@@ -176,6 +176,38 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
+  // ==================== Public Portal Routes ====================
+  {
+    path: '/portal/status',
+    name: 'PortalStatus',
+    component: () => import('@/views/public/PortalStatusView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Channel Status',
+      titleKey: 'portal.status.title'
+    }
+  },
+  {
+    path: '/portal/pricing',
+    name: 'PortalPricing',
+    component: () => import('@/views/public/PortalPricingView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Pricing',
+      titleKey: 'portal.pricing.title'
+    }
+  },
+  {
+    path: '/portal/tutorial',
+    name: 'PortalTutorial',
+    component: () => import('@/views/public/PortalTutorialView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Tutorial',
+      titleKey: 'portal.tutorial.title'
+    }
+  },
+
   // ==================== User Routes ====================
   {
     path: '/',
@@ -690,7 +722,7 @@ let authInitialized = false
 const navigationLoading = useNavigationLoadingState()
 // 延迟初始化预加载，传入 router 实例
 let routePrefetch: ReturnType<typeof useRoutePrefetch> | null = null
-const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result', '/payment/airwallex', '/legal']
+const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result', '/payment/airwallex', '/legal', '/home', '/portal']
 const BACKEND_MODE_CALLBACK_PATHS = [
   '/auth/callback',
   '/auth/linuxdo/callback',

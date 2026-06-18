@@ -1,4 +1,44 @@
 export default {
+  // Public Portal
+  portal: {
+    nav: {
+      status: 'Status',
+      pricing: 'Pricing',
+      tutorial: 'Tutorial',
+      chat: 'Chat',
+    },
+    status: {
+      title: 'Channel Status',
+      subtitle: 'Real-time availability, latency and uptime across channels',
+    },
+    pricing: {
+      title: 'Pricing',
+      subtitle: 'Real-time billing rates for channels, groups and models',
+    },
+    tutorial: {
+      title: 'Tutorial',
+      subtitle: 'Quick start guide',
+      empty: 'Tutorial content has not been configured yet. Please check back later.',
+    },
+    hero: {
+      badge: 'All channels online',
+      title: 'One gateway, many upstream channels',
+      subtitle: 'Pay-as-you-go billing · Balance never expires · Multiple channel rates',
+      viewPricing: 'View Pricing',
+      getStarted: 'Get Started',
+      goToConsole: 'Go to Console',
+    },
+    features: {
+      status: 'Status Check',
+      statusDesc: 'Monitor channel status and latency in real time',
+      pricing: 'Transparent Pricing',
+      pricingDesc: 'Token-based billing with clear rate multipliers',
+      tutorial: 'Tutorial',
+      tutorialDesc: 'Step-by-step onboarding guide',
+      chat: 'Chat Station',
+      chatDesc: 'Try it online, ready to use',
+    },
+  },
   // Home Page
   home: {
     viewOnGithub: 'View on GitHub',
@@ -5860,6 +5900,12 @@ export default {
         homeContentPlaceholder: 'Enter custom content for the home page. Supports Markdown & HTML. If a URL is entered, it will be displayed as an iframe.',
         homeContentHint: 'Customize the home page content. Supports Markdown/HTML. If you enter a URL (starting with http:// or https://), it will be used as an iframe src to embed an external page. When set, the default status information will no longer be displayed.',
         homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.',
+        chatStationUrl: 'Chat Station URL',
+        chatStationUrlPlaceholder: 'https://chat.example.com',
+        chatStationUrlHint: 'Destination URL for the public portal "Chat" entry. Leave blank to hide the entry.',
+        tutorialContent: 'Tutorial Content',
+        tutorialContentPlaceholder: 'Enter the usage tutorial here. Markdown is supported.',
+        tutorialContentHint: 'Content shown on the public portal "Tutorial" page. Markdown supported. Leave blank to hide the entry.',
         hideCcsImportButton: 'Hide CCS Import Button',
         hideCcsImportButtonHint: 'When enabled, the "Import to CCS" button will be hidden on the API Keys page'
       },

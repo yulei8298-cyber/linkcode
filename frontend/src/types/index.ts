@@ -208,6 +208,8 @@ export interface PublicSettings {
   contact_info: string
   doc_url: string
   home_content: string
+  tutorial_content_md: string
+  chat_station_url: string
   hide_ccs_import_button: boolean
   payment_enabled: boolean
   risk_control_enabled: boolean

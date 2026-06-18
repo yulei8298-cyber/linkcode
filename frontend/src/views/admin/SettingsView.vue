@@ -5000,6 +5000,42 @@
                 </p>
               </div>
 
+              <!-- Chat Station URL (public portal) -->
+              <div>
+                <label
+                  class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ t("admin.settings.site.chatStationUrl") }}
+                </label>
+                <input
+                  v-model="form.chat_station_url"
+                  type="url"
+                  class="input"
+                  :placeholder="t('admin.settings.site.chatStationUrlPlaceholder')"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t("admin.settings.site.chatStationUrlHint") }}
+                </p>
+              </div>
+
+              <!-- Tutorial Content (Markdown, public portal) -->
+              <div>
+                <label
+                  class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ t("admin.settings.site.tutorialContent") }}
+                </label>
+                <textarea
+                  v-model="form.tutorial_content_md"
+                  rows="8"
+                  class="input font-mono text-sm"
+                  :placeholder="t('admin.settings.site.tutorialContentPlaceholder')"
+                ></textarea>
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t("admin.settings.site.tutorialContentHint") }}
+                </p>
+              </div>
+
               <!-- Hide CCS Import Button -->
               <div
                 class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
@@ -7669,6 +7705,8 @@ const form = reactive<SettingsForm>({
   contact_info: "",
   doc_url: "",
   home_content: "",
+  tutorial_content_md: "",
+  chat_station_url: "",
   backend_mode_enabled: false,
   hide_ccs_import_button: false,
   payment_enabled: false,
@@ -8835,6 +8873,8 @@ async function saveSettings() {
       contact_info: form.contact_info,
       doc_url: form.doc_url,
       home_content: form.home_content,
+      tutorial_content_md: form.tutorial_content_md,
+      chat_station_url: form.chat_station_url,
       backend_mode_enabled: form.backend_mode_enabled,
       hide_ccs_import_button: form.hide_ccs_import_button,
       table_default_page_size: form.table_default_page_size,

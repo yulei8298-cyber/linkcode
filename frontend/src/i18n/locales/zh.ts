@@ -1,4 +1,44 @@
 export default {
+  // Public Portal
+  portal: {
+    nav: {
+      status: '可用性检测',
+      pricing: '定价方案',
+      tutorial: '使用教程',
+      chat: '对话站',
+    },
+    status: {
+      title: '可用性检测',
+      subtitle: '实时查看各渠道在线状态、延迟与可用率',
+    },
+    pricing: {
+      title: '定价方案',
+      subtitle: '各渠道分组与模型的实时计费价格',
+    },
+    tutorial: {
+      title: '使用教程',
+      subtitle: '快速接入指南',
+      empty: '教程内容尚未配置，请稍后再来查看。',
+    },
+    hero: {
+      badge: '全部渠道在线',
+      title: '一个入口，聚合多家上游渠道',
+      subtitle: '实时按量计费 · 余额永久有效 · 多渠道倍率可选',
+      viewPricing: '查看定价',
+      getStarted: '开始使用',
+      goToConsole: '前往控制台',
+    },
+    features: {
+      status: '可用性检测',
+      statusDesc: '实时监控各渠道状态与延迟',
+      pricing: '透明定价',
+      pricingDesc: '按 Token 实时计费，倍率清晰',
+      tutorial: '使用教程',
+      tutorialDesc: '一步步教你快速接入',
+      chat: '对话站',
+      chatDesc: '在线体验，开箱即用',
+    },
+  },
   // Home Page
   home: {
     viewOnGithub: '在 GitHub 上查看',
@@ -6016,6 +6056,12 @@ export default {
           '自定义首页内容，支持 Markdown/HTML。如果输入的是链接（以 http:// 或 https:// 开头），则会使用该链接作为 iframe 的 src 属性，这允许你设置任意网页作为首页。设置后首页的状态信息将不再显示。',
         homeContentIframeWarning:
           '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。',
+        chatStationUrl: '对话站链接',
+        chatStationUrlPlaceholder: 'https://chat.example.com',
+        chatStationUrlHint: '公开门户「对话站」入口跳转的地址。留空则不显示该入口。',
+        tutorialContent: '使用教程内容',
+        tutorialContentPlaceholder: '在此输入使用教程，支持 Markdown 格式。',
+        tutorialContentHint: '公开门户「使用教程」页面展示的内容，支持 Markdown。留空则不显示该入口。',
         hideCcsImportButton: '隐藏 CCS 导入按钮',
         hideCcsImportButtonHint: '启用后将在 API Keys 页面隐藏"导入 CCS"按钮'
       },

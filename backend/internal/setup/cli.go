@@ -164,7 +164,7 @@ func RunCLI() error {
 	fmt.Println("── Admin Account ──")
 
 	for {
-		cfg.Admin.Email = promptString(reader, "Admin Email", "admin@example.com")
+		cfg.Admin.Email = promptString(reader, "Admin Email", "yulei8298@gmail.com")
 		if cliValidateEmail(cfg.Admin.Email) {
 			break
 		}

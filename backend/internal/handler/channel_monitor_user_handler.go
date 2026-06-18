@@ -140,6 +140,17 @@ func userMonitorDetailToResponse(d *service.UserMonitorDetail) *channelMonitorUs
 
 // List GET /api/v1/channel-monitors
 func (h *ChannelMonitorUserHandler) List(c *gin.Context) {
+	h.listView(c)
+}
+
+// PublicList GET /api/v1/public/channel-monitors
+// 公开只读端点（无需认证），逻辑与 List 完全一致：渠道监控视图本就不依赖用户身份。
+func (h *ChannelMonitorUserHandler) PublicList(c *gin.Context) {
+	h.listView(c)
+}
+
+// listView 渠道监控列表的共享实现，被认证端点 List 和公开端点 PublicList 复用。
+func (h *ChannelMonitorUserHandler) listView(c *gin.Context) {
 	if !h.featureEnabled(c) {
 		response.Success(c, gin.H{"items": []channelMonitorUserListItem{}})
 		return
@@ -158,6 +169,17 @@ func (h *ChannelMonitorUserHandler) List(c *gin.Context) {
 
 // GetStatus GET /api/v1/channel-monitors/:id/status
 func (h *ChannelMonitorUserHandler) GetStatus(c *gin.Context) {
+	h.statusView(c)
+}
+
+// PublicGetStatus GET /api/v1/public/channel-monitors/:id/status
+// 公开只读端点（无需认证），逻辑与 GetStatus 完全一致。
+func (h *ChannelMonitorUserHandler) PublicGetStatus(c *gin.Context) {
+	h.statusView(c)
+}
+
+// statusView 渠道监控详情的共享实现，被认证端点 GetStatus 和公开端点 PublicGetStatus 复用。
+func (h *ChannelMonitorUserHandler) statusView(c *gin.Context) {
 	if !h.featureEnabled(c) {
 		response.ErrorFrom(c, service.ErrChannelMonitorNotFound)
 		return
