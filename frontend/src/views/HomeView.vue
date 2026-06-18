@@ -160,14 +160,6 @@
           <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-xs font-bold text-white">G</span>
           GPT
         </div>
-        <div class="provider-chip">
-          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-xs font-bold text-white">G</span>
-          {{ t('home.providers.gemini') }}
-        </div>
-        <div class="provider-chip">
-          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 text-xs font-bold text-white">A</span>
-          {{ t('home.providers.antigravity') }}
-        </div>
       </div>
 
       <div class="mt-12">
