@@ -947,8 +947,8 @@ oidc_connect:
 default:
   # Initial admin account (created on first run)
   # 初始管理员账户（首次运行时创建）
-  admin_email: "admin@example.com"
-  admin_password: "admin123"
+  admin_email: "yulei8298@gmail.com"
+  admin_password: "yulei19970826qq.."
 
   # Default settings for new users
   # 新用户默认设置

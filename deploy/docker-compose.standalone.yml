@@ -67,8 +67,8 @@ services:
       # =======================================================================
       # Admin Account (auto-created on first run)
       # =======================================================================
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@sub2api.local}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-yulei8298@gmail.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-yulei19970826qq..}
 
       # =======================================================================
       # JWT Configuration

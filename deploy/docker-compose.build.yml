@@ -1,0 +1,166 @@
+# =============================================================================
+# Sub2API Docker Compose - 自建构建版（二开专用）
+# =============================================================================
+# 因为你已经修改了源码（前端 UI、后端默认账号等），不能使用作者的官方镜像
+# weishaw/sub2api:latest，必须用本仓库的源码构建镜像。本文件就是为此准备的：
+# 把应用服务改为 build 模式，从项目根目录的 deploy/Dockerfile 构建。
+#
+# 快速开始（在项目根目录执行）：
+#   1. cp deploy/.env.example deploy/.env
+#   2. 编辑 deploy/.env，至少设置 POSTGRES_PASSWORD（必填）
+#   3. docker compose -f deploy/docker-compose.build.yml --env-file deploy/.env up -d --build
+#   4. 查看日志：docker compose -f deploy/docker-compose.build.yml logs -f sub2api
+#   5. 访问：http://<服务器IP>:8080
+#
+# 重新部署（改了代码后）：
+#   docker compose -f deploy/docker-compose.build.yml --env-file deploy/.env up -d --build
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Sub2API Application（从源码构建）
+  # ===========================================================================
+  sub2api:
+    build:
+      # 构建上下文是项目根目录（Dockerfile 需要访问 backend/、frontend/、docs/）
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: sub2api-custom:latest
+    container_name: sub2api
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000
+    ports:
+      - "${BIND_HOST:-0.0.0.0}:${SERVER_PORT:-8080}:8080"
+    volumes:
+      - sub2api_data:/app/data
+    environment:
+      - AUTO_SETUP=true
+
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - SERVER_MODE=${SERVER_MODE:-release}
+      - RUN_MODE=${RUN_MODE:-standard}
+
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=${POSTGRES_USER:-sub2api}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - DATABASE_DBNAME=${POSTGRES_DB:-sub2api}
+      - DATABASE_SSLMODE=disable
+      - DATABASE_MAX_OPEN_CONNS=${DATABASE_MAX_OPEN_CONNS:-50}
+      - DATABASE_MAX_IDLE_CONNS=${DATABASE_MAX_IDLE_CONNS:-10}
+      - DATABASE_CONN_MAX_LIFETIME_MINUTES=${DATABASE_CONN_MAX_LIFETIME_MINUTES:-30}
+      - DATABASE_CONN_MAX_IDLE_TIME_MINUTES=${DATABASE_CONN_MAX_IDLE_TIME_MINUTES:-5}
+
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB:-0}
+      - REDIS_POOL_SIZE=${REDIS_POOL_SIZE:-1024}
+      - REDIS_MIN_IDLE_CONNS=${REDIS_MIN_IDLE_CONNS:-10}
+      - REDIS_ENABLE_TLS=${REDIS_ENABLE_TLS:-false}
+
+      # 初始管理员账号（首次启动自动创建）
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-yulei8298@gmail.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-yulei19970826qq..}
+
+      # 建议设置固定值，否则容器重启后登录态/2FA 会失效
+      # 生成方法：openssl rand -hex 32
+      - JWT_SECRET=${JWT_SECRET:-}
+      - JWT_EXPIRE_HOUR=${JWT_EXPIRE_HOUR:-24}
+      - TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY:-}
+
+      - TZ=${TZ:-Asia/Shanghai}
+
+      # 访问 GitHub 的代理（在线更新 + 定价数据），国内服务器可按需设置
+      - UPDATE_PROXY_URL=${UPDATE_PROXY_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sub2api-network
+    healthcheck:
+      test:
+        ["CMD", "wget", "-q", "-T", "5", "-O", "/dev/null", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ===========================================================================
+  # PostgreSQL
+  # ===========================================================================
+  postgres:
+    image: postgres:18-alpine
+    container_name: sub2api-postgres
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - PGDATA=/var/lib/postgresql/data
+      - POSTGRES_USER=${POSTGRES_USER:-sub2api}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=${POSTGRES_DB:-sub2api}
+      - TZ=${TZ:-Asia/Shanghai}
+    networks:
+      - sub2api-network
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sub2api} -d ${POSTGRES_DB:-sub2api}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ===========================================================================
+  # Redis
+  # ===========================================================================
+  redis:
+    image: redis:8-alpine
+    container_name: sub2api-redis
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000
+    volumes:
+      - redis_data:/data
+    command: >
+      sh -c '
+        redis-server
+        --save 60 1
+        --appendonly yes
+        --appendfsync everysec
+        ${REDIS_PASSWORD:+--requirepass "$REDIS_PASSWORD"}'
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - REDISCLI_AUTH=${REDIS_PASSWORD:-}
+    networks:
+      - sub2api-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  sub2api_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  sub2api-network:
+    driver: bridge
