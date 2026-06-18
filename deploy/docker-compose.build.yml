@@ -10,7 +10,7 @@
 #   2. 编辑 deploy/.env，至少设置 POSTGRES_PASSWORD（必填）
 #   3. docker compose -f deploy/docker-compose.build.yml --env-file deploy/.env up -d --build
 #   4. 查看日志：docker compose -f deploy/docker-compose.build.yml logs -f sub2api
-#   5. 访问：http://<服务器IP>:8080
+#   5. 访问：http://<服务器IP>  （默认端口 80，可在 .env 改 SERVER_PORT）
 #
 # 重新部署（改了代码后）：
 #   docker compose -f deploy/docker-compose.build.yml --env-file deploy/.env up -d --build
