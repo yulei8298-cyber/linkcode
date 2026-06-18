@@ -22,11 +22,17 @@ export default {
     },
     hero: {
       badge: '全部渠道在线',
-      title: '一个入口，聚合多家上游渠道',
-      subtitle: '实时按量计费 · 余额永久有效 · 多渠道倍率可选',
+      title: '一个入口，畅享 ',
+      subtitle: '实时按量计费 · 余额永久有效 · 多渠道倍率低至 0.2x',
       viewPricing: '查看定价',
       getStarted: '开始使用',
       goToConsole: '前往控制台',
+    },
+    stats: {
+      providers: '支持渠道',
+      lowestRate: '最低倍率',
+      balance: '余额有效期',
+      permanentValue: '永久',
     },
     features: {
       status: '可用性检测',
@@ -37,6 +43,17 @@ export default {
       tutorialDesc: '一步步教你快速接入',
       chat: '对话站',
       chatDesc: '在线体验，开箱即用',
+      soon: '即将上线',
+    },
+    why: {
+      title: '为什么选择我们',
+      subtitle: '把多家上游渠道聚合成一个稳定、透明、好用的 API 入口',
+      unified: '统一入口',
+      unifiedDesc: '一个 API 同时接入 Claude、GPT、Gemini 等多家模型，无需分别对接。',
+      billing: '透明计费',
+      billingDesc: 'Token 级实时计费，价格清晰可查，余额永久有效不过期。',
+      stable: '稳定可靠',
+      stableDesc: '多账号智能调度、自动故障切换，配合实时可用性监控。',
     },
   },
   // Home Page

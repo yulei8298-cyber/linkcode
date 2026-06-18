@@ -25,7 +25,7 @@
           <span
             class="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-dark-800 dark:ring-dark-700"
           >
-            <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
+            <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
           </span>
           <span class="hidden truncate text-base font-semibold sm:inline">{{ siteName }}</span>
         </RouterLink>
@@ -148,16 +148,16 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API')
+const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'linkcode')
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const chatStationUrl = computed(() => appStore.cachedPublicSettings?.chat_station_url || '')
-const tutorialContentMD = computed(() => appStore.cachedPublicSettings?.tutorial_content_md || '')
 
-// Nav item visibility driven by feature flags / configured content.
-const showStatus = computed(() => appStore.cachedPublicSettings?.channel_monitor_enabled !== false)
-const showPricing = computed(() => appStore.cachedPublicSettings?.available_channels_enabled === true)
-const showTutorial = computed(() => Boolean(tutorialContentMD.value.trim()))
+// 状态/定价/教程入口始终显示（页面本身在无数据时有空状态提示）；
+// 对话站仅在后台配置了 URL 后才显示。
+const showStatus = computed(() => true)
+const showPricing = computed(() => true)
+const showTutorial = computed(() => true)
 const showChat = computed(() => Boolean(chatStationUrl.value.trim()))
 const hasAnyNav = computed(() => showStatus.value || showPricing.value || showTutorial.value || showChat.value)
 

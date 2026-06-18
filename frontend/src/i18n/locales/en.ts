@@ -22,11 +22,17 @@ export default {
     },
     hero: {
       badge: 'All channels online',
-      title: 'One gateway, many upstream channels',
-      subtitle: 'Pay-as-you-go billing · Balance never expires · Multiple channel rates',
+      title: 'One gateway for ',
+      subtitle: 'Pay-as-you-go billing · Balance never expires · Rates as low as 0.2x',
       viewPricing: 'View Pricing',
       getStarted: 'Get Started',
       goToConsole: 'Go to Console',
+    },
+    stats: {
+      providers: 'Providers',
+      lowestRate: 'Lowest Rate',
+      balance: 'Balance Validity',
+      permanentValue: 'Forever',
     },
     features: {
       status: 'Status Check',
@@ -37,6 +43,17 @@ export default {
       tutorialDesc: 'Step-by-step onboarding guide',
       chat: 'Chat Station',
       chatDesc: 'Try it online, ready to use',
+      soon: 'Soon',
+    },
+    why: {
+      title: 'Why Choose Us',
+      subtitle: 'Aggregate many upstream channels into one stable, transparent API gateway',
+      unified: 'Unified Gateway',
+      unifiedDesc: 'Access Claude, GPT, Gemini and more through a single API — no separate integrations.',
+      billing: 'Transparent Billing',
+      billingDesc: 'Token-level real-time billing with clear pricing; balance never expires.',
+      stable: 'Reliable',
+      stableDesc: 'Smart multi-account scheduling, automatic failover, and live availability monitoring.',
     },
   },
   // Home Page
