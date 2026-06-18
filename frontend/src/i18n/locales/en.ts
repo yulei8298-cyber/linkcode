@@ -23,6 +23,7 @@ export default {
     hero: {
       badge: 'All channels online',
       title: 'One gateway for ',
+      titleHighlight: 'Claude Code & ChatGPT',
       subtitle: 'Pay-as-you-go billing · Balance never expires · Rates as low as 0.2x',
       viewPricing: 'View Pricing',
       getStarted: 'Get Started',

@@ -22,7 +22,8 @@ export default {
     },
     hero: {
       badge: '全部渠道在线',
-      title: '一个入口，畅享 ',
+      title: '一个入口，接入 ',
+      titleHighlight: 'Claude Code 与 ChatGPT',
       subtitle: '实时按量计费 · 余额永久有效 · 多渠道倍率低至 0.2x',
       viewPricing: '查看定价',
       getStarted: '开始使用',

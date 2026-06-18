@@ -31,7 +31,7 @@
 
       <h1 class="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
         {{ t('portal.hero.title') }}
-        <span class="bg-gradient-to-r from-primary-500 to-emerald-500 bg-clip-text text-transparent">Claude · GPT · Gemini</span>
+        <span class="bg-gradient-to-r from-primary-500 to-emerald-500 bg-clip-text text-transparent">{{ t('portal.hero.titleHighlight') }}</span>
       </h1>
       <p class="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-gray-600 dark:text-dark-300 sm:text-lg">
         {{ siteSubtitle || t('portal.hero.subtitle') }}
