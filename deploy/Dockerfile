@@ -20,7 +20,10 @@ FROM ${NODE_IMAGE} AS frontend-builder
 WORKDIR /app/frontend
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# 锁定 pnpm 9（与 frontend/pnpm-lock.yaml 的 lockfileVersion 9.0 匹配）。
+# pnpm 10+ 改了 package.json 中 pnpm.overrides 的读取方式，会导致
+# --frozen-lockfile 报 ERR_PNPM_LOCKFILE_CONFIG_MISMATCH。
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 # Install dependencies first (better caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
