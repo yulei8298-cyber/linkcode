@@ -33,9 +33,30 @@ print_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 # ---------------------------------------------------------------------------
-# 定位项目根目录（脚本位于 deploy/ 下）
+# 定位 deploy 目录与项目根目录
+# 不依赖 $0/BASH_SOURCE 反推（被 exec/sh 调用时可能失真），
+# 改为按"哪个目录里真的有 docker-compose.build.yml"来判定，兼容多种运行位置。
 # ---------------------------------------------------------------------------
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+resolve_deploy_dir() {
+    local src dir
+    src="${BASH_SOURCE[0]:-$0}"
+    dir="$(cd "$(dirname "${src}")" 2>/dev/null && pwd)"
+    if [ -n "${dir}" ] && [ -f "${dir}/docker-compose.build.yml" ]; then
+        echo "${dir}"; return 0
+    fi
+    if [ -f "./deploy/docker-compose.build.yml" ]; then
+        (cd ./deploy && pwd); return 0
+    fi
+    if [ -f "./docker-compose.build.yml" ]; then
+        pwd; return 0
+    fi
+    return 1
+}
+
+SCRIPT_DIR="$(resolve_deploy_dir)" || {
+    print_error "找不到 docker-compose.build.yml。请在项目根目录执行：bash deploy/install-custom.sh"
+    exit 1
+}
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.build.yml"
 ENV_FILE="${SCRIPT_DIR}/.env"

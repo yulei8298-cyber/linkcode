@@ -42,7 +42,26 @@ for arg in "$@"; do
     esac
 done
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+resolve_deploy_dir() {
+    local src dir
+    src="${BASH_SOURCE[0]:-$0}"
+    dir="$(cd "$(dirname "${src}")" 2>/dev/null && pwd)"
+    if [ -n "${dir}" ] && [ -f "${dir}/docker-compose.build.yml" ]; then
+        echo "${dir}"; return 0
+    fi
+    if [ -f "./deploy/docker-compose.build.yml" ]; then
+        (cd ./deploy && pwd); return 0
+    fi
+    if [ -f "./docker-compose.build.yml" ]; then
+        pwd; return 0
+    fi
+    return 1
+}
+
+SCRIPT_DIR="$(resolve_deploy_dir)" || {
+    print_error "找不到 docker-compose.build.yml。请在项目根目录执行：bash deploy/update.sh"
+    exit 1
+}
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.build.yml"
 ENV_FILE="${SCRIPT_DIR}/.env"
