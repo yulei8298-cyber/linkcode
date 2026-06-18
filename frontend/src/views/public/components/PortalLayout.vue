@@ -2,16 +2,20 @@
   <div
     class="relative flex min-h-screen flex-col bg-white text-gray-900 dark:bg-dark-950 dark:text-white"
   >
-    <!-- Dotted grid background (tabcode-style) -->
+    <!-- Dotted grid background + soft color blooms -->
     <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div
         class="absolute inset-0 bg-[radial-gradient(circle,rgba(0,0,0,0.045)_1px,transparent_1px)] bg-[size:22px_22px] dark:bg-[radial-gradient(circle,rgba(255,255,255,0.05)_1px,transparent_1px)]"
+      ></div>
+      <!-- 顶部柔和渐变光斑：青绿 / 蓝 / 紫，整体很淡 -->
+      <div
+        class="absolute left-1/2 top-0 h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-gradient-to-br from-primary-300/25 via-sky-300/20 to-purple-300/20 blur-3xl dark:from-primary-500/15 dark:via-sky-500/10 dark:to-purple-500/10"
       ></div>
       <div
         class="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-primary-400/10 blur-3xl"
       ></div>
       <div
-        class="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary-500/10 blur-3xl"
+        class="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-sky-400/10 blur-3xl"
       ></div>
     </div>
 

@@ -70,78 +70,40 @@
       </div>
     </section>
 
-    <!-- ===================== Feature entries (4 functions) ===================== -->
-    <section class="grid gap-5 pb-4 sm:grid-cols-2 lg:grid-cols-4">
-      <router-link to="/portal/status" class="feature-card group">
-        <span class="feature-icon bg-gradient-to-br from-emerald-500 to-emerald-600">
-          <Icon name="chart" size="lg" class="text-white" />
-        </span>
-        <h3 class="feature-title">{{ t('portal.features.status') }}</h3>
-        <p class="feature-desc">{{ t('portal.features.statusDesc') }}</p>
-      </router-link>
-
-      <router-link to="/portal/pricing" class="feature-card group">
-        <span class="feature-icon bg-gradient-to-br from-primary-500 to-primary-600">
-          <Icon name="chart" size="lg" class="text-white" />
-        </span>
-        <h3 class="feature-title">{{ t('portal.features.pricing') }}</h3>
-        <p class="feature-desc">{{ t('portal.features.pricingDesc') }}</p>
-      </router-link>
-
-      <router-link to="/portal/tutorial" class="feature-card group">
-        <span class="feature-icon bg-gradient-to-br from-blue-500 to-blue-600">
-          <Icon name="book" size="lg" class="text-white" />
-        </span>
-        <h3 class="feature-title">{{ t('portal.features.tutorial') }}</h3>
-        <p class="feature-desc">{{ t('portal.features.tutorialDesc') }}</p>
-      </router-link>
-
-      <component
-        :is="showChat ? 'a' : 'div'"
-        :href="showChat ? chatStationUrl : undefined"
-        :target="showChat ? '_blank' : undefined"
-        :rel="showChat ? 'noopener noreferrer' : undefined"
-        class="feature-card group"
-        :class="{ 'cursor-default opacity-80': !showChat }"
-      >
-        <span class="feature-icon bg-gradient-to-br from-purple-500 to-purple-600">
-          <Icon name="chat" size="lg" class="text-white" />
-        </span>
-        <h3 class="feature-title">
-          {{ t('portal.features.chat') }}
-          <span v-if="!showChat" class="ml-1 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-dark-700 dark:text-dark-400">{{ t('portal.features.soon') }}</span>
-        </h3>
-        <p class="feature-desc">{{ t('portal.features.chatDesc') }}</p>
-      </component>
-    </section>
-
-    <!-- ===================== Why us ===================== -->
+    <!-- ===================== Global access ===================== -->
     <section class="py-16">
       <div class="mb-10 text-center">
-        <h2 class="text-2xl font-bold sm:text-3xl">{{ t('portal.why.title') }}</h2>
-        <p class="mx-auto mt-3 max-w-xl text-sm text-gray-500 dark:text-dark-400">{{ t('portal.why.subtitle') }}</p>
+        <h2 class="text-2xl font-bold sm:text-3xl">{{ t('portal.global.title') }}</h2>
+        <p class="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-gray-500 dark:text-dark-400">{{ t('portal.global.subtitle') }}</p>
       </div>
-      <div class="grid gap-6 md:grid-cols-3">
-        <div class="why-card">
-          <span class="why-icon bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-300">
-            <Icon name="swap" size="md" />
-          </span>
-          <h3 class="why-title">{{ t('portal.why.unified') }}</h3>
-          <p class="why-desc">{{ t('portal.why.unifiedDesc') }}</p>
-        </div>
-        <div class="why-card">
-          <span class="why-icon bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
-            <Icon name="chart" size="md" />
-          </span>
-          <h3 class="why-title">{{ t('portal.why.billing') }}</h3>
-          <p class="why-desc">{{ t('portal.why.billingDesc') }}</p>
-        </div>
-        <div class="why-card">
-          <span class="why-icon bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
-            <Icon name="shield" size="md" />
-          </span>
-          <h3 class="why-title">{{ t('portal.why.stable') }}</h3>
-          <p class="why-desc">{{ t('portal.why.stableDesc') }}</p>
+
+      <div class="relative mx-auto max-w-4xl">
+        <!-- 点阵世界地图（原创：径向点阵 + 连线节点动画） -->
+        <div class="map-dots relative aspect-[2/1] w-full rounded-3xl">
+          <svg viewBox="0 0 800 400" class="absolute inset-0 h-full w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="link-line" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#2dd4bf" stop-opacity="0.1"/>
+                <stop offset="0.5" stop-color="#0ea5e9" stop-opacity="0.9"/>
+                <stop offset="1" stop-color="#2dd4bf" stop-opacity="0.1"/>
+              </linearGradient>
+            </defs>
+            <!-- 连线 -->
+            <g stroke="url(#link-line)" stroke-width="1.6" fill="none" stroke-linecap="round">
+              <path class="link-path" d="M150,150 Q330,40 420,210" />
+              <path class="link-path" style="animation-delay:.6s" d="M420,210 Q560,120 660,180" />
+              <path class="link-path" style="animation-delay:1.2s" d="M150,150 Q260,300 420,210" />
+              <path class="link-path" style="animation-delay:1.8s" d="M660,180 Q700,260 600,300" />
+            </g>
+            <!-- 节点 -->
+            <g>
+              <circle class="node" cx="150" cy="150" r="5" />
+              <circle class="node" style="animation-delay:.4s" cx="420" cy="210" r="6" />
+              <circle class="node" style="animation-delay:.8s" cx="660" cy="180" r="5" />
+              <circle class="node" style="animation-delay:1.2s" cx="600" cy="300" r="4" />
+              <circle class="node" style="animation-delay:1.6s" cx="260" cy="250" r="4" />
+            </g>
+          </svg>
         </div>
       </div>
     </section>
@@ -190,14 +152,11 @@ const appStore = useAppStore()
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
-const chatStationUrl = computed(() => appStore.cachedPublicSettings?.chat_station_url || '')
 
 const isHomeContentUrl = computed(() => {
   const content = homeContent.value.trim()
   return content.startsWith('http://') || content.startsWith('https://')
 })
-
-const showChat = computed(() => Boolean(chatStationUrl.value.trim()))
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
@@ -232,34 +191,47 @@ onMounted(() => {
 .stat-label {
   @apply mt-1 text-xs text-gray-500 dark:text-dark-400;
 }
-.feature-card {
-  @apply flex flex-col items-start rounded-2xl border border-gray-200/80 bg-white/80 p-6 text-left shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/70 dark:bg-dark-800/60;
-}
-.feature-icon {
-  @apply mb-4 flex h-12 w-12 items-center justify-center rounded-xl shadow-lg transition-transform;
-}
-.feature-card:hover .feature-icon {
-  @apply scale-110;
-}
-.feature-title {
-  @apply mb-1.5 text-lg font-semibold text-gray-900 dark:text-white;
-}
-.feature-desc {
-  @apply text-sm leading-relaxed text-gray-600 dark:text-dark-400;
-}
-.why-card {
-  @apply rounded-2xl border border-gray-200/70 bg-white/60 p-7 dark:border-dark-700/70 dark:bg-dark-800/40;
-}
-.why-icon {
-  @apply mb-4 flex h-11 w-11 items-center justify-center rounded-xl;
-}
-.why-title {
-  @apply mb-2 text-base font-semibold text-gray-900 dark:text-white;
-}
-.why-desc {
-  @apply text-sm leading-relaxed text-gray-600 dark:text-dark-400;
-}
 .provider-chip {
   @apply inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-4 py-2.5 text-sm font-medium text-gray-700 dark:border-dark-700 dark:bg-dark-800/60 dark:text-dark-200;
+}
+
+/* 点阵世界地图背景：用径向点阵 mask 出地图质感 */
+.map-dots {
+  background-image: radial-gradient(currentColor 1px, transparent 1.4px);
+  background-size: 14px 14px;
+  color: rgba(100, 116, 139, 0.25);
+}
+:global(.dark) .map-dots {
+  color: rgba(148, 163, 184, 0.18);
+}
+
+/* 连线流光 */
+.link-path {
+  stroke-dasharray: 6 10;
+  animation: link-flow 3s linear infinite;
+}
+@keyframes link-flow {
+  to {
+    stroke-dashoffset: -160;
+  }
+}
+
+/* 节点脉冲 */
+.node {
+  fill: #0ea5e9;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pulse 2.4s ease-in-out infinite;
+}
+@keyframes node-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    r: 4;
+  }
+  50% {
+    opacity: 1;
+    r: 6;
+  }
 }
 </style>

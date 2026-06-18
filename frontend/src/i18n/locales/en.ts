@@ -56,6 +56,10 @@ export default {
       stable: 'Reliable',
       stableDesc: 'Smart multi-account scheduling, automatic failover, and live availability monitoring.',
     },
+    global: {
+      title: 'One-click access to overseas models & services',
+      subtitle: 'An aggregation relay with smart routing and acceleration — connect to overseas nodes and models without a VPN.',
+    },
   },
   // Home Page
   home: {

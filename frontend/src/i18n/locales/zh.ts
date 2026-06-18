@@ -56,6 +56,10 @@ export default {
       stable: '稳定可靠',
       stableDesc: '多账号智能调度、自动故障切换，配合实时可用性监控。',
     },
+    global: {
+      title: '一键接入海外模型与服务',
+      subtitle: '聚合中转，智能选路与加速，无需翻墙即可稳定直连海外节点与模型能力。',
+    },
   },
   // Home Page
   home: {
