@@ -9,7 +9,13 @@
 #
 # 用法（在项目根目录执行）：
 #   bash deploy/install-custom.sh
+#   注意：请用 bash 运行，不要用 sh（sh 在 Debian/Ubuntu 是 dash，不支持本脚本语法）
 # =============================================================================
+
+# 若被 sh/dash 等非 bash 解释器调用，自动用 bash 重新执行自己
+if [ -z "${BASH_VERSION:-}" ]; then
+    exec bash "$0" "$@"
+fi
 
 set -euo pipefail
 

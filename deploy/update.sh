@@ -10,7 +10,13 @@
 #   bash deploy/update.sh              # 标准更新：git pull + 重建 + 重启
 #   bash deploy/update.sh --no-pull    # 不执行 git pull（适合手动上传代码的场景）
 #   bash deploy/update.sh --no-backup  # 跳过数据库备份
+#   注意：请用 bash 运行，不要用 sh（sh 在 Debian/Ubuntu 是 dash，不支持本脚本语法）
 # =============================================================================
+
+# 若被 sh/dash 等非 bash 解释器调用，自动用 bash 重新执行自己
+if [ -z "${BASH_VERSION:-}" ]; then
+    exec bash "$0" "$@"
+fi
 
 set -euo pipefail
 
