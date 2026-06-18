@@ -26,13 +26,18 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import PortalLayout from './components/PortalLayout.vue'
 import { useAppStore } from '@/stores/app'
+import { DEFAULT_TUTORIAL_MD } from './defaultTutorial'
 
 const { t } = useI18n()
 const appStore = useAppStore()
 
 marked.setOptions({ breaks: true, gfm: true })
 
-const contentMD = computed(() => appStore.cachedPublicSettings?.tutorial_content_md || '')
+// 后台配置了教程内容则用后台的，否则回退到内置默认教程。
+const contentMD = computed(() => {
+  const configured = appStore.cachedPublicSettings?.tutorial_content_md || ''
+  return configured.trim() ? configured : DEFAULT_TUTORIAL_MD
+})
 const hasContent = computed(() => Boolean(contentMD.value.trim()))
 
 const renderedHtml = computed(() => {
