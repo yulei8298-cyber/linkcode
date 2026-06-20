@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"sort"
 	"strings"
 	"time"
 
@@ -25,6 +24,10 @@ const (
 	lobeHubProviderClaude = "claude"
 	lobeHubProviderGPT    = "gpt"
 	lobeHubProviderGemini = "gemini"
+
+	lobeHubGroupAnthropic = "Anthropic-chat"
+	lobeHubGroupOpenAI    = "OpenAI-chat"
+	lobeHubGroupGemini    = "Gemini-chat"
 )
 
 type LobeHubSSOCodeStore interface {
@@ -187,20 +190,18 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 	if err != nil {
 		return nil, fmt.Errorf("list available groups: %w", err)
 	}
-	groupByPlatform := make(map[string][]Group)
+	groupByPlatform := make(map[string]Group)
 	for _, g := range availableGroups {
 		if g.Status != StatusActive {
 			continue
 		}
-		groupByPlatform[g.Platform] = append(groupByPlatform[g.Platform], g)
-	}
-	for platform := range groupByPlatform {
-		sort.SliceStable(groupByPlatform[platform], func(i, j int) bool {
-			if groupByPlatform[platform][i].SortOrder == groupByPlatform[platform][j].SortOrder {
-				return groupByPlatform[platform][i].ID < groupByPlatform[platform][j].ID
-			}
-			return groupByPlatform[platform][i].SortOrder < groupByPlatform[platform][j].SortOrder
-		})
+		if !isLobeHubChatGroup(g.Platform, g.Name) {
+			continue
+		}
+		current, ok := groupByPlatform[g.Platform]
+		if !ok || preferLobeHubGroup(g, current) {
+			groupByPlatform[g.Platform] = g
+		}
 	}
 
 	activePlatforms, err := s.activeChannelPlatforms(ctx)
@@ -211,10 +212,11 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 	targets := []struct {
 		provider string
 		platform string
+		group    string
 	}{
-		{provider: lobeHubProviderClaude, platform: PlatformAnthropic},
-		{provider: lobeHubProviderGPT, platform: PlatformOpenAI},
-		{provider: lobeHubProviderGemini, platform: PlatformGemini},
+		{provider: lobeHubProviderClaude, platform: PlatformAnthropic, group: lobeHubGroupAnthropic},
+		{provider: lobeHubProviderGPT, platform: PlatformOpenAI, group: lobeHubGroupOpenAI},
+		{provider: lobeHubProviderGemini, platform: PlatformGemini, group: lobeHubGroupGemini},
 	}
 
 	out := make([]LobeHubSSOAPIKey, 0, len(targets))
@@ -222,11 +224,11 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 		if _, ok := activePlatforms[target.platform]; !ok {
 			continue
 		}
-		groups := groupByPlatform[target.platform]
-		if len(groups) == 0 {
+		group, ok := groupByPlatform[target.platform]
+		if !ok || group.Name != target.group {
 			continue
 		}
-		groupID := groups[0].ID
+		groupID := group.ID
 		key, err := s.findOrCreateProviderKey(ctx, userID, target.provider, target.platform, groupID)
 		if err != nil {
 			return nil, err
@@ -239,6 +241,26 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 		})
 	}
 	return out, nil
+}
+
+func isLobeHubChatGroup(platform, name string) bool {
+	switch platform {
+	case PlatformAnthropic:
+		return name == lobeHubGroupAnthropic
+	case PlatformOpenAI:
+		return name == lobeHubGroupOpenAI
+	case PlatformGemini:
+		return name == lobeHubGroupGemini
+	default:
+		return false
+	}
+}
+
+func preferLobeHubGroup(candidate, current Group) bool {
+	if candidate.SortOrder == current.SortOrder {
+		return candidate.ID < current.ID
+	}
+	return candidate.SortOrder < current.SortOrder
 }
 
 func (s *LobeHubSSOService) activeChannelPlatforms(ctx context.Context) (map[string]struct{}, error) {
