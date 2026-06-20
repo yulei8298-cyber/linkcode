@@ -69,6 +69,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/lobehub-sso/continue',
+    name: 'LobeHubSSOContinue',
+    component: () => import('@/views/auth/LobeHubSSOContinueView.vue'),
+    meta: {
+      requiresAuth: true,
+      title: 'LobeHub SSO'
+    }
+  },
+  {
     path: '/auth/callback',
     name: 'OAuthCallback',
     alias: '/auth/oauth/callback',
@@ -722,7 +731,7 @@ let authInitialized = false
 const navigationLoading = useNavigationLoadingState()
 // 延迟初始化预加载，传入 router 实例
 let routePrefetch: ReturnType<typeof useRoutePrefetch> | null = null
-const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result', '/payment/airwallex', '/legal', '/home', '/portal']
+const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result', '/payment/airwallex', '/legal', '/home', '/portal', '/lobehub-sso/continue']
 const BACKEND_MODE_CALLBACK_PATHS = [
   '/auth/callback',
   '/auth/linuxdo/callback',
@@ -801,6 +810,12 @@ router.beforeEach(async (to, _from, next) => {
   if (!requiresAuth) {
     // If already authenticated and trying to access login/register, redirect to appropriate dashboard
     if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+      const redirect = typeof to.query.redirect === 'string' ? to.query.redirect : ''
+      if (redirect.startsWith('/lobehub-sso/continue')) {
+        next(redirect)
+        return
+      }
+
       // In backend mode, non-admin users should NOT be redirected away from login
       // (they are blocked from all protected routes, so redirecting would cause a loop)
       if (appStore.backendModeEnabled && !authStore.isAdmin) {

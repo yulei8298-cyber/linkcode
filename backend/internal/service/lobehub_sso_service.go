@@ -1,0 +1,354 @@
+package service
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"net/url"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+)
+
+var (
+	ErrLobeHubSSODisabled     = infraerrors.Forbidden("LOBEHUB_SSO_DISABLED", "LobeHub SSO is disabled")
+	ErrLobeHubSSOUnauthorized = infraerrors.Unauthorized("LOBEHUB_SSO_UNAUTHORIZED", "invalid LobeHub SSO credentials")
+	ErrLobeHubSSOCodeInvalid  = infraerrors.Unauthorized("LOBEHUB_SSO_CODE_INVALID", "SSO code is invalid or expired")
+)
+
+const (
+	lobeHubProviderClaude = "claude"
+	lobeHubProviderGPT    = "gpt"
+	lobeHubProviderGemini = "gemini"
+)
+
+type LobeHubSSOCodeStore interface {
+	Store(ctx context.Context, code string, payload LobeHubSSOCodePayload, ttl time.Duration) error
+	Take(ctx context.Context, code string) (*LobeHubSSOCodePayload, error)
+}
+
+type LobeHubSSOCodePayload struct {
+	UserID    int64     `json:"user_id"`
+	ReturnTo  string    `json:"return_to,omitempty"`
+	IssuedAt  time.Time `json:"issued_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+type LobeHubSSOAuthorizeInput struct {
+	UserID   int64
+	ReturnTo string
+}
+
+type LobeHubSSOAuthorizeResult struct {
+	RedirectURL string    `json:"redirect_url"`
+	ExpiresAt   time.Time `json:"expires_at"`
+}
+
+type LobeHubSSOExchangeInput struct {
+	Code         string
+	SharedSecret string
+}
+
+type LobeHubSSOExchangeResult struct {
+	User       LobeHubSSOUser     `json:"user"`
+	APIBaseURL string             `json:"api_base_url"`
+	Keys       []LobeHubSSOAPIKey `json:"keys"`
+}
+
+type LobeHubSSOUser struct {
+	ID        int64  `json:"id"`
+	Email     string `json:"email"`
+	Username  string `json:"username,omitempty"`
+	AvatarURL string `json:"avatar_url,omitempty"`
+}
+
+type LobeHubSSOAPIKey struct {
+	Provider string `json:"provider"`
+	Platform string `json:"platform"`
+	Key      string `json:"key"`
+	GroupID  int64  `json:"group_id,omitempty"`
+}
+
+type LobeHubSSOService struct {
+	cfg            *config.Config
+	codeStore      LobeHubSSOCodeStore
+	userRepo       UserRepository
+	apiKeyService  *APIKeyService
+	channelService *ChannelService
+}
+
+func NewLobeHubSSOService(
+	cfg *config.Config,
+	codeStore LobeHubSSOCodeStore,
+	userRepo UserRepository,
+	apiKeyService *APIKeyService,
+	channelService *ChannelService,
+) *LobeHubSSOService {
+	return &LobeHubSSOService{
+		cfg:            cfg,
+		codeStore:      codeStore,
+		userRepo:       userRepo,
+		apiKeyService:  apiKeyService,
+		channelService: channelService,
+	}
+}
+
+func (s *LobeHubSSOService) Authorize(ctx context.Context, input LobeHubSSOAuthorizeInput) (*LobeHubSSOAuthorizeResult, error) {
+	if err := s.ensureEnabled(); err != nil {
+		return nil, err
+	}
+	user, err := s.userRepo.GetByID(ctx, input.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("get user: %w", err)
+	}
+	if user == nil || !user.IsActive() {
+		return nil, ErrUserNotActive
+	}
+
+	code, err := randomURLToken(32)
+	if err != nil {
+		return nil, fmt.Errorf("generate sso code: %w", err)
+	}
+	now := time.Now()
+	ttl := s.codeTTL()
+	expiresAt := now.Add(ttl)
+	if err := s.codeStore.Store(ctx, code, LobeHubSSOCodePayload{
+		UserID:    user.ID,
+		ReturnTo:  strings.TrimSpace(input.ReturnTo),
+		IssuedAt:  now,
+		ExpiresAt: expiresAt,
+	}, ttl); err != nil {
+		return nil, fmt.Errorf("store sso code: %w", err)
+	}
+
+	redirectURL, err := s.buildCallbackURL(code, input.ReturnTo)
+	if err != nil {
+		return nil, err
+	}
+	return &LobeHubSSOAuthorizeResult{RedirectURL: redirectURL, ExpiresAt: expiresAt}, nil
+}
+
+func (s *LobeHubSSOService) Exchange(ctx context.Context, input LobeHubSSOExchangeInput) (*LobeHubSSOExchangeResult, error) {
+	if err := s.ensureEnabled(); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(input.SharedSecret) == "" || strings.TrimSpace(input.SharedSecret) != strings.TrimSpace(s.cfg.LobeHubSSO.SharedSecret) {
+		return nil, ErrLobeHubSSOUnauthorized
+	}
+	code := strings.TrimSpace(input.Code)
+	if code == "" {
+		return nil, ErrLobeHubSSOCodeInvalid
+	}
+	payload, err := s.codeStore.Take(ctx, code)
+	if err != nil {
+		if errors.Is(err, ErrLobeHubSSOCodeInvalid) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("take sso code: %w", err)
+	}
+	if payload == nil || payload.UserID <= 0 || time.Now().After(payload.ExpiresAt) {
+		return nil, ErrLobeHubSSOCodeInvalid
+	}
+	user, err := s.userRepo.GetByID(ctx, payload.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("get user: %w", err)
+	}
+	if user == nil || !user.IsActive() {
+		return nil, ErrUserNotActive
+	}
+
+	keys := []LobeHubSSOAPIKey{}
+	if s.cfg.LobeHubSSO.AutoCreateAPIKeys {
+		keys, err = s.prepareProviderKeys(ctx, user.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &LobeHubSSOExchangeResult{
+		User: LobeHubSSOUser{
+			ID:        user.ID,
+			Email:     user.Email,
+			Username:  user.Username,
+			AvatarURL: user.AvatarURL,
+		},
+		APIBaseURL: s.apiBaseURL(),
+		Keys:       keys,
+	}, nil
+}
+
+func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int64) ([]LobeHubSSOAPIKey, error) {
+	availableGroups, err := s.apiKeyService.GetAvailableGroups(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list available groups: %w", err)
+	}
+	groupByPlatform := make(map[string][]Group)
+	for _, g := range availableGroups {
+		if g.Status != StatusActive {
+			continue
+		}
+		groupByPlatform[g.Platform] = append(groupByPlatform[g.Platform], g)
+	}
+	for platform := range groupByPlatform {
+		sort.SliceStable(groupByPlatform[platform], func(i, j int) bool {
+			if groupByPlatform[platform][i].SortOrder == groupByPlatform[platform][j].SortOrder {
+				return groupByPlatform[platform][i].ID < groupByPlatform[platform][j].ID
+			}
+			return groupByPlatform[platform][i].SortOrder < groupByPlatform[platform][j].SortOrder
+		})
+	}
+
+	activePlatforms, err := s.activeChannelPlatforms(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	targets := []struct {
+		provider string
+		platform string
+	}{
+		{provider: lobeHubProviderClaude, platform: PlatformAnthropic},
+		{provider: lobeHubProviderGPT, platform: PlatformOpenAI},
+		{provider: lobeHubProviderGemini, platform: PlatformGemini},
+	}
+
+	out := make([]LobeHubSSOAPIKey, 0, len(targets))
+	for _, target := range targets {
+		if _, ok := activePlatforms[target.platform]; !ok {
+			continue
+		}
+		groups := groupByPlatform[target.platform]
+		if len(groups) == 0 {
+			continue
+		}
+		groupID := groups[0].ID
+		key, err := s.findOrCreateProviderKey(ctx, userID, target.provider, target.platform, groupID)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, LobeHubSSOAPIKey{
+			Provider: target.provider,
+			Platform: target.platform,
+			Key:      key.Key,
+			GroupID:  groupID,
+		})
+	}
+	return out, nil
+}
+
+func (s *LobeHubSSOService) activeChannelPlatforms(ctx context.Context) (map[string]struct{}, error) {
+	channels, err := s.channelService.ListAvailable(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list available channels: %w", err)
+	}
+	out := make(map[string]struct{})
+	for _, ch := range channels {
+		if ch.Status != StatusActive {
+			continue
+		}
+		for _, g := range ch.Groups {
+			if g.Platform != "" {
+				out[g.Platform] = struct{}{}
+			}
+		}
+	}
+	return out, nil
+}
+
+func (s *LobeHubSSOService) findOrCreateProviderKey(ctx context.Context, userID int64, provider, platform string, groupID int64) (*APIKey, error) {
+	name := s.providerKeyName(provider)
+	existing, err := s.apiKeyService.SearchAPIKeys(ctx, userID, name, 20)
+	if err != nil {
+		return nil, err
+	}
+	for i := range existing {
+		k := &existing[i]
+		if k.Name != name || !k.IsActive() {
+			continue
+		}
+		if k.GroupID != nil && *k.GroupID == groupID {
+			return k, nil
+		}
+	}
+	return s.apiKeyService.Create(ctx, userID, CreateAPIKeyRequest{
+		Name:    name,
+		GroupID: &groupID,
+	})
+}
+
+func (s *LobeHubSSOService) providerKeyName(provider string) string {
+	prefix := strings.TrimSpace(s.cfg.LobeHubSSO.APIKeyNamePrefix)
+	if prefix == "" {
+		prefix = "LobeHub"
+	}
+	switch provider {
+	case lobeHubProviderClaude:
+		return prefix + " Claude"
+	case lobeHubProviderGPT:
+		return prefix + " GPT"
+	case lobeHubProviderGemini:
+		return prefix + " Gemini"
+	default:
+		return prefix + " " + provider
+	}
+}
+
+func (s *LobeHubSSOService) ensureEnabled() error {
+	if s == nil || s.cfg == nil || !s.cfg.LobeHubSSO.Enabled {
+		return ErrLobeHubSSODisabled
+	}
+	if strings.TrimSpace(s.cfg.LobeHubSSO.SharedSecret) == "" {
+		return ErrLobeHubSSODisabled
+	}
+	return nil
+}
+
+func (s *LobeHubSSOService) codeTTL() time.Duration {
+	seconds := s.cfg.LobeHubSSO.CodeTTLSeconds
+	if seconds <= 0 {
+		seconds = 120
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+func (s *LobeHubSSOService) apiBaseURL() string {
+	if v := strings.TrimRight(strings.TrimSpace(s.cfg.LobeHubSSO.APIBaseURL), "/"); v != "" {
+		return v
+	}
+	if v := strings.TrimRight(strings.TrimSpace(s.cfg.Server.FrontendURL), "/"); v != "" {
+		return v
+	}
+	return ""
+}
+
+func (s *LobeHubSSOService) buildCallbackURL(code, returnTo string) (string, error) {
+	base, err := url.Parse(strings.TrimSpace(s.cfg.LobeHubSSO.LobeHubBaseURL))
+	if err != nil {
+		return "", fmt.Errorf("parse lobehub base url: %w", err)
+	}
+	callbackPath := strings.TrimSpace(s.cfg.LobeHubSSO.CallbackPath)
+	if callbackPath == "" {
+		callbackPath = "/linkcode/sso/callback"
+	}
+	base.Path = strings.TrimRight(base.Path, "/") + "/" + strings.TrimLeft(callbackPath, "/")
+	q := base.Query()
+	q.Set("code", code)
+	if strings.TrimSpace(returnTo) != "" {
+		q.Set("returnTo", strings.TrimSpace(returnTo))
+	}
+	base.RawQuery = q.Encode()
+	return base.String(), nil
+}
+
+func randomURLToken(byteLen int) (string, error) {
+	buf := make([]byte, byteLen)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(buf), nil
+}

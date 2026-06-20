@@ -26,4 +26,6 @@ func RegisterPublicRoutes(
 		// 定价方案（只读，展示所有公开分组的定价）
 		public.GET("/pricing", h.PublicPricing.List)
 	}
+
+	v1.POST("/lobehub-sso/exchange", h.LobeHubSSO.Exchange)
 }

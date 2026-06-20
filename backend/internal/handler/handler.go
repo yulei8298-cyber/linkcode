@@ -58,6 +58,7 @@ type Handlers struct {
 	PaymentWebhook   *PaymentWebhookHandler
 	AvailableChannel *AvailableChannelHandler
 	PublicPricing    *PublicPricingHandler
+	LobeHubSSO       *LobeHubSSOHandler
 }
 
 // BuildInfo contains build-time information

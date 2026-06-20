@@ -78,6 +78,12 @@ func RegisterUserRoutes(
 			channels.GET("/available", h.AvailableChannel.List)
 		}
 
+		// LobeHub SSO
+		lobeHubSSO := authenticated.Group("/lobehub-sso")
+		{
+			lobeHubSSO.POST("/authorize", h.LobeHubSSO.Authorize)
+		}
+
 		// 使用记录
 		usage := authenticated.Group("/usage")
 		{

@@ -76,6 +76,7 @@ type Config struct {
 	DingTalk                DingTalkConnectConfig         `mapstructure:"dingtalk_connect"`
 	GitHubOAuth             EmailOAuthProviderConfig      `mapstructure:"github_oauth"`
 	GoogleOAuth             EmailOAuthProviderConfig      `mapstructure:"google_oauth"`
+	LobeHubSSO              LobeHubSSOConfig              `mapstructure:"lobehub_sso"`
 	Default                 DefaultConfig                 `mapstructure:"default"`
 	RateLimit               RateLimitConfig               `mapstructure:"rate_limit"`
 	Pricing                 PricingConfig                 `mapstructure:"pricing"`
@@ -296,6 +297,17 @@ type EmailOAuthProviderConfig struct {
 	Scopes              string `mapstructure:"scopes"`
 	RedirectURL         string `mapstructure:"redirect_url"`
 	FrontendRedirectURL string `mapstructure:"frontend_redirect_url"`
+}
+
+type LobeHubSSOConfig struct {
+	Enabled              bool   `mapstructure:"enabled"`
+	SharedSecret         string `mapstructure:"shared_secret"`
+	LobeHubBaseURL       string `mapstructure:"lobehub_base_url"`
+	CallbackPath         string `mapstructure:"callback_path"`
+	CodeTTLSeconds       int    `mapstructure:"code_ttl_seconds"`
+	APIBaseURL           string `mapstructure:"api_base_url"`
+	AutoCreateAPIKeys    bool   `mapstructure:"auto_create_api_keys"`
+	APIKeyNamePrefix     string `mapstructure:"api_key_name_prefix"`
 }
 
 const (
@@ -1735,6 +1747,16 @@ func setDefaults() {
 	// TOTP
 	viper.SetDefault("totp.encryption_key", "")
 
+	// LobeHub SSO
+	viper.SetDefault("lobehub_sso.enabled", false)
+	viper.SetDefault("lobehub_sso.shared_secret", "")
+	viper.SetDefault("lobehub_sso.lobehub_base_url", "")
+	viper.SetDefault("lobehub_sso.callback_path", "/linkcode/sso/callback")
+	viper.SetDefault("lobehub_sso.code_ttl_seconds", 120)
+	viper.SetDefault("lobehub_sso.api_base_url", "")
+	viper.SetDefault("lobehub_sso.auto_create_api_keys", true)
+	viper.SetDefault("lobehub_sso.api_key_name_prefix", "LobeHub")
+
 	// Default
 	// Admin credentials are created via the setup flow (web wizard / CLI / AUTO_SETUP).
 	// Do not ship fixed defaults here to avoid insecure "known credentials" in production.
@@ -2058,6 +2080,28 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("server.frontend_url invalid: must not include userinfo")
 		}
 		warnIfInsecureURL("server.frontend_url", c.Server.FrontendURL)
+	}
+	if c.LobeHubSSO.Enabled {
+		if strings.TrimSpace(c.LobeHubSSO.SharedSecret) == "" {
+			return fmt.Errorf("lobehub_sso.shared_secret is required when lobehub_sso.enabled=true")
+		}
+		if len([]byte(strings.TrimSpace(c.LobeHubSSO.SharedSecret))) < 32 {
+			return fmt.Errorf("lobehub_sso.shared_secret must be at least 32 bytes")
+		}
+		if strings.TrimSpace(c.LobeHubSSO.LobeHubBaseURL) == "" {
+			return fmt.Errorf("lobehub_sso.lobehub_base_url is required when lobehub_sso.enabled=true")
+		}
+		if err := ValidateAbsoluteHTTPURL(c.LobeHubSSO.LobeHubBaseURL); err != nil {
+			return fmt.Errorf("lobehub_sso.lobehub_base_url invalid: %w", err)
+		}
+		if ttl := c.LobeHubSSO.CodeTTLSeconds; ttl < 30 || ttl > 600 {
+			return fmt.Errorf("lobehub_sso.code_ttl_seconds must be between 30 and 600")
+		}
+		if apiBase := strings.TrimSpace(c.LobeHubSSO.APIBaseURL); apiBase != "" {
+			if err := ValidateAbsoluteHTTPURL(apiBase); err != nil {
+				return fmt.Errorf("lobehub_sso.api_base_url invalid: %w", err)
+			}
+		}
 	}
 	if c.JWT.ExpireHour <= 0 {
 		return fmt.Errorf("jwt.expire_hour must be positive")

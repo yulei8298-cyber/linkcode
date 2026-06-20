@@ -5,6 +5,7 @@
 
 // Re-export the HTTP client
 export { apiClient } from './client'
+export { lobeHubSSOAPI } from './lobehubSso'
 
 // Auth API
 export { authAPI, isTotp2FARequired, type LoginResponse } from './auth'

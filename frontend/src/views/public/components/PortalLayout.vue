@@ -66,6 +66,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="nav-link"
+            @click="handleChatStationClick"
           >
             {{ t('portal.nav.chat') }}
           </a>
@@ -107,7 +108,7 @@
         <RouterLink v-if="showStatus" to="/portal/status" class="nav-link-mobile" active-class="nav-link-active">{{ t('portal.nav.status') }}</RouterLink>
         <RouterLink v-if="showPricing" to="/portal/pricing" class="nav-link-mobile" active-class="nav-link-active">{{ t('portal.nav.pricing') }}</RouterLink>
         <RouterLink v-if="showTutorial" to="/portal/tutorial" class="nav-link-mobile" active-class="nav-link-active">{{ t('portal.nav.tutorial') }}</RouterLink>
-        <a v-if="showChat" :href="chatStationUrl" target="_blank" rel="noopener noreferrer" class="nav-link-mobile">{{ t('portal.nav.chat') }}</a>
+        <a v-if="showChat" :href="chatStationUrl" target="_blank" rel="noopener noreferrer" class="nav-link-mobile" @click="handleChatStationClick">{{ t('portal.nav.chat') }}</a>
       </div>
     </header>
 
@@ -145,6 +146,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { useAuthStore, useAppStore } from '@/stores'
+import { lobeHubSSOAPI } from '@/api'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 
@@ -175,6 +177,21 @@ function toggleTheme() {
   isDark.value = !isDark.value
   document.documentElement.classList.toggle('dark', isDark.value)
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
+async function handleChatStationClick(event: MouseEvent) {
+  const url = chatStationUrl.value.trim()
+  if (!url || !isAuthenticated.value) {
+    return
+  }
+
+  event.preventDefault()
+  try {
+    const result = await lobeHubSSOAPI.authorize('/')
+    window.location.href = result.redirect_url || url
+  } catch (error) {
+    console.error('Failed to start LobeHub SSO:', error)
+    window.location.href = url
+  }
 }
 </script>
 

@@ -130,6 +130,7 @@ Community projects that extend or integrate with Sub2API:
 | Project | Description | Features |
 |---------|-------------|----------|
 | ~~[Sub2ApiPay](https://github.com/touwaeriol/sub2apipay)~~ | ~~Self-service payment system~~ | **Now Built-in** — Payment is now integrated into Sub2API, no separate deployment needed. See [Payment Configuration Guide](docs/PAYMENT.md) |
+| LobeHub Chat Station | Use LinkCode as the identity and API-key source for a LobeHub-based chat station | SSO login, one-time code exchange, and optional Claude/GPT/Gemini API key auto-provisioning. See [LobeHub SSO Integration Guide](docs/LOBEHUB_SSO_INTEGRATION.md) |
 | [sub2api-mobile](https://github.com/ckken/sub2api-mobile) | Mobile admin console | Cross-platform app (iOS/Android/Web) for user management, account management, monitoring dashboard, and multi-backend switching; built with Expo + React Native |
 
 ## Tech Stack
