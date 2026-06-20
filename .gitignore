@@ -132,6 +132,7 @@ docs/*
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
 !docs/LOBEHUB_SSO_INTEGRATION.md
+!docs/对话站单点登录集成开发指南.md
 !docs/legal/
 !docs/legal/*.md
 .serena/
