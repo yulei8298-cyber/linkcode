@@ -19,6 +19,11 @@ export interface CcSwitchImportDeeplinkInput {
   usageScript: string
 }
 
+export function ensureOpenAIV1Endpoint(baseUrl: string): string {
+  const trimmed = baseUrl.replace(/\/+$/, '')
+  return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`
+}
+
 export function resolveCcSwitchImportConfig(
   platform: GroupPlatform | undefined | null,
   clientType: CcSwitchClientType,
@@ -33,7 +38,7 @@ export function resolveCcSwitchImportConfig(
     case 'openai':
       return {
         app: 'codex',
-        endpoint: baseUrl,
+        endpoint: ensureOpenAIV1Endpoint(baseUrl),
         model: OPENAI_CC_SWITCH_CODEX_MODEL
       }
     case 'gemini':
