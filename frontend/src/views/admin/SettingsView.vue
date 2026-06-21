@@ -5000,6 +5000,35 @@
                 </p>
               </div>
 
+              <!-- Pricing Display Config (public portal) -->
+              <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
+                <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      {{ t("admin.settings.site.pricingDisplayConfig") }}
+                    </label>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.site.pricingDisplayConfigHint") }}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    @click="resetPricingDisplayConfig"
+                  >
+                    {{ t("admin.settings.site.pricingDisplayConfigReset") }}
+                  </button>
+                </div>
+                <textarea
+                  v-model="form.pricing_display_config"
+                  rows="12"
+                  class="input font-mono text-sm"
+                  :placeholder="t('admin.settings.site.pricingDisplayConfigPlaceholder')"
+                ></textarea>
+              </div>
+
               <!-- Chat Station URL (public portal) -->
               <div>
                 <label
@@ -7043,6 +7072,7 @@ import {
   normalizeRegistrationEmailSuffixDomains,
   parseRegistrationEmailSuffixWhitelistInput,
 } from "@/utils/registrationEmailPolicy";
+import { stringifyDefaultPricingDisplayConfig } from "@/utils/pricingDisplayConfig";
 
 const { t, locale } = useI18n();
 const appStore = useAppStore();
@@ -7150,6 +7180,10 @@ const testEmailAddress = ref("");
 const registrationEmailSuffixWhitelistTags = ref<string[]>([]);
 const registrationEmailSuffixWhitelistDraft = ref("");
 const tablePageSizeOptionsInput = ref("10, 20, 50, 100");
+
+function resetPricingDisplayConfig(): void {
+  form.pricing_display_config = stringifyDefaultPricingDisplayConfig();
+}
 
 // Admin API Key 状态
 const adminApiKeyLoading = ref(true);
@@ -7705,6 +7739,7 @@ const form = reactive<SettingsForm>({
   contact_info: "",
   doc_url: "",
   home_content: "",
+  pricing_display_config: stringifyDefaultPricingDisplayConfig(),
   tutorial_content_md: "",
   chat_station_url: "",
   backend_mode_enabled: false,
@@ -8728,6 +8763,15 @@ async function saveSettings() {
 
     form.table_default_page_size = normalizedTableDefaultPageSize;
     form.table_page_size_options = normalizedTablePageSizeOptions;
+    const pricingDisplayConfig = form.pricing_display_config.trim();
+    if (pricingDisplayConfig) {
+      try {
+        JSON.parse(pricingDisplayConfig);
+      } catch {
+        appStore.showError(t("admin.settings.site.pricingDisplayConfigFormatError"));
+        return;
+      }
+    }
 
     const normalizedLoginAgreementDocuments =
       normalizeLoginAgreementDocumentsForSave();
@@ -8873,6 +8917,7 @@ async function saveSettings() {
       contact_info: form.contact_info,
       doc_url: form.doc_url,
       home_content: form.home_content,
+      pricing_display_config: pricingDisplayConfig,
       tutorial_content_md: form.tutorial_content_md,
       chat_station_url: form.chat_station_url,
       backend_mode_enabled: form.backend_mode_enabled,

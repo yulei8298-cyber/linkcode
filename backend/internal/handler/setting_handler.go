@@ -65,6 +65,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		ContactInfo:                      settings.ContactInfo,
 		DocURL:                           settings.DocURL,
 		HomeContent:                      settings.HomeContent,
+		PricingDisplayConfig:             settings.PricingDisplayConfig,
 		TutorialContentMD:                settings.TutorialContentMD,
 		ChatStationURL:                   settings.ChatStationURL,
 		HideCcsImportButton:              settings.HideCcsImportButton,

@@ -218,6 +218,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		ContactInfo:                            settings.ContactInfo,
 		DocURL:                                 settings.DocURL,
 		HomeContent:                            settings.HomeContent,
+		PricingDisplayConfig:                   settings.PricingDisplayConfig,
 		TutorialContentMD:                      settings.TutorialContentMD,
 		ChatStationURL:                         settings.ChatStationURL,
 		HideCcsImportButton:                    settings.HideCcsImportButton,
@@ -506,6 +507,7 @@ type UpdateSettingsRequest struct {
 	ContactInfo                 string                `json:"contact_info"`
 	DocURL                      string                `json:"doc_url"`
 	HomeContent                 string                `json:"home_content"`
+	PricingDisplayConfig        string                `json:"pricing_display_config"`
 	TutorialContentMD           string                `json:"tutorial_content_md"`
 	ChatStationURL              string                `json:"chat_station_url"`
 	HideCcsImportButton         bool                  `json:"hide_ccs_import_button"`
@@ -1591,6 +1593,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ContactInfo:                            req.ContactInfo,
 		DocURL:                                 req.DocURL,
 		HomeContent:                            req.HomeContent,
+		PricingDisplayConfig:                   req.PricingDisplayConfig,
 		TutorialContentMD:                      req.TutorialContentMD,
 		ChatStationURL:                         req.ChatStationURL,
 		HideCcsImportButton:                    req.HideCcsImportButton,
@@ -2066,6 +2069,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ContactInfo:                            updatedSettings.ContactInfo,
 		DocURL:                                 updatedSettings.DocURL,
 		HomeContent:                            updatedSettings.HomeContent,
+		PricingDisplayConfig:                   updatedSettings.PricingDisplayConfig,
 		TutorialContentMD:                      updatedSettings.TutorialContentMD,
 		ChatStationURL:                         updatedSettings.ChatStationURL,
 		HideCcsImportButton:                    updatedSettings.HideCcsImportButton,

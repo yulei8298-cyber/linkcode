@@ -432,6 +432,7 @@ export interface SystemSettings {
   contact_info: string;
   doc_url: string;
   home_content: string;
+  pricing_display_config: string;
   tutorial_content_md: string;
   chat_station_url: string;
   hide_ccs_import_button: boolean;
@@ -700,6 +701,7 @@ export interface UpdateSettingsRequest {
   contact_info?: string;
   doc_url?: string;
   home_content?: string;
+  pricing_display_config?: string;
   tutorial_content_md?: string;
   chat_station_url?: string;
   hide_ccs_import_button?: boolean;

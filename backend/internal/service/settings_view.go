@@ -134,6 +134,7 @@ type SystemSettings struct {
 	ContactInfo                 string
 	DocURL                      string
 	HomeContent                 string
+	PricingDisplayConfig        string
 	TutorialContentMD           string
 	ChatStationURL              string
 	HideCcsImportButton         bool
@@ -263,6 +264,7 @@ type PublicSettings struct {
 	ContactInfo                      string
 	DocURL                           string
 	HomeContent                      string
+	PricingDisplayConfig             string
 	TutorialContentMD                string
 	ChatStationURL                   string
 	HideCcsImportButton              bool

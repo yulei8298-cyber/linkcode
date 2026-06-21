@@ -134,6 +134,7 @@ type SystemSettings struct {
 	ContactInfo                 string           `json:"contact_info"`
 	DocURL                      string           `json:"doc_url"`
 	HomeContent                 string           `json:"home_content"`
+	PricingDisplayConfig        string           `json:"pricing_display_config"`
 	TutorialContentMD           string           `json:"tutorial_content_md"`
 	ChatStationURL              string           `json:"chat_station_url"`
 	HideCcsImportButton         bool             `json:"hide_ccs_import_button"`
@@ -294,6 +295,7 @@ type PublicSettings struct {
 	ContactInfo                      string                   `json:"contact_info"`
 	DocURL                           string                   `json:"doc_url"`
 	HomeContent                      string                   `json:"home_content"`
+	PricingDisplayConfig             string                   `json:"pricing_display_config"`
 	TutorialContentMD                string                   `json:"tutorial_content_md"`
 	ChatStationURL                   string                   `json:"chat_station_url"`
 	HideCcsImportButton              bool                     `json:"hide_ccs_import_button"`

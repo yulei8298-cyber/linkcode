@@ -791,6 +791,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyContactInfo,
 		SettingKeyDocURL,
 		SettingKeyHomeContent,
+		SettingKeyPricingDisplayConfig,
 		SettingKeyTutorialContentMD,
 		SettingKeyChatStationURL,
 		SettingKeyHideCcsImportButton,
@@ -918,6 +919,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		ContactInfo:                      settings[SettingKeyContactInfo],
 		DocURL:                           settings[SettingKeyDocURL],
 		HomeContent:                      settings[SettingKeyHomeContent],
+		PricingDisplayConfig:             settings[SettingKeyPricingDisplayConfig],
 		TutorialContentMD:                settings[SettingKeyTutorialContentMD],
 		ChatStationURL:                   settings[SettingKeyChatStationURL],
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
@@ -1234,6 +1236,7 @@ type PublicSettingsInjectionPayload struct {
 	ContactInfo                      string                   `json:"contact_info"`
 	DocURL                           string                   `json:"doc_url"`
 	HomeContent                      string                   `json:"home_content"`
+	PricingDisplayConfig             string                   `json:"pricing_display_config"`
 	TutorialContentMD                string                   `json:"tutorial_content_md"`
 	ChatStationURL                   string                   `json:"chat_station_url"`
 	HideCcsImportButton              bool                     `json:"hide_ccs_import_button"`
@@ -1302,6 +1305,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		ContactInfo:                      settings.ContactInfo,
 		DocURL:                           settings.DocURL,
 		HomeContent:                      settings.HomeContent,
+		PricingDisplayConfig:             settings.PricingDisplayConfig,
 		TutorialContentMD:                settings.TutorialContentMD,
 		ChatStationURL:                   settings.ChatStationURL,
 		HideCcsImportButton:              settings.HideCcsImportButton,
@@ -1897,6 +1901,7 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyContactInfo] = settings.ContactInfo
 	updates[SettingKeyDocURL] = settings.DocURL
 	updates[SettingKeyHomeContent] = settings.HomeContent
+	updates[SettingKeyPricingDisplayConfig] = settings.PricingDisplayConfig
 	updates[SettingKeyTutorialContentMD] = settings.TutorialContentMD
 	updates[SettingKeyChatStationURL] = settings.ChatStationURL
 	updates[SettingKeyHideCcsImportButton] = strconv.FormatBool(settings.HideCcsImportButton)
@@ -2820,6 +2825,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyAPIKeyACLTrustForwardedIP:                 "false",
 		SettingKeySiteName:                                  "linkcode",
 		SettingKeySiteLogo:                                  "",
+		SettingKeyPricingDisplayConfig:                      "",
 		SettingKeyPurchaseSubscriptionEnabled:               "false",
 		SettingKeyPurchaseSubscriptionURL:                   "",
 		SettingKeyTableDefaultPageSize:                      "20",
@@ -3019,6 +3025,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		ContactInfo:                      settings[SettingKeyContactInfo],
 		DocURL:                           settings[SettingKeyDocURL],
 		HomeContent:                      settings[SettingKeyHomeContent],
+		PricingDisplayConfig:             settings[SettingKeyPricingDisplayConfig],
 		TutorialContentMD:                settings[SettingKeyTutorialContentMD],
 		ChatStationURL:                   settings[SettingKeyChatStationURL],
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
