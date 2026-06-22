@@ -47,21 +47,11 @@
           </p>
         </div>
 
-        <div class="space-y-4 lg:text-right">
-          <p class="text-sm font-medium text-gray-500 dark:text-dark-400">
-            {{ pricingConfig.recommendedAmountLabel }}
-          </p>
-          <div class="flex flex-wrap gap-2 lg:justify-end">
-            <span
-              v-for="amount in pricingConfig.recommendedAmounts"
-              :key="amount"
-              class="inline-flex min-w-20 items-center justify-center rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-dark-600 dark:text-dark-200"
-            >
-              ¥ {{ formatAmount(amount) }}
-            </span>
-          </div>
+        <div class="flex items-center lg:justify-end">
           <a
             :href="pricingConfig.rechargeButtonUrl || '/payment'"
+            target="_blank"
+            rel="noopener noreferrer"
             class="inline-flex items-center justify-center rounded-xl bg-gray-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
           >
             {{ pricingConfig.rechargeButtonText }}
