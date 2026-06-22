@@ -75,6 +75,15 @@ services:
 
       - TZ=${TZ:-Asia/Shanghai}
 
+      # LobeHub SSO Configuration
+      - LOBEHUB_SSO_ENABLED=${LOBEHUB_SSO_ENABLED:-true}
+      - LOBEHUB_SSO_SHARED_SECRET=${LOBEHUB_SSO_SHARED_SECRET:?LOBEHUB_SSO_SHARED_SECRET is required}
+      - LOBEHUB_SSO_LOBEHUB_BASE_URL=${LOBEHUB_SSO_LOBEHUB_BASE_URL:-https://ai.linkcode.site}
+      - LOBEHUB_SSO_CALLBACK_PATH=${LOBEHUB_SSO_CALLBACK_PATH:-/linkcode/sso/callback}
+      - LOBEHUB_SSO_API_BASE_URL=${LOBEHUB_SSO_API_BASE_URL:-https://api.linkcode.site}
+      - LOBEHUB_SSO_AUTO_CREATE_API_KEYS=${LOBEHUB_SSO_AUTO_CREATE_API_KEYS:-true}
+      - LOBEHUB_SSO_API_KEY_NAME_PREFIX=${LOBEHUB_SSO_API_KEY_NAME_PREFIX:-Link AI}
+
       # 访问 GitHub 的代理（在线更新 + 定价数据），国内服务器可按需设置
       - UPDATE_PROXY_URL=${UPDATE_PROXY_URL:-}
     depends_on:
