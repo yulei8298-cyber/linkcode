@@ -24,7 +24,7 @@ export default {
       badge: 'All channels online',
       title: 'One gateway for ',
       titleHighlight: 'Claude Code & ChatGPT',
-      subtitle: 'Pay-as-you-go billing · Balance never expires · Rates as low as 0.2x',
+      subtitle: 'Pay-as-you-go billing · Balance never expires · Rates as low as 0.22x',
       viewPricing: 'View Pricing',
       getStarted: 'Get Started',
       goToConsole: 'Go to Console',

@@ -52,11 +52,11 @@
       <!-- Stats -->
       <div class="mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-4">
         <div class="stat-card">
-          <div class="stat-num">4+</div>
+          <div class="stat-num">2+</div>
           <div class="stat-label">{{ t('portal.stats.providers') }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-num">0.2x</div>
+          <div class="stat-num">0.22x</div>
           <div class="stat-label">{{ t('portal.stats.lowestRate') }}</div>
         </div>
         <div class="stat-card">
