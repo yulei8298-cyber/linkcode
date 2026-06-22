@@ -93,6 +93,7 @@
           </p>
         </div>
         <router-link
+          v-if="showChannelDetailLink"
           to="/portal/pricing"
           class="inline-flex items-center gap-1 text-sm font-semibold text-gray-600 transition hover:text-gray-950 dark:text-dark-300 dark:hover:text-white"
         >
@@ -154,6 +155,12 @@ import { getPublicPricing } from '@/api/public'
 import type { UserAvailableChannel, UserAvailableGroup } from '@/api/channels'
 import { parsePricingDisplayConfig } from '@/utils/pricingDisplayConfig'
 import { extractApiErrorMessage } from '@/utils/apiError'
+
+withDefaults(defineProps<{
+  showChannelDetailLink?: boolean
+}>(), {
+  showChannelDetailLink: true,
+})
 
 const { t } = useI18n()
 const appStore = useAppStore()

@@ -9,9 +9,6 @@
     ></iframe>
     <!-- HTML mode - SECURITY: homeContent is admin-only setting, XSS risk is acceptable -->
     <div v-else v-html="homeContent"></div>
-    <div class="mx-auto w-full max-w-6xl px-4 sm:px-6">
-      <HomePricingSection />
-    </div>
   </div>
 
   <!-- Default Home Page (tabcode-style public portal) -->
@@ -104,35 +101,6 @@
       </div>
     </section>
 
-    <!-- ===================== Supported providers ===================== -->
-    <section class="border-t border-gray-200/70 py-16 text-center dark:border-dark-800/70">
-      <h2 class="text-xl font-bold sm:text-2xl">{{ t('home.providers.title') }}</h2>
-      <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">{{ t('home.providers.description') }}</p>
-
-      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <div class="provider-chip">
-          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 text-xs font-bold text-white">C</span>
-          {{ t('home.providers.claude') }}
-        </div>
-        <div class="provider-chip">
-          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-xs font-bold text-white">G</span>
-          GPT
-        </div>
-      </div>
-
-      <div class="mt-12">
-        <router-link
-          :to="isAuthenticated ? dashboardPath : '/login'"
-          class="inline-flex items-center gap-2 rounded-full bg-primary-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/25 transition hover:bg-primary-700"
-        >
-          {{ isAuthenticated ? t('portal.hero.goToConsole') : t('portal.hero.getStarted') }}
-          <Icon name="arrowRight" size="md" :stroke-width="2" />
-        </router-link>
-      </div>
-    </section>
-
-    <!-- ===================== Pricing ===================== -->
-    <HomePricingSection />
   </PortalLayout>
 </template>
 
@@ -141,7 +109,6 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import PortalLayout from '@/views/public/components/PortalLayout.vue'
-import HomePricingSection from '@/views/public/components/HomePricingSection.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
@@ -188,10 +155,6 @@ onMounted(() => {
 .stat-label {
   @apply mt-1 text-xs text-gray-500 dark:text-dark-400;
 }
-.provider-chip {
-  @apply inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-4 py-2.5 text-sm font-medium text-gray-700 dark:border-dark-700 dark:bg-dark-800/60 dark:text-dark-200;
-}
-
 /* 点阵世界地图背景：用径向点阵 mask 出地图质感 */
 .map-dots {
   background-image: radial-gradient(currentColor 1px, transparent 1.4px);
