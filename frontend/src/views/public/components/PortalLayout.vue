@@ -185,12 +185,24 @@ async function handleChatStationClick(event: MouseEvent) {
   }
 
   event.preventDefault()
+  const chatWindow = window.open('', '_blank')
+  if (chatWindow) {
+    chatWindow.opener = null
+    chatWindow.location.href = url
+  }
+
   try {
     const result = await lobeHubSSOAPI.authorize('/')
-    window.location.href = result.redirect_url || url
+    if (chatWindow) {
+      chatWindow.location.replace(result.redirect_url || url)
+    } else {
+      window.open(result.redirect_url || url, '_blank', 'noopener,noreferrer')
+    }
   } catch (error) {
     console.error('Failed to start LobeHub SSO:', error)
-    window.location.href = url
+    if (!chatWindow) {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
   }
 }
 </script>
