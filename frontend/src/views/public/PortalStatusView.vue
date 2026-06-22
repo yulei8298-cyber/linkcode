@@ -1,28 +1,34 @@
 <template>
   <PortalLayout>
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold sm:text-3xl">{{ t('portal.status.title') }}</h1>
-      <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">{{ t('portal.status.subtitle') }}</p>
-    </div>
+    <section class="mx-auto w-full max-w-5xl py-2 sm:py-6">
+      <div class="mb-8 text-center">
+        <h1 class="text-2xl font-bold sm:text-3xl">{{ t('portal.status.title') }}</h1>
+        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">{{ t('portal.status.subtitle') }}</p>
+      </div>
 
-    <MonitorHero
-      :overall-status="overallStatus"
-      :interval-seconds="DEFAULT_INTERVAL_SECONDS"
-      :window="currentWindow"
-      :loading="loading"
-      :auto-refresh="autoRefresh"
-      @update:window="handleWindowChange"
-      @refresh="manualReload"
-    />
+      <div class="mx-auto mb-6 flex justify-center">
+        <MonitorHero
+          :overall-status="overallStatus"
+          :interval-seconds="DEFAULT_INTERVAL_SECONDS"
+          :window="currentWindow"
+          :loading="loading"
+          :auto-refresh="autoRefresh"
+          @update:window="handleWindowChange"
+          @refresh="manualReload"
+        />
+      </div>
 
-    <MonitorCardGrid
-      :items="items"
-      :window="currentWindow"
-      :countdown-seconds="countdown"
-      :loading="loading"
-      :detail-cache="detailCache"
-      @card-click="openDetail"
-    />
+      <div class="portal-monitor-grid mx-auto">
+        <MonitorCardGrid
+          :items="items"
+          :window="currentWindow"
+          :countdown-seconds="countdown"
+          :loading="loading"
+          :detail-cache="detailCache"
+          @card-click="openDetail"
+        />
+      </div>
+    </section>
 
     <PortalMonitorDetailDialog
       :show="showDetail"
@@ -155,3 +161,13 @@ onBeforeUnmount(() => {
   if (abortController) abortController.abort()
 })
 </script>
+
+<style scoped>
+.portal-monitor-grid {
+  max-width: 920px;
+}
+
+.portal-monitor-grid :deep(> div > .grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+</style>
