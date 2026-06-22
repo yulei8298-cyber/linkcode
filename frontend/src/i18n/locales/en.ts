@@ -5929,7 +5929,7 @@ export default {
         pricingDisplayConfig: 'Home Pricing Display Config',
         pricingDisplayConfigPlaceholder: 'JSON format. Leave empty to use defaults.',
         pricingDisplayConfigHint:
-          'Controls the default home pricing module, including recharge ratio, recommended amounts, benefit notes, button text, and channel-rate description template. The default home page is hidden when custom home content is set.',
+          'Controls the home pricing module, including recharge ratio, recommended amounts, benefit notes, button text, and channel-rate description template. When custom home content is set, the pricing module remains below that content.',
         pricingDisplayConfigReset: 'Use Default Template',
         pricingDisplayConfigFormatError: 'Home pricing display config is not valid JSON. Please check it before saving.',
         chatStationUrl: 'Chat Station URL',

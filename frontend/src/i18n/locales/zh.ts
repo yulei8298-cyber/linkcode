@@ -6085,7 +6085,7 @@ export default {
         pricingDisplayConfig: '首页定价展示配置',
         pricingDisplayConfigPlaceholder: 'JSON 格式，留空使用默认配置',
         pricingDisplayConfigHint:
-          '用于默认首页的定价模块，可配置充值比例、推荐金额、福利说明、按钮文案、渠道倍率描述模板等。设置自定义首页内容后默认首页不会显示。',
+          '用于首页定价模块，可配置充值比例、推荐金额、福利说明、按钮文案、渠道倍率描述模板等。设置自定义首页内容后，定价模块会继续显示在自定义内容下方。',
         pricingDisplayConfigReset: '填入默认模板',
         pricingDisplayConfigFormatError: '首页定价展示配置不是有效 JSON，请检查后再保存。',
         chatStationUrl: '对话站链接',
