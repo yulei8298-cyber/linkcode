@@ -174,9 +174,7 @@ function initTheme() {
 onMounted(() => {
   initTheme()
   authStore.checkAuth()
-  if (!appStore.publicSettingsLoaded) {
-    appStore.fetchPublicSettings()
-  }
+  appStore.fetchPublicSettings(true)
 })
 </script>
 
