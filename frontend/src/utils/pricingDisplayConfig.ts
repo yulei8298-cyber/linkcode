@@ -10,10 +10,14 @@ export interface PricingDisplayConfig {
   subtitle: string
   rechargeLabel: string
   yuanAmount: number
+  yuanAmountMax: number | null
   usdAmount: number
+  usdAmountMax: number | null
   creditUnitLabel: string
   exampleText: string
   highlightText: string
+  activityLabel: string
+  activityText: string
   recommendedAmountLabel: string
   recommendedAmounts: number[]
   rechargeButtonText: string
@@ -35,10 +39,14 @@ export const defaultPricingDisplayConfig: PricingDisplayConfig = {
   subtitle: '已取消包月套餐，统一改为按 token 用量计费，余额永久有效，不同渠道按倍率扣费',
   rechargeLabel: '充值比例',
   yuanAmount: 0.8,
+  yuanAmountMax: null,
   usdAmount: 1,
+  usdAmountMax: null,
   creditUnitLabel: '额度',
-  exampleText: '例如充值 ¥ 8.00 即可获得 $10 额度',
-  highlightText: '本店充值比例 0.8 ¥ : 1$，到账即时生效',
+  exampleText: '例如活动期间充值 ¥ 500 可获得 $688 额度',
+  highlightText: '本店充值比例按实际活动配置生效，到账即时生效',
+  activityLabel: '活动期间',
+  activityText: '',
   recommendedAmountLabel: '推荐充值金额',
   recommendedAmounts: [10, 20, 50, 100, 200],
   rechargeButtonText: '前往在线充值',
@@ -89,10 +97,14 @@ export function parsePricingDisplayConfig(raw: unknown): PricingDisplayConfig {
       subtitle: normalizeString(parsed.subtitle, defaultPricingDisplayConfig.subtitle),
       rechargeLabel: normalizeString(parsed.rechargeLabel, defaultPricingDisplayConfig.rechargeLabel),
       yuanAmount: normalizeNumber(parsed.yuanAmount, defaultPricingDisplayConfig.yuanAmount),
+      yuanAmountMax: parsed.yuanAmountMax == null ? null : normalizeNumber(parsed.yuanAmountMax, defaultPricingDisplayConfig.yuanAmountMax ?? defaultPricingDisplayConfig.yuanAmount),
       usdAmount: normalizeNumber(parsed.usdAmount, defaultPricingDisplayConfig.usdAmount),
+      usdAmountMax: parsed.usdAmountMax == null ? null : normalizeNumber(parsed.usdAmountMax, defaultPricingDisplayConfig.usdAmountMax ?? defaultPricingDisplayConfig.usdAmount),
       creditUnitLabel: normalizeString(parsed.creditUnitLabel, defaultPricingDisplayConfig.creditUnitLabel),
       exampleText: normalizeString(parsed.exampleText, defaultPricingDisplayConfig.exampleText),
       highlightText: normalizeString(parsed.highlightText, defaultPricingDisplayConfig.highlightText),
+      activityLabel: normalizeString(parsed.activityLabel, defaultPricingDisplayConfig.activityLabel),
+      activityText: normalizeString(parsed.activityText, defaultPricingDisplayConfig.activityText),
       recommendedAmountLabel: normalizeString(
         parsed.recommendedAmountLabel,
         defaultPricingDisplayConfig.recommendedAmountLabel,

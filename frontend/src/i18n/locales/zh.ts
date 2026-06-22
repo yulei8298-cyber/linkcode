@@ -6082,12 +6082,12 @@ export default {
           '自定义首页内容，支持 Markdown/HTML。如果输入的是链接（以 http:// 或 https:// 开头），则会使用该链接作为 iframe 的 src 属性，这允许你设置任意网页作为首页。设置后首页的状态信息将不再显示。',
         homeContentIframeWarning:
           '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。',
-        pricingDisplayConfig: '首页定价展示配置',
+        pricingDisplayConfig: '定价方案展示配置',
         pricingDisplayConfigPlaceholder: 'JSON 格式，留空使用默认配置',
         pricingDisplayConfigHint:
-          '用于首页定价模块，可配置充值比例、推荐金额、福利说明、按钮文案、渠道倍率描述模板等。设置自定义首页内容后，定价模块会继续显示在自定义内容下方。',
+          '用于定价方案页面，可配置充值比例范围、活动说明、推荐金额、福利说明、按钮文案、渠道倍率描述模板等。',
         pricingDisplayConfigReset: '填入默认模板',
-        pricingDisplayConfigFormatError: '首页定价展示配置不是有效 JSON，请检查后再保存。',
+        pricingDisplayConfigFormatError: '定价方案展示配置不是有效 JSON，请检查后再保存。',
         chatStationUrl: '对话站链接',
         chatStationUrlPlaceholder: 'https://chat.example.com',
         chatStationUrlHint: '公开门户「对话站」入口跳转的地址。留空则不显示该入口。',
