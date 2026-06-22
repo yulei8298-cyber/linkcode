@@ -15,13 +15,6 @@
   <PortalLayout v-else>
     <!-- ===================== Hero ===================== -->
     <section class="relative py-16 text-center sm:py-24">
-      <!-- Logo mark -->
-      <div class="mb-8 flex justify-center">
-        <span class="flex h-20 w-20 items-center justify-center rounded-3xl bg-white shadow-xl shadow-primary-500/10 ring-1 ring-gray-100 dark:bg-dark-800 dark:ring-dark-700">
-          <img :src="siteLogo || '/logo.svg'" alt="logo" class="h-14 w-14 object-contain" />
-        </span>
-      </div>
-
       <div
         class="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
       >
@@ -299,7 +292,6 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
-const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const pricingConfig = computed(() =>
