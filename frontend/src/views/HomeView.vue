@@ -43,7 +43,7 @@
           :href="chatStationUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:bg-emerald-700"
+          class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-600 to-orange-500 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-fuchsia-600/25 ring-1 ring-white/30 transition hover:from-fuchsia-700 hover:to-orange-600 hover:shadow-orange-500/30 dark:ring-white/10"
           @click="handleChatStationClick"
         >
           {{ t('portal.hero.goToChat') }}

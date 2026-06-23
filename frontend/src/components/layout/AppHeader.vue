@@ -32,7 +32,7 @@
           :href="chatStationUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-sm font-medium text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-fuchsia-600 to-orange-500 px-2.5 py-1.5 text-sm font-medium text-white shadow-sm shadow-fuchsia-600/25 ring-1 ring-white/30 transition hover:from-fuchsia-700 hover:to-orange-600 hover:shadow-orange-500/30 dark:ring-white/10"
           @click="handleChatStationClick"
         >
           <Icon name="chat" size="sm" />
