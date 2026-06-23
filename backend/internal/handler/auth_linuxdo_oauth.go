@@ -324,9 +324,8 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 		redirectOAuthError(c, frontendCallback, "session_error", infraerrors.Reason(err), infraerrors.Message(err))
 		return
 	}
-	emailVerificationRequired := h != nil && h.authService != nil && h.authService.IsEmailVerifyEnabled(c.Request.Context())
 	forceEmailOnSignup := h.isForceEmailOnThirdPartySignup(c.Request.Context())
-	if compatEmailUser != nil && !emailVerificationRequired && !forceEmailOnSignup {
+	if compatEmailUser != nil && !forceEmailOnSignup {
 		if err := ensureLoginUserActive(&service.User{
 			ID:     compatEmailUser.ID,
 			Email:  compatEmailUser.Email,
@@ -384,7 +383,7 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 		return
 	}
 
-	if compatEmailUser == nil && !emailVerificationRequired && !forceEmailOnSignup {
+	if compatEmailUser == nil && !forceEmailOnSignup {
 		if err := h.ensureBackendModeAllowsNewUserLogin(c.Request.Context()); err != nil {
 			redirectOAuthError(c, frontendCallback, "session_error", infraerrors.Reason(err), infraerrors.Message(err))
 			return
