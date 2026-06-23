@@ -2,6 +2,7 @@ package handler
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -37,7 +38,7 @@ func (h *PublicPricingHandler) List(c *gin.Context) {
 
 	groupsByPlatform := make(map[string][]userAvailableGroup)
 	for _, g := range groups {
-		if g.IsExclusive || g.Platform == "" {
+		if g.IsExclusive || g.Platform == "" || strings.Contains(strings.ToLower(strings.TrimSpace(g.Name)), "-chat") {
 			continue
 		}
 		groupsByPlatform[g.Platform] = append(groupsByPlatform[g.Platform], userAvailableGroup{
