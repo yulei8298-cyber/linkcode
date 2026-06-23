@@ -38,6 +38,17 @@
           {{ isAuthenticated ? t('portal.hero.goToConsole') : t('portal.hero.getStarted') }}
           <Icon name="arrowRight" size="md" :stroke-width="2" />
         </router-link>
+        <a
+          v-if="showChat"
+          :href="chatStationUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:bg-emerald-700"
+          @click="handleChatStationClick"
+        >
+          {{ t('portal.hero.goToChat') }}
+          <Icon name="chat" size="md" :stroke-width="2" />
+        </a>
         <router-link
           to="/portal/pricing"
           class="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-7 py-3.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-dark-700 dark:bg-dark-800 dark:text-dark-100 dark:hover:bg-dark-700"
@@ -110,6 +121,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import PortalLayout from '@/views/public/components/PortalLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { lobeHubSSOAPI } from '@/api'
 
 const { t } = useI18n()
 
@@ -118,6 +130,7 @@ const appStore = useAppStore()
 
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
+const chatStationUrl = computed(() => appStore.cachedPublicSettings?.chat_station_url || '')
 
 const isHomeContentUrl = computed(() => {
   const content = homeContent.value.trim()
@@ -127,6 +140,7 @@ const isHomeContentUrl = computed(() => {
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
+const showChat = computed(() => Boolean(chatStationUrl.value.trim()))
 
 function initTheme() {
   const savedTheme = localStorage.getItem('theme')
@@ -135,6 +149,34 @@ function initTheme() {
     (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
   ) {
     document.documentElement.classList.add('dark')
+  }
+}
+
+async function handleChatStationClick(event: MouseEvent) {
+  const url = chatStationUrl.value.trim()
+  if (!url || !isAuthenticated.value) {
+    return
+  }
+
+  event.preventDefault()
+  const chatWindow = window.open('', '_blank')
+  if (chatWindow) {
+    chatWindow.opener = null
+    chatWindow.location.href = url
+  }
+
+  try {
+    const result = await lobeHubSSOAPI.authorize('/')
+    if (chatWindow) {
+      chatWindow.location.replace(result.redirect_url || url)
+    } else {
+      window.open(result.redirect_url || url, '_blank', 'noopener,noreferrer')
+    }
+  } catch (error) {
+    console.error('Failed to start LobeHub SSO:', error)
+    if (!chatWindow) {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
   }
 }
 

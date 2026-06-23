@@ -28,6 +28,7 @@ export default {
       viewPricing: 'View Pricing',
       getStarted: 'Get Started',
       goToConsole: 'Go to Console',
+      goToChat: 'Go to Chat',
     },
     stats: {
       providers: 'Providers',
@@ -525,6 +526,7 @@ export default {
     sessionExpiredDesc: 'Please go back to the registration page and start again.',
     verificationCode: 'Verification Code',
     verificationCodeHint: 'Enter the 6-digit code sent to your email',
+    verificationCodeSpamHint: 'If you did not receive the code, please check your spam folder',
     sendingCode: 'Sending...',
     sendCode: 'Send code',
     clickToResend: 'Click to resend code',

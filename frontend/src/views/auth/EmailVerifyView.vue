@@ -49,6 +49,7 @@
             placeholder="000000"
           />
           <p class="input-hint text-center">{{ t('auth.verificationCodeHint') }}</p>
+          <p class="input-hint text-center">{{ t('auth.verificationCodeSpamHint') }}</p>
         </div>
 
         <!-- Code Status -->

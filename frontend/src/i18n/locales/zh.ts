@@ -28,6 +28,7 @@ export default {
       viewPricing: '查看定价',
       getStarted: '开始使用',
       goToConsole: '前往控制台',
+      goToChat: '前往对话站',
     },
     stats: {
       providers: '支持渠道',
@@ -524,6 +525,7 @@ export default {
     sessionExpiredDesc: '请返回注册页面重新开始。',
     verificationCode: '验证码',
     verificationCodeHint: '请输入发送到您邮箱的6位验证码',
+    verificationCodeSpamHint: '如未收到验证码，请检查是否在垃圾邮箱中',
     sendingCode: '发送中...',
     sendCode: '发送验证码',
     clickToResend: '点击重新发送验证码',

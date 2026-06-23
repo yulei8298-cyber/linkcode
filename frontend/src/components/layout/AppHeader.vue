@@ -26,6 +26,19 @@
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
 
+        <!-- Chat Station -->
+        <a
+          v-if="showChatStation"
+          :href="chatStationUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-sm font-medium text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700"
+          @click="handleChatStationClick"
+        >
+          <Icon name="chat" size="sm" />
+          <span class="hidden sm:inline">{{ t('portal.hero.goToChat') }}</span>
+        </a>
+
         <!-- Docs Link -->
         <a
           v-if="docUrl"
@@ -218,6 +231,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
+import { lobeHubSSOAPI } from '@/api'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
@@ -237,6 +251,8 @@ const dropdownRef = ref<HTMLElement | null>(null)
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => appStore.docUrl)
 const avatarUrl = computed(() => user.value?.avatar_url?.trim() || '')
+const chatStationUrl = computed(() => appStore.cachedPublicSettings?.chat_station_url || '')
+const showChatStation = computed(() => Boolean(user.value && chatStationUrl.value.trim()))
 
 // 只在标准模式的管理员下显示新手引导按钮
 const showOnboardingButton = computed(() => {
@@ -312,6 +328,34 @@ async function handleLogout() {
 function handleReplayGuide() {
   closeDropdown()
   onboardingStore.replay()
+}
+
+async function handleChatStationClick(event: MouseEvent) {
+  const url = chatStationUrl.value.trim()
+  if (!url || !user.value) {
+    return
+  }
+
+  event.preventDefault()
+  const chatWindow = window.open('', '_blank')
+  if (chatWindow) {
+    chatWindow.opener = null
+    chatWindow.location.href = url
+  }
+
+  try {
+    const result = await lobeHubSSOAPI.authorize('/')
+    if (chatWindow) {
+      chatWindow.location.replace(result.redirect_url || url)
+    } else {
+      window.open(result.redirect_url || url, '_blank', 'noopener,noreferrer')
+    }
+  } catch (error) {
+    console.error('Failed to start LobeHub SSO:', error)
+    if (!chatWindow) {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }
 }
 
 function handleClickOutside(event: MouseEvent) {
