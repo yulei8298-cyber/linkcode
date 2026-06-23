@@ -69,6 +69,11 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 				return
 			}
 		}
+		if isChatStationGroupSecretInvalid(c, apiKey, cfg) {
+			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonIPRestriction)
+			abortWithGoogleError(c, 403, "Access denied")
+			return
+		}
 		if apiKey.User == nil {
 			abortWithGoogleError(c, 401, "User associated with API key not found")
 			return

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,6 +13,11 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	chatStationOnlyGroupName = "OpenAI-chat"
+	chatStationSecretHeader  = "X-LinkCode-Chat-Station-Secret"
 )
 
 // NewAPIKeyAuthMiddleware 创建 API Key 认证中间件
@@ -118,6 +124,9 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 				AbortWithError(c, 403, "ACCESS_DENIED", fmt.Sprintf("Access denied. Your IP is %s", clientIP))
 				return
 			}
+		}
+		if abortIfChatStationGroupSecretInvalid(c, apiKey, cfg) {
+			return
 		}
 
 		// 检查关联的用户
@@ -317,6 +326,27 @@ func abortIfAPIKeyGroupNotAllowed(c *gin.Context, apiKey *service.APIKey) bool {
 	service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
 	AbortWithError(c, 403, "GROUP_NOT_ALLOWED", "API Key 所属专属分组不再允许当前用户使用")
 	return true
+}
+
+func abortIfChatStationGroupSecretInvalid(c *gin.Context, apiKey *service.APIKey, cfg *config.Config) bool {
+	if isChatStationGroupSecretInvalid(c, apiKey, cfg) {
+		service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonIPRestriction)
+		AbortWithError(c, 403, "ACCESS_DENIED", "Access denied")
+		return true
+	}
+	return false
+}
+
+func isChatStationGroupSecretInvalid(c *gin.Context, apiKey *service.APIKey, cfg *config.Config) bool {
+	if apiKey == nil || apiKey.Group == nil || strings.TrimSpace(apiKey.Group.Name) != chatStationOnlyGroupName {
+		return false
+	}
+	expected := ""
+	if cfg != nil {
+		expected = strings.TrimSpace(cfg.LobeHubSSO.SharedSecret)
+	}
+	actual := strings.TrimSpace(c.GetHeader(chatStationSecretHeader))
+	return expected == "" || actual == "" || subtle.ConstantTimeCompare([]byte(actual), []byte(expected)) != 1
 }
 
 func validateAPIKeyGroupAllowed(apiKey *service.APIKey) bool {
