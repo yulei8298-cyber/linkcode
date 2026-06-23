@@ -644,6 +644,28 @@
               />
             </div>
           </div>
+
+          <div class="mt-4 space-y-4 border-l-2 border-gray-200 pl-4 dark:border-dark-600">
+            <div>
+              <label class="input-label">{{ t("admin.groups.ipAcl.whitelist") }}</label>
+              <textarea
+                v-model="createForm.ip_whitelist"
+                rows="4"
+                class="input"
+                :placeholder="t('admin.groups.ipAcl.placeholder')"
+              ></textarea>
+            </div>
+            <div>
+              <label class="input-label">{{ t("admin.groups.ipAcl.blacklist") }}</label>
+              <textarea
+                v-model="createForm.ip_blacklist"
+                rows="3"
+                class="input"
+                :placeholder="t('admin.groups.ipAcl.placeholder')"
+              ></textarea>
+            </div>
+            <p class="input-hint">{{ t("admin.groups.ipAcl.hint") }}</p>
+          </div>
         </div>
 
         <div class="border-t pt-4">
@@ -1930,6 +1952,28 @@
                 :placeholder="t('admin.groups.subscription.noLimit')"
               />
             </div>
+          </div>
+
+          <div class="mt-4 space-y-4 border-l-2 border-gray-200 pl-4 dark:border-dark-600">
+            <div>
+              <label class="input-label">{{ t("admin.groups.ipAcl.whitelist") }}</label>
+              <textarea
+                v-model="editForm.ip_whitelist"
+                rows="4"
+                class="input"
+                :placeholder="t('admin.groups.ipAcl.placeholder')"
+              ></textarea>
+            </div>
+            <div>
+              <label class="input-label">{{ t("admin.groups.ipAcl.blacklist") }}</label>
+              <textarea
+                v-model="editForm.ip_blacklist"
+                rows="3"
+                class="input"
+                :placeholder="t('admin.groups.ipAcl.placeholder')"
+              ></textarea>
+            </div>
+            <p class="input-hint">{{ t("admin.groups.ipAcl.hint") }}</p>
           </div>
         </div>
 
@@ -3332,6 +3376,8 @@ const createForm = reactive({
   daily_limit_usd: null as number | null,
   weekly_limit_usd: null as number | null,
   monthly_limit_usd: null as number | null,
+  ip_whitelist: "",
+  ip_blacklist: "",
   // 图片生成计费配置
   allow_image_generation: false,
   image_rate_independent: false,
@@ -3663,6 +3709,8 @@ const editForm = reactive({
   daily_limit_usd: null as number | null,
   weekly_limit_usd: null as number | null,
   monthly_limit_usd: null as number | null,
+  ip_whitelist: "",
+  ip_blacklist: "",
   // 图片生成计费配置
   allow_image_generation: false,
   image_rate_independent: false,
@@ -3915,6 +3963,8 @@ const closeCreateModal = () => {
   createForm.daily_limit_usd = null;
   createForm.weekly_limit_usd = null;
   createForm.monthly_limit_usd = null;
+  createForm.ip_whitelist = "";
+  createForm.ip_blacklist = "";
   createForm.allow_image_generation = false;
   createForm.image_rate_independent = false;
   createForm.image_rate_multiplier = 1;
@@ -3954,6 +4004,9 @@ const normalizeOptionalLimit = (
   return Number.isFinite(value) && value > 0 ? value : null;
 };
 
+const parseIPList = (text: string): string[] =>
+  text.split("\n").map(ip => ip.trim()).filter(ip => ip.length > 0);
+
 const normalizeImageRateMultiplier = (
   value: number | string | null | undefined,
 ): number => {
@@ -3983,6 +4036,8 @@ const handleCreateGroup = async () => {
       monthly_limit_usd: normalizeOptionalLimit(
         createForm.monthly_limit_usd as number | string | null,
       ),
+      ip_whitelist: parseIPList(createForm.ip_whitelist),
+      ip_blacklist: parseIPList(createForm.ip_blacklist),
       model_routing: convertRoutingRulesToApiFormat(
         createModelRoutingRules.value,
       ),
@@ -4041,6 +4096,8 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.daily_limit_usd = group.daily_limit_usd;
   editForm.weekly_limit_usd = group.weekly_limit_usd;
   editForm.monthly_limit_usd = group.monthly_limit_usd;
+  editForm.ip_whitelist = (group.ip_whitelist || []).join("\n");
+  editForm.ip_blacklist = (group.ip_blacklist || []).join("\n");
   editForm.allow_image_generation = group.allow_image_generation ?? false;
   editForm.image_rate_independent = group.image_rate_independent ?? false;
   editForm.image_rate_multiplier = group.image_rate_multiplier ?? 1;
@@ -4116,6 +4173,8 @@ const handleUpdateGroup = async () => {
       monthly_limit_usd: normalizeOptionalLimit(
         editForm.monthly_limit_usd as number | string | null,
       ),
+      ip_whitelist: parseIPList(editForm.ip_whitelist),
+      ip_blacklist: parseIPList(editForm.ip_blacklist),
       fallback_group_id:
         editForm.fallback_group_id === null ? 0 : editForm.fallback_group_id,
       fallback_group_id_on_invalid_request:

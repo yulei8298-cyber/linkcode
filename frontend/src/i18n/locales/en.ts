@@ -2301,6 +2301,12 @@ export default {
         validityHint: 'Number of days the subscription is valid when assigned to a user',
         noLimit: 'No limit'
       },
+      ipAcl: {
+        whitelist: 'Group IP Whitelist',
+        blacklist: 'Group IP Blacklist',
+        placeholder: 'One IP or CIDR per line, e.g. 10.0.0.0/8',
+        hint: 'When configured, every request under this group must pass the group IP ACL first; users cannot bypass it by editing their own keys.'
+      },
       imagePricing: {
         title: 'Image Generation Pricing',
         description: 'Configure image generation access and base image prices. Leave empty to use default prices.',

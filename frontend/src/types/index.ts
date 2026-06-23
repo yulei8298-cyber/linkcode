@@ -514,6 +514,8 @@ export interface Group {
   daily_limit_usd: number | null
   weekly_limit_usd: number | null
   monthly_limit_usd: number | null
+  ip_whitelist: string[]
+  ip_blacklist: string[]
   // 图片生成计费配置
   allow_image_generation: boolean
   image_rate_independent: boolean
@@ -633,6 +635,8 @@ export interface CreateGroupRequest {
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
+  ip_whitelist?: string[]
+  ip_blacklist?: string[]
   allow_image_generation?: boolean
   image_rate_independent?: boolean
   image_rate_multiplier?: number
@@ -668,6 +672,8 @@ export interface UpdateGroupRequest {
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
+  ip_whitelist?: string[]
+  ip_blacklist?: string[]
   allow_image_generation?: boolean
   image_rate_independent?: boolean
   image_rate_multiplier?: number

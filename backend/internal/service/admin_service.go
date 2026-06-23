@@ -22,6 +22,7 @@ import (
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
@@ -204,6 +205,8 @@ type CreateGroupInput struct {
 	DailyLimitUSD    *float64 // 日限额 (USD)
 	WeeklyLimitUSD   *float64 // 周限额 (USD)
 	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	IPWhitelist      []string
+	IPBlacklist      []string
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration bool
 	ImageRateIndependent bool
@@ -245,6 +248,8 @@ type UpdateGroupInput struct {
 	DailyLimitUSD    *float64 // 日限额 (USD)
 	WeeklyLimitUSD   *float64 // 周限额 (USD)
 	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	IPWhitelist      *[]string
+	IPBlacklist      *[]string
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration *bool
 	ImageRateIndependent *bool
@@ -1808,6 +1813,12 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	dailyLimit := normalizeLimit(input.DailyLimitUSD)
 	weeklyLimit := normalizeLimit(input.WeeklyLimitUSD)
 	monthlyLimit := normalizeLimit(input.MonthlyLimitUSD)
+	if invalid := ip.ValidateIPPatterns(input.IPWhitelist); len(invalid) > 0 {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidIPPattern, invalid)
+	}
+	if invalid := ip.ValidateIPPatterns(input.IPBlacklist); len(invalid) > 0 {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidIPPattern, invalid)
+	}
 
 	// 图片价格：负数表示清除（使用默认价格），0 保留（表示免费）
 	imagePrice1K := normalizePrice(input.ImagePrice1K)
@@ -1887,6 +1898,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		DailyLimitUSD:                   dailyLimit,
 		WeeklyLimitUSD:                  weeklyLimit,
 		MonthlyLimitUSD:                 monthlyLimit,
+		IPWhitelist:                     input.IPWhitelist,
+		IPBlacklist:                     input.IPBlacklist,
 		AllowImageGeneration:            input.AllowImageGeneration,
 		ImageRateIndependent:            input.ImageRateIndependent,
 		ImageRateMultiplier:             imageRateMultiplier,
@@ -2066,6 +2079,18 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	group.DailyLimitUSD = normalizeLimit(input.DailyLimitUSD)
 	group.WeeklyLimitUSD = normalizeLimit(input.WeeklyLimitUSD)
 	group.MonthlyLimitUSD = normalizeLimit(input.MonthlyLimitUSD)
+	if input.IPWhitelist != nil {
+		if invalid := ip.ValidateIPPatterns(*input.IPWhitelist); len(invalid) > 0 {
+			return nil, fmt.Errorf("%w: %v", ErrInvalidIPPattern, invalid)
+		}
+		group.IPWhitelist = *input.IPWhitelist
+	}
+	if input.IPBlacklist != nil {
+		if invalid := ip.ValidateIPPatterns(*input.IPBlacklist); len(invalid) > 0 {
+			return nil, fmt.Errorf("%w: %v", ErrInvalidIPPattern, invalid)
+		}
+		group.IPBlacklist = *input.IPBlacklist
+	}
 	// 图片生成计费配置：负数表示清除（使用默认价格）
 	if input.AllowImageGeneration != nil {
 		group.AllowImageGeneration = *input.AllowImageGeneration

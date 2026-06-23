@@ -2384,6 +2384,12 @@ export default {
         validityHint: '分配给用户时订阅的有效天数',
         noLimit: '无限制'
       },
+      ipAcl: {
+        whitelist: '分组 IP 白名单',
+        blacklist: '分组 IP 黑名单',
+        placeholder: '每行一个 IP 或 CIDR，例如 10.0.0.0/8',
+        hint: '配置后，该分组下所有请求会先经过分组 IP 限制；用户修改自己的 Key 也无法绕过。'
+      },
       imagePricing: {
         title: '图片生成计费',
         description: '配置图片生成能力和图片基础单价，留空则使用默认价格',

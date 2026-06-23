@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -10,6 +11,7 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -82,6 +84,9 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		groupIn.ID = created.ID
 		groupIn.CreatedAt = created.CreatedAt
 		groupIn.UpdatedAt = created.UpdatedAt
+		if aclErr := r.updateGroupIPACL(ctx, groupIn.ID, groupIn.IPWhitelist, groupIn.IPBlacklist); aclErr != nil {
+			return aclErr
+		}
 		if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventGroupChanged, nil, &groupIn.ID, nil); err != nil {
 			logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue group create failed: group=%d err=%v", groupIn.ID, err)
 		}
@@ -112,7 +117,11 @@ func (r *groupRepository) GetByIDLite(ctx context.Context, id int64) (*service.G
 	if err != nil {
 		return nil, translatePersistenceError(err, service.ErrGroupNotFound, nil)
 	}
-	return groupEntityToService(m), nil
+	out := groupEntityToService(m)
+	if err := r.hydrateGroupIPACL(ctx, out); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) error {
@@ -205,6 +214,9 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		return translatePersistenceError(err, service.ErrGroupNotFound, service.ErrGroupExists)
 	}
 	groupIn.UpdatedAt = updated.UpdatedAt
+	if err := r.updateGroupIPACL(ctx, groupIn.ID, groupIn.IPWhitelist, groupIn.IPBlacklist); err != nil {
+		return err
+	}
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventGroupChanged, nil, &groupIn.ID, nil); err != nil {
 		logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue group update failed: group=%d err=%v", groupIn.ID, err)
 	}
@@ -272,6 +284,13 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 		g := groupEntityToService(groups[i])
 		outGroups = append(outGroups, *g)
 		groupIDs = append(groupIDs, g.ID)
+	}
+	groupPtrs := make([]*service.Group, 0, len(outGroups))
+	for i := range outGroups {
+		groupPtrs = append(groupPtrs, &outGroups[i])
+	}
+	if err := r.hydrateGroupIPACL(ctx, groupPtrs...); err != nil {
+		return nil, nil, err
 	}
 
 	counts, err := r.loadAccountCounts(ctx, groupIDs)
@@ -370,6 +389,15 @@ func (r *groupRepository) listWithAccountCountSort(ctx context.Context, q *dbent
 			outGroups[idx] = *g
 		}
 	}
+	groupPtrs := make([]*service.Group, 0, len(outGroups))
+	for i := range outGroups {
+		if outGroups[i].ID > 0 {
+			groupPtrs = append(groupPtrs, &outGroups[i])
+		}
+	}
+	if err := r.hydrateGroupIPACL(ctx, groupPtrs...); err != nil {
+		return nil, nil, err
+	}
 
 	return outGroups, paginationResultFromTotal(int64(total), params), nil
 }
@@ -444,6 +472,13 @@ func (r *groupRepository) ListActive(ctx context.Context) ([]service.Group, erro
 		outGroups = append(outGroups, *g)
 		groupIDs = append(groupIDs, g.ID)
 	}
+	groupPtrs := make([]*service.Group, 0, len(outGroups))
+	for i := range outGroups {
+		groupPtrs = append(groupPtrs, &outGroups[i])
+	}
+	if err := r.hydrateGroupIPACL(ctx, groupPtrs...); err != nil {
+		return nil, err
+	}
 
 	counts, err := r.loadAccountCounts(ctx, groupIDs)
 	if err == nil {
@@ -473,6 +508,13 @@ func (r *groupRepository) ListActiveByPlatform(ctx context.Context, platform str
 		g := groupEntityToService(groups[i])
 		outGroups = append(outGroups, *g)
 		groupIDs = append(groupIDs, g.ID)
+	}
+	groupPtrs := make([]*service.Group, 0, len(outGroups))
+	for i := range outGroups {
+		groupPtrs = append(groupPtrs, &outGroups[i])
+	}
+	if err := r.hydrateGroupIPACL(ctx, groupPtrs...); err != nil {
+		return nil, err
 	}
 
 	counts, err := r.loadAccountCounts(ctx, groupIDs)
@@ -793,6 +835,82 @@ func (r *groupRepository) BindAccountsToGroup(ctx context.Context, groupID int64
 	}
 
 	return nil
+}
+
+func (r *groupRepository) updateGroupIPACL(ctx context.Context, groupID int64, whitelist, blacklist []string) error {
+	var whitelistJSON any
+	var blacklistJSON any
+	if len(whitelist) > 0 {
+		b, err := json.Marshal(whitelist)
+		if err != nil {
+			return err
+		}
+		whitelistJSON = string(b)
+	}
+	if len(blacklist) > 0 {
+		b, err := json.Marshal(blacklist)
+		if err != nil {
+			return err
+		}
+		blacklistJSON = string(b)
+	}
+	_, err := r.sql.ExecContext(ctx, `
+		UPDATE groups
+		SET ip_whitelist = CASE WHEN $2::text IS NULL THEN NULL ELSE $2::jsonb END,
+		    ip_blacklist = CASE WHEN $3::text IS NULL THEN NULL ELSE $3::jsonb END
+		WHERE id = $1
+	`, groupID, whitelistJSON, blacklistJSON)
+	return err
+}
+
+func (r *groupRepository) hydrateGroupIPACL(ctx context.Context, groups ...*service.Group) error {
+	if len(groups) == 0 {
+		return nil
+	}
+	ids := make([]int64, 0, len(groups))
+	groupMap := make(map[int64]*service.Group, len(groups))
+	for _, g := range groups {
+		if g == nil || g.ID <= 0 {
+			continue
+		}
+		ids = append(ids, g.ID)
+		groupMap[g.ID] = g
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	rows, err := r.sql.QueryContext(ctx, `
+		SELECT id, ip_whitelist, ip_blacklist
+		FROM groups
+		WHERE id = ANY($1)
+	`, pq.Array(ids))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var id int64
+		var whitelistRaw, blacklistRaw []byte
+		if err := rows.Scan(&id, &whitelistRaw, &blacklistRaw); err != nil {
+			return err
+		}
+		g := groupMap[id]
+		if g == nil {
+			continue
+		}
+		g.IPWhitelist = nil
+		g.IPBlacklist = nil
+		if len(whitelistRaw) > 0 {
+			_ = json.Unmarshal(whitelistRaw, &g.IPWhitelist)
+		}
+		if len(blacklistRaw) > 0 {
+			_ = json.Unmarshal(blacklistRaw, &g.IPBlacklist)
+		}
+		g.CompiledIPWhitelist = ip.CompileIPRules(g.IPWhitelist)
+		g.CompiledIPBlacklist = ip.CompileIPRules(g.IPBlacklist)
+	}
+	return rows.Err()
 }
 
 // UpdateSortOrders 批量更新分组排序
