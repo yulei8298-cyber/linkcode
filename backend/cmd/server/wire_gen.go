@@ -135,7 +135,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	channelRepository := repository.NewChannelRepository(db)
 	groupService := service.NewGroupService(groupRepository, apiKeyAuthCacheInvalidator)
 	channelService := service.NewChannelService(channelRepository, groupRepository, apiKeyAuthCacheInvalidator, pricingService)
-	lobeHubSSOService := service.NewLobeHubSSOService(configConfig, lobeHubSSOCache, userRepository, apiKeyService, channelService)
+	lobeHubSSOService := service.NewLobeHubSSOService(configConfig, lobeHubSSOCache, userRepository, groupRepository, userSubscriptionRepository, apiKeyService, channelService, subscriptionService)
 	modelPricingResolver := service.NewModelPricingResolver(channelService, billingService)
 	notificationEmailService := service.NewNotificationEmailService(settingRepository, emailService)
 	balanceNotifyService := service.ProvideBalanceNotifyService(emailService, settingRepository, accountRepository, notificationEmailService)

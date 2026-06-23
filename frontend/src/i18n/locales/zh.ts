@@ -2374,7 +2374,7 @@ export default {
         title: '订阅设置',
         type: '计费类型',
         typeHint: '标准计费从用户余额扣除。订阅模式使用配额限制。',
-        typeNotEditable: '分组创建后无法修改计费类型。',
+        typeNotEditable: '可按运营阶段切换计费类型；保存前请确认已有密钥、订阅和余额扣费规则。',
         standard: '标准（余额）',
         subscription: '订阅（配额）',
         dailyLimit: '每日限额（USD）',

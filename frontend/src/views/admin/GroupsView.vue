@@ -1880,7 +1880,6 @@
             <Select
               v-model="editForm.subscription_type"
               :options="subscriptionTypeOptions"
-              :disabled="true"
             />
             <p class="input-hint">
               {{ t("admin.groups.subscription.typeNotEditable") }}

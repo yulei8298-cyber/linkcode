@@ -21,13 +21,7 @@ var (
 )
 
 const (
-	lobeHubProviderClaude = "claude"
-	lobeHubProviderGPT    = "gpt"
-	lobeHubProviderGemini = "gemini"
-
-	lobeHubGroupAnthropic = "Anthropic-chat"
-	lobeHubGroupOpenAI    = "OpenAI-chat"
-	lobeHubGroupGemini    = "Gemini-chat"
+	lobeHubProviderGPT = "gpt"
 )
 
 type LobeHubSSOCodeStore interface {
@@ -78,26 +72,35 @@ type LobeHubSSOAPIKey struct {
 }
 
 type LobeHubSSOService struct {
-	cfg            *config.Config
-	codeStore      LobeHubSSOCodeStore
-	userRepo       UserRepository
-	apiKeyService  *APIKeyService
-	channelService *ChannelService
+	cfg                *config.Config
+	codeStore          LobeHubSSOCodeStore
+	userRepo           UserRepository
+	groupRepo          GroupRepository
+	userSubRepo        UserSubscriptionRepository
+	apiKeyService      *APIKeyService
+	channelService     *ChannelService
+	defaultSubAssigner DefaultSubscriptionAssigner
 }
 
 func NewLobeHubSSOService(
 	cfg *config.Config,
 	codeStore LobeHubSSOCodeStore,
 	userRepo UserRepository,
+	groupRepo GroupRepository,
+	userSubRepo UserSubscriptionRepository,
 	apiKeyService *APIKeyService,
 	channelService *ChannelService,
+	defaultSubAssigner DefaultSubscriptionAssigner,
 ) *LobeHubSSOService {
 	return &LobeHubSSOService{
-		cfg:            cfg,
-		codeStore:      codeStore,
-		userRepo:       userRepo,
-		apiKeyService:  apiKeyService,
-		channelService: channelService,
+		cfg:                cfg,
+		codeStore:          codeStore,
+		userRepo:           userRepo,
+		groupRepo:          groupRepo,
+		userSubRepo:        userSubRepo,
+		apiKeyService:      apiKeyService,
+		channelService:     channelService,
+		defaultSubAssigner: defaultSubAssigner,
 	}
 }
 
@@ -186,13 +189,16 @@ func (s *LobeHubSSOService) Exchange(ctx context.Context, input LobeHubSSOExchan
 }
 
 func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int64) ([]LobeHubSSOAPIKey, error) {
-	availableGroups, err := s.apiKeyService.GetAvailableGroups(ctx, userID)
+	availableGroups, err := s.listLobeHubCandidateGroups(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("list available groups: %w", err)
+		return nil, err
 	}
 	groupByPlatform := make(map[string]Group)
 	for _, g := range availableGroups {
 		if g.Status != StatusActive {
+			continue
+		}
+		if g.IsExclusive {
 			continue
 		}
 		if !isLobeHubChatGroup(g.Platform, g.Name) {
@@ -212,11 +218,8 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 	targets := []struct {
 		provider string
 		platform string
-		group    string
 	}{
-		{provider: lobeHubProviderClaude, platform: PlatformAnthropic, group: lobeHubGroupAnthropic},
-		{provider: lobeHubProviderGPT, platform: PlatformOpenAI, group: lobeHubGroupOpenAI},
-		{provider: lobeHubProviderGemini, platform: PlatformGemini, group: lobeHubGroupGemini},
+		{provider: lobeHubProviderGPT, platform: PlatformOpenAI},
 	}
 
 	out := make([]LobeHubSSOAPIKey, 0, len(targets))
@@ -225,10 +228,13 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 			continue
 		}
 		group, ok := groupByPlatform[target.platform]
-		if !ok || group.Name != target.group {
+		if !ok {
 			continue
 		}
 		groupID := group.ID
+		if err := s.ensureLobeHubGroupAccess(ctx, userID, group); err != nil {
+			return nil, err
+		}
 		key, err := s.findOrCreateProviderKey(ctx, userID, target.provider, target.platform, groupID)
 		if err != nil {
 			return nil, err
@@ -243,14 +249,21 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 	return out, nil
 }
 
+func (s *LobeHubSSOService) listLobeHubCandidateGroups(ctx context.Context) ([]Group, error) {
+	if s.groupRepo == nil {
+		return nil, fmt.Errorf("group repository is not configured")
+	}
+	groups, err := s.groupRepo.ListActiveByPlatform(ctx, PlatformOpenAI)
+	if err != nil {
+		return nil, fmt.Errorf("list lobehub chat groups: %w", err)
+	}
+	return groups, nil
+}
+
 func isLobeHubChatGroup(platform, name string) bool {
 	switch platform {
-	case PlatformAnthropic:
-		return name == lobeHubGroupAnthropic
 	case PlatformOpenAI:
-		return name == lobeHubGroupOpenAI
-	case PlatformGemini:
-		return name == lobeHubGroupGemini
+		return strings.Contains(strings.ToLower(strings.TrimSpace(name)), "-chat")
 	default:
 		return false
 	}
@@ -282,6 +295,33 @@ func (s *LobeHubSSOService) activeChannelPlatforms(ctx context.Context) (map[str
 	return out, nil
 }
 
+func (s *LobeHubSSOService) ensureLobeHubGroupAccess(ctx context.Context, userID int64, group Group) error {
+	if !group.IsSubscriptionType() {
+		return nil
+	}
+	if s.userSubRepo == nil || s.defaultSubAssigner == nil {
+		return fmt.Errorf("lobehub subscription assigner is not configured")
+	}
+	if _, err := s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, userID, group.ID); err == nil {
+		return nil
+	}
+	validityDays := group.DefaultValidityDays
+	if validityDays <= 0 {
+		validityDays = MaxValidityDays
+	}
+	_, _, err := s.defaultSubAssigner.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
+		UserID:       userID,
+		GroupID:      group.ID,
+		ValidityDays: validityDays,
+		AssignedBy:   0,
+		Notes:        "auto assigned by LobeHub SSO",
+	})
+	if err != nil {
+		return fmt.Errorf("assign lobehub chat subscription: %w", err)
+	}
+	return nil
+}
+
 func (s *LobeHubSSOService) findOrCreateProviderKey(ctx context.Context, userID int64, provider, platform string, groupID int64) (*APIKey, error) {
 	name := s.providerKeyName(provider)
 	existing, err := s.apiKeyService.SearchAPIKeys(ctx, userID, name, 20)
@@ -309,12 +349,8 @@ func (s *LobeHubSSOService) providerKeyName(provider string) string {
 		prefix = "LobeHub"
 	}
 	switch provider {
-	case lobeHubProviderClaude:
-		return prefix + " Claude"
 	case lobeHubProviderGPT:
 		return prefix + " GPT"
-	case lobeHubProviderGemini:
-		return prefix + " Gemini"
 	default:
 		return prefix + " " + provider
 	}

@@ -2291,7 +2291,7 @@ export default {
         type: 'Billing Type',
         typeHint:
           'Standard billing deducts from user balance. Subscription mode uses quota limits instead.',
-        typeNotEditable: 'Billing type cannot be changed after group creation.',
+        typeNotEditable: 'You can switch billing type as operations change; review existing keys, subscriptions, and balance billing rules before saving.',
         standard: 'Standard (Balance)',
         subscription: 'Subscription (Quota)',
         dailyLimit: 'Daily Limit (USD)',
