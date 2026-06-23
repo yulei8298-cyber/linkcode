@@ -326,6 +326,64 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 	}
 	emailVerificationRequired := h != nil && h.authService != nil && h.authService.IsEmailVerifyEnabled(c.Request.Context())
 	forceEmailOnSignup := h.isForceEmailOnThirdPartySignup(c.Request.Context())
+	if compatEmailUser != nil && !emailVerificationRequired && !forceEmailOnSignup {
+		if err := ensureLoginUserActive(&service.User{
+			ID:     compatEmailUser.ID,
+			Email:  compatEmailUser.Email,
+			Status: compatEmailUser.Status,
+		}); err != nil {
+			redirectOAuthError(c, frontendCallback, "session_error", infraerrors.Reason(err), infraerrors.Message(err))
+			return
+		}
+		if err := h.ensureBackendModeAllowsUser(c.Request.Context(), &service.User{
+			ID:     compatEmailUser.ID,
+			Email:  compatEmailUser.Email,
+			Status: compatEmailUser.Status,
+		}); err != nil {
+			redirectOAuthError(c, frontendCallback, "session_error", infraerrors.Reason(err), infraerrors.Message(err))
+			return
+		}
+
+		if err := applyPendingOAuthBinding(
+			c.Request.Context(),
+			h.entClient(),
+			h.authService,
+			h.userService,
+			&dbent.PendingAuthSession{
+				Intent:                 oauthIntentLogin,
+				ProviderType:           identityKey.ProviderType,
+				ProviderKey:            identityKey.ProviderKey,
+				ProviderSubject:        identityKey.ProviderSubject,
+				TargetUserID:           &compatEmailUser.ID,
+				ResolvedEmail:          strings.TrimSpace(compatEmailUser.Email),
+				UpstreamIdentityClaims: upstreamClaims,
+			},
+			nil,
+			&compatEmailUser.ID,
+			true,
+			true,
+		); err != nil {
+			redirectOAuthError(c, frontendCallback, "session_error", "failed to bind oauth identity", "")
+			return
+		}
+
+		loginUser, err := h.userService.GetByID(c.Request.Context(), compatEmailUser.ID)
+		if err != nil {
+			redirectOAuthError(c, frontendCallback, "session_error", infraerrors.Reason(err), infraerrors.Message(err))
+			return
+		}
+		tokenPair, err := h.authService.GenerateTokenPair(c.Request.Context(), loginUser, "")
+		if err != nil {
+			redirectOAuthError(c, frontendCallback, "session_error", "failed to generate token pair", "")
+			return
+		}
+		h.authService.RecordSuccessfulLogin(c.Request.Context(), loginUser.ID)
+		clearOAuthPendingSessionCookie(c, secureCookie)
+		clearOAuthPendingBrowserCookie(c, secureCookie)
+		redirectOAuthTokenPair(c, frontendCallback, tokenPair, redirectTo)
+		return
+	}
+
 	if compatEmailUser == nil && !emailVerificationRequired && !forceEmailOnSignup {
 		if err := h.ensureBackendModeAllowsNewUserLogin(c.Request.Context()); err != nil {
 			redirectOAuthError(c, frontendCallback, "session_error", infraerrors.Reason(err), infraerrors.Message(err))

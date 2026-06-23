@@ -541,31 +541,33 @@ func TestLinuxDoOAuthCallbackCreatesBindPendingSessionForCompatEmailUser(t *test
 	handler.LinuxDoOAuthCallback(c)
 
 	require.Equal(t, http.StatusFound, recorder.Code)
-	require.Equal(t, "/auth/linuxdo/callback", recorder.Header().Get("Location"))
+	location := recorder.Header().Get("Location")
+	require.Contains(t, location, "/auth/linuxdo/callback#")
+	require.Contains(t, location, "access_token=")
+	require.Contains(t, location, "refresh_token=")
+	fragmentValues := parseOAuthRedirectFragment(t, location)
+	require.Equal(t, "/dashboard", fragmentValues.Get("redirect"))
+	requireCookieCleared(t, recorder, oauthPendingSessionCookieName)
+	requireCookieCleared(t, recorder, oauthPendingBrowserCookieName)
 
-	sessionCookie := findCookie(recorder.Result().Cookies(), oauthPendingSessionCookieName)
-	require.NotNil(t, sessionCookie)
+	userEntity, err := client.User.Get(ctx, existingUser.ID)
+	require.NoError(t, err)
+	require.Equal(t, strings.TrimSpace(existingUser.Email), strings.TrimSpace(userEntity.Email))
 
-	session, err := client.PendingAuthSession.Query().
-		Where(pendingauthsession.SessionTokenEQ(decodeCookieValueForTest(t, sessionCookie.Value))).
+	identity, err := client.AuthIdentity.Query().
+		Where(
+			authidentity.ProviderTypeEQ("linuxdo"),
+			authidentity.ProviderKeyEQ("linuxdo"),
+			authidentity.ProviderSubjectEQ("321"),
+		).
 		Only(ctx)
 	require.NoError(t, err)
-	require.Equal(t, oauthIntentLogin, session.Intent)
-	require.NotNil(t, session.TargetUserID)
-	require.Equal(t, existingUser.ID, *session.TargetUserID)
-	require.Equal(t, strings.TrimSpace(existingUser.Email), session.ResolvedEmail)
-	require.Equal(t, "legacy@example.com", session.UpstreamIdentityClaims["compat_email"])
+	require.Equal(t, existingUser.ID, identity.UserID)
+	require.Equal(t, "legacy@example.com", identity.Metadata["compat_email"])
 
-	completion, ok := session.LocalFlowState[oauthCompletionResponseKey].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "/dashboard", completion["redirect"])
-	require.Equal(t, oauthPendingChoiceStep, completion["step"])
-	require.Equal(t, strings.TrimSpace(existingUser.Email), completion["email"])
-	require.Equal(t, strings.TrimSpace(existingUser.Email), completion["existing_account_email"])
-	require.Equal(t, true, completion["existing_account_bindable"])
-	require.Equal(t, "compat_email_match", completion["choice_reason"])
-	_, hasAccessToken := completion["access_token"]
-	require.False(t, hasAccessToken)
+	sessionCount, err := client.PendingAuthSession.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, sessionCount)
 }
 
 func TestLinuxDoOAuthCallbackCreatesChoicePendingSessionWhenSignupRequiresInvite(t *testing.T) {
