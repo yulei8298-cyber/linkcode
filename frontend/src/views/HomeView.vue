@@ -159,10 +159,9 @@ async function handleChatStationClick(event: MouseEvent) {
   }
 
   event.preventDefault()
-  const chatWindow = window.open('', '_blank')
+  const chatWindow = window.open(url, '_blank')
   if (chatWindow) {
     chatWindow.opener = null
-    chatWindow.location.href = url
   }
 
   try {
