@@ -200,9 +200,6 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 		if g.Status != StatusActive {
 			continue
 		}
-		if g.IsExclusive {
-			continue
-		}
 		if !isLobeHubChatGroup(g.Platform, g.Name) {
 			continue
 		}
@@ -299,6 +296,14 @@ func (s *LobeHubSSOService) activeChannelPlatforms(ctx context.Context) (map[str
 
 func (s *LobeHubSSOService) ensureLobeHubGroupAccess(ctx context.Context, userID int64, group Group) error {
 	if !group.IsSubscriptionType() {
+		if group.IsExclusive {
+			if s.userRepo == nil {
+				return fmt.Errorf("lobehub user repository is not configured")
+			}
+			if err := s.userRepo.AddGroupToAllowedGroups(ctx, userID, group.ID); err != nil {
+				return fmt.Errorf("assign lobehub chat group access: %w", err)
+			}
+		}
 		return nil
 	}
 	if s.userSubRepo == nil || s.defaultSubAssigner == nil {
