@@ -22,6 +22,8 @@ var (
 
 const (
 	lobeHubProviderGPT = "gpt"
+
+	lobeHubGroupOpenAI = "OpenAI-chat"
 )
 
 type LobeHubSSOCodeStore interface {
@@ -263,7 +265,7 @@ func (s *LobeHubSSOService) listLobeHubCandidateGroups(ctx context.Context) ([]G
 func isLobeHubChatGroup(platform, name string) bool {
 	switch platform {
 	case PlatformOpenAI:
-		return strings.Contains(strings.ToLower(strings.TrimSpace(name)), "-chat")
+		return strings.TrimSpace(name) == lobeHubGroupOpenAI
 	default:
 		return false
 	}
