@@ -1,12 +1,8 @@
-// 使用教程的内置默认内容（Markdown）。
-// 后台「系统设置 → 使用教程内容」配置后会覆盖此默认值；未配置时公开门户展示这份。
-// 这是针对 LinkCode 自有网关编写的原创接入指南。
-
-export const DEFAULT_TUTORIAL_MD = `# LinkCode 快速开始
+# LinkCode 快速开始
 
 LinkCode 是一个聚合多家上游渠道的 AI API 网关，支持 **OpenAI / ChatGPT 兼容协议** 与 **Anthropic / Claude 兼容协议**。你只需要完成充值、创建 API 密钥、复制接口地址三步，就可以在 Codex CLI、Claude Code、OpenCode 或自己的程序里使用。
 
-> 本教程中的 \`sk-你的密钥\` 请替换为你在控制台创建的真实 API Key。不要把密钥发给他人，也不要提交到公开仓库。
+> 本教程中的 `sk-你的密钥` 请替换为你在控制台创建的真实 API Key。不要把密钥发给他人，也不要提交到公开仓库。
 
 ![LinkCode 首页](/tutorial/01-home-safe.png)
 
@@ -51,7 +47,7 @@ LinkCode 是一个聚合多家上游渠道的 AI API 网关，支持 **OpenAI / 
 
 ![创建 API 密钥](/tutorial/05-create-key-safe.png)
 
-> API Key 通常只在创建时完整显示。后续页面会以 \`sk-xxx...xxxx\` 的形式脱敏展示，请创建后立刻保存。
+> API Key 通常只在创建时完整显示。后续页面会以 `sk-xxx...xxxx` 的形式脱敏展示，请创建后立刻保存。
 
 ---
 
@@ -61,15 +57,15 @@ LinkCode 是一个聚合多家上游渠道的 AI API 网关，支持 **OpenAI / 
 
 | 用途 | Base URL |
 | --- | --- |
-| OpenAI / ChatGPT 兼容接口 | \`https://api.linkcode.site/v1\` |
-| Claude / Anthropic 兼容接口 | \`https://api.linkcode.site\` |
-| OpenAI 国内直连快速端点 | \`https://api-fast.linkcode.site/v1\` |
-| Claude 国内直连快速端点 | \`https://api-fast.linkcode.site\` |
+| OpenAI / ChatGPT 兼容接口 | `https://api.linkcode.site/v1` |
+| Claude / Anthropic 兼容接口 | `https://api.linkcode.site` |
+| OpenAI 国内直连快速端点 | `https://api-fast.linkcode.site/v1` |
+| Claude 国内直连快速端点 | `https://api-fast.linkcode.site` |
 
 鉴权方式与官方协议保持一致：
 
-- OpenAI 协议：请求头使用 \`Authorization: Bearer sk-你的密钥\`
-- Claude 协议：请求头使用 \`x-api-key: sk-你的密钥\`
+- OpenAI 协议：请求头使用 `Authorization: Bearer sk-你的密钥`
+- Claude 协议：请求头使用 `x-api-key: sk-你的密钥`
 
 ---
 
@@ -81,13 +77,13 @@ LinkCode 是一个聚合多家上游渠道的 AI API 网关，支持 **OpenAI / 
 
 Codex CLI 常用配置目录：
 
-\`\`\`bash
+```bash
 mkdir -p ~/.codex
-\`\`\`
+```
 
-\`~/.codex/config.toml\` 示例：
+`~/.codex/config.toml` 示例：
 
-\`\`\`toml
+```toml
 model_provider = "OpenAI"
 model = "gpt-5.5"
 review_model = "gpt-5.5"
@@ -100,15 +96,15 @@ name = "OpenAI"
 base_url = "https://api.linkcode.site"
 wire_api = "responses"
 requires_openai_auth = true
-\`\`\`
+```
 
-\`~/.codex/auth.json\` 示例：
+`~/.codex/auth.json` 示例：
 
-\`\`\`json
+```json
 {
   "OPENAI_API_KEY": "sk-你的密钥"
 }
-\`\`\`
+```
 
 ---
 
@@ -116,14 +112,14 @@ requires_openai_auth = true
 
 如果你的密钥分组是 Claude / Anthropic 协议，使用 Claude Code 时设置下面两个环境变量即可：
 
-\`\`\`bash
+```bash
 export ANTHROPIC_BASE_URL="https://api.linkcode.site"
 export ANTHROPIC_API_KEY="sk-你的密钥"
 
 claude
-\`\`\`
+```
 
-如需长期生效，可以把上面的 \`export\` 写入 \`~/.zshrc\` 或 \`~/.bashrc\`。
+如需长期生效，可以把上面的 `export` 写入 `~/.zshrc` 或 `~/.bashrc`。
 
 ---
 
@@ -131,7 +127,7 @@ claude
 
 任何支持自定义 Base URL 的 OpenAI 兼容客户端都可以使用 LinkCode。以 Python SDK 为例：
 
-\`\`\`python
+```python
 from openai import OpenAI
 
 client = OpenAI(
@@ -145,7 +141,7 @@ resp = client.chat.completions.create(
 )
 
 print(resp.choices[0].message.content)
-\`\`\`
+```
 
 ---
 
@@ -153,29 +149,29 @@ print(resp.choices[0].message.content)
 
 OpenAI / ChatGPT 兼容接口：
 
-\`\`\`bash
-curl https://api.linkcode.site/v1/chat/completions \\
-  -H "Authorization: Bearer sk-你的密钥" \\
-  -H "Content-Type: application/json" \\
+```bash
+curl https://api.linkcode.site/v1/chat/completions \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-5.5",
     "messages": [{"role": "user", "content": "你好"}]
   }'
-\`\`\`
+```
 
 Claude / Anthropic 兼容接口：
 
-\`\`\`bash
-curl https://api.linkcode.site/v1/messages \\
-  -H "x-api-key: sk-你的密钥" \\
-  -H "anthropic-version: 2023-06-01" \\
-  -H "content-type: application/json" \\
+```bash
+curl https://api.linkcode.site/v1/messages \
+  -H "x-api-key: sk-你的密钥" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
   -d '{
     "model": "claude-sonnet-4-6",
     "max_tokens": 256,
     "messages": [{"role": "user", "content": "你好"}]
   }'
-\`\`\`
+```
 
 返回正常 JSON 响应就表示接入成功。
 
@@ -184,14 +180,13 @@ curl https://api.linkcode.site/v1/messages \\
 ## 常见问题
 
 **Q：返回 401 或鉴权失败？**  
-检查密钥是否复制完整、是否用错请求头。OpenAI 用 \`Authorization: Bearer\`，Claude 用 \`x-api-key\`。
+检查密钥是否复制完整、是否用错请求头。OpenAI 用 `Authorization: Bearer`，Claude 用 `x-api-key`。
 
 **Q：提示没有可用分组或模型不可用？**  
 进入「API 密钥」页面确认密钥分组是否正确，也可以在「定价方案」或「渠道状态」查看当前可用渠道。
 
 **Q：应该使用哪个 Base URL？**  
-OpenAI 兼容客户端使用 \`https://api.linkcode.site/v1\`。Claude / Anthropic 客户端使用 \`https://api.linkcode.site\`。如果你的网络更适合国内直连，可以尝试 \`api-fast.linkcode.site\` 对应端点。
+OpenAI 兼容客户端使用 `https://api.linkcode.site/v1`。Claude / Anthropic 客户端使用 `https://api.linkcode.site`。如果你的网络更适合国内直连，可以尝试 `api-fast.linkcode.site` 对应端点。
 
 **Q：如何查看消费明细？**  
 进入控制台左侧「使用记录」，可以按时间、模型、API Key 查看请求、Token 与扣费明细。
-`
