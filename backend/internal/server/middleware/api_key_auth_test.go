@@ -910,7 +910,7 @@ func TestAPIKeyAuthOpenAIChatGroupRequiresChatStationSecret(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		require.Equal(t, http.StatusForbidden, w.Code)
-		requireAPIKeyAuthError(t, w, "ACCESS_DENIED", "Access denied")
+		requireAPIKeyAuthError(t, w, chatStationRestrictedErrorCode, chatStationRestrictedErrorMessage)
 	})
 
 	t.Run("valid_secret_allowed", func(t *testing.T) {

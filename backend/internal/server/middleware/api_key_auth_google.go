@@ -71,7 +71,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 		}
 		if isChatStationGroupSecretInvalid(c, apiKey, cfg) {
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonIPRestriction)
-			abortWithGoogleError(c, 403, "Access denied")
+			abortWithGoogleError(c, 403, chatStationRestrictedErrorMessage)
 			return
 		}
 		if apiKey.User == nil {

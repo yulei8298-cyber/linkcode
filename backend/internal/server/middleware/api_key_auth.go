@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	chatStationOnlyGroupName = "OpenAI-chat"
-	chatStationSecretHeader  = "X-LinkCode-Chat-Station-Secret"
+	chatStationOnlyGroupName          = "OpenAI-chat"
+	chatStationSecretHeader           = "X-LinkCode-Chat-Station-Secret"
+	chatStationRestrictedErrorCode    = "CHAT_STATION_GROUP_RESTRICTED"
+	chatStationRestrictedErrorMessage = "OpenAI-chat group is reserved for the chat station. Please use it from the chat station entry."
 )
 
 // NewAPIKeyAuthMiddleware 创建 API Key 认证中间件
@@ -331,7 +333,7 @@ func abortIfAPIKeyGroupNotAllowed(c *gin.Context, apiKey *service.APIKey) bool {
 func abortIfChatStationGroupSecretInvalid(c *gin.Context, apiKey *service.APIKey, cfg *config.Config) bool {
 	if isChatStationGroupSecretInvalid(c, apiKey, cfg) {
 		service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonIPRestriction)
-		AbortWithError(c, 403, "ACCESS_DENIED", "Access denied")
+		AbortWithError(c, 403, chatStationRestrictedErrorCode, chatStationRestrictedErrorMessage)
 		return true
 	}
 	return false
