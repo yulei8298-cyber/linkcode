@@ -209,11 +209,6 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 		}
 	}
 
-	activePlatforms, err := s.activeChannelPlatforms(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	targets := []struct {
 		provider string
 		platform string
@@ -223,9 +218,6 @@ func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int6
 
 	out := make([]LobeHubSSOAPIKey, 0, len(targets))
 	for _, target := range targets {
-		if _, ok := activePlatforms[target.platform]; !ok {
-			continue
-		}
 		group, ok := groupByPlatform[target.platform]
 		if !ok {
 			continue

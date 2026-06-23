@@ -168,7 +168,7 @@ func (s *lobeHubSSOAPIKeyRepoStub) GetRateLimitData(context.Context, int64) (*AP
 	panic("unexpected GetRateLimitData call")
 }
 
-func TestLobeHubSSOPrepareProviderKeysCreatesKeyForExclusiveOpenAIChatGroup(t *testing.T) {
+func TestLobeHubSSOPrepareProviderKeysCreatesKeyForExclusiveOpenAIChatGroupWithoutChannel(t *testing.T) {
 	groupID := int64(88)
 	groupRepo := &lobeHubSSOGroupRepoStub{
 		groups: []Group{{
@@ -188,18 +188,8 @@ func TestLobeHubSSOPrepareProviderKeysCreatesKeyForExclusiveOpenAIChatGroup(t *t
 	cfg.Default.APIKeyPrefix = "sk-test-"
 	cfg.LobeHubSSO.APIKeyNamePrefix = "Link AI"
 
-	channelService := NewChannelService(&mockChannelRepository{
-		listAllFn: func(context.Context) ([]Channel, error) {
-			return []Channel{{ID: 1, Name: "OpenAI", Status: StatusActive, GroupIDs: []int64{groupID}}}, nil
-		},
-		getGroupPlatformsFn: func(_ context.Context, groupIDs []int64) (map[int64]string, error) {
-			require.Equal(t, []int64{groupID}, groupIDs)
-			return map[int64]string{groupID: PlatformOpenAI}, nil
-		},
-	}, groupRepo, nil, nil)
-
 	apiKeyService := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, nil, nil, nil, cfg)
-	svc := NewLobeHubSSOService(cfg, nil, userRepo, groupRepo, nil, apiKeyService, channelService, nil)
+	svc := NewLobeHubSSOService(cfg, nil, userRepo, groupRepo, nil, apiKeyService, nil, nil)
 
 	keys, err := svc.prepareProviderKeys(context.Background(), userRepo.user.ID)
 	require.NoError(t, err)
