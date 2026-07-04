@@ -1062,7 +1062,8 @@ turnstile:
 gemini:
   oauth:
     # OAuth 客户端配置说明：
-    # 1) 留空 client_id/client_secret：使用 Gemini CLI 内置 OAuth Client（其 client_secret 需通过环境变量注入）
+    # 1) 留空 client_id/client_secret：使用 Gemini CLI OAuth Client（其凭据需通过环境变量注入）
+    #    - GEMINI_CLI_OAUTH_CLIENT_ID
     #    - GEMINI_CLI_OAUTH_CLIENT_SECRET
     # 2) 同时设置 client_id/client_secret：使用你自建的 OAuth Client（推荐，权限更完整）
     #

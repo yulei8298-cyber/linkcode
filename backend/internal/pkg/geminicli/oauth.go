@@ -167,25 +167,21 @@ func EffectiveOAuthConfig(cfg OAuthConfig, oauthType string) (OAuthConfig, error
 		effective.Scopes = strings.Join(strings.Fields(strings.ReplaceAll(effective.Scopes, ",", " ")), " ")
 	}
 
-	// Fall back to built-in Gemini CLI OAuth client when not configured.
-	// SECURITY: This repo does not embed the built-in client secret; it must be provided via env.
+	// Fall back to Gemini CLI OAuth client when not configured.
+	// SECURITY: This repo does not embed third-party OAuth credentials; both values
+	// must be provided via env by the operator.
 	if effective.ClientID == "" && effective.ClientSecret == "" {
-		secret := strings.TrimSpace(GeminiCLIOAuthClientSecret)
-		if secret == "" {
-			if v, ok := os.LookupEnv(GeminiCLIOAuthClientSecretEnv); ok {
-				secret = strings.TrimSpace(v)
-			}
+		clientID, clientSecret := GeminiCLIOAuthClientCredentialsFromEnv()
+		if clientID == "" || clientSecret == "" {
+			return OAuthConfig{}, infraerrors.Newf(http.StatusBadRequest, "GEMINI_CLI_OAUTH_CLIENT_NOT_CONFIGURED", "Gemini CLI OAuth client is not configured; set both %s and %s, or provide a custom OAuth client", GeminiCLIOAuthClientIDEnv, GeminiCLIOAuthClientSecretEnv)
 		}
-		if secret == "" {
-			return OAuthConfig{}, infraerrors.Newf(http.StatusBadRequest, "GEMINI_CLI_OAUTH_CLIENT_SECRET_MISSING", "built-in Gemini CLI OAuth client_secret is not configured; set %s or provide a custom OAuth client", GeminiCLIOAuthClientSecretEnv)
-		}
-		effective.ClientID = GeminiCLIOAuthClientID
-		effective.ClientSecret = secret
+		effective.ClientID = clientID
+		effective.ClientSecret = clientSecret
 	} else if effective.ClientID == "" || effective.ClientSecret == "" {
 		return OAuthConfig{}, infraerrors.New(http.StatusBadRequest, "GEMINI_OAUTH_CLIENT_NOT_CONFIGURED", "OAuth client not configured: please set both client_id and client_secret (or leave both empty to use the built-in Gemini CLI client)")
 	}
 
-	isBuiltinClient := effective.ClientID == GeminiCLIOAuthClientID
+	isBuiltinClient := IsGeminiCLIOAuthClient(effective.ClientID)
 
 	if effective.Scopes == "" {
 		// Use different default scopes based on OAuth type
@@ -234,6 +230,36 @@ func EffectiveOAuthConfig(cfg OAuthConfig, oauthType string) (OAuthConfig, error
 	}
 
 	return effective, nil
+}
+
+func GeminiCLIOAuthClientCredentialsFromEnv() (string, string) {
+	clientID := strings.TrimSpace(GeminiCLIOAuthClientID)
+	if clientID == "" {
+		if v, ok := os.LookupEnv(GeminiCLIOAuthClientIDEnv); ok {
+			clientID = strings.TrimSpace(v)
+		}
+	}
+
+	clientSecret := strings.TrimSpace(GeminiCLIOAuthClientSecret)
+	if clientSecret == "" {
+		if v, ok := os.LookupEnv(GeminiCLIOAuthClientSecretEnv); ok {
+			clientSecret = strings.TrimSpace(v)
+		}
+	}
+
+	return clientID, clientSecret
+}
+
+func IsGeminiCLIOAuthClient(clientID string) bool {
+	clientID = strings.TrimSpace(clientID)
+	if clientID == "" {
+		return false
+	}
+	envClientID, _ := GeminiCLIOAuthClientCredentialsFromEnv()
+	if envClientID != "" {
+		return clientID == envClientID
+	}
+	return clientID == strings.TrimSpace(GeminiCLIOAuthClientID)
 }
 
 func hasRestrictedScope(scope string) bool {

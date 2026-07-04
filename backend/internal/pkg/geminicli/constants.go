@@ -35,13 +35,15 @@ const (
 	// GeminiCLIRedirectURI is the redirect URI used by Gemini CLI for Code Assist OAuth.
 	GeminiCLIRedirectURI = "https://codeassist.google.com/authcode"
 
-	// GeminiCLIOAuthClientID/Secret are the public OAuth client credentials used by Google Gemini CLI.
-	// They enable the "login without creating your own OAuth client" experience, but Google may
-	// restrict which scopes are allowed for this client.
-	GeminiCLIOAuthClientID     = "YOUR_GEMINI_CLI_OAUTH_CLIENT_ID"
-	GeminiCLIOAuthClientSecret = "YOUR_GEMINI_CLI_OAUTH_CLIENT_SECRET"
+	// GeminiCLIOAuthClientID/Secret are placeholders for the OAuth client credentials used
+	// by Google Gemini CLI. This repository intentionally does not embed third-party
+	// credentials; operators must inject both values through environment variables.
+	GeminiCLIOAuthClientID     = ""
+	GeminiCLIOAuthClientSecret = ""
 
-	// GeminiCLIOAuthClientSecretEnv is the environment variable name for the built-in client secret.
+	// GeminiCLIOAuthClientIDEnv/GeminiCLIOAuthClientSecretEnv are the environment variable
+	// names for the Gemini CLI OAuth client credentials.
+	GeminiCLIOAuthClientIDEnv     = "GEMINI_CLI_OAUTH_CLIENT_ID"
 	GeminiCLIOAuthClientSecretEnv = "GEMINI_CLI_OAUTH_CLIENT_SECRET"
 
 	SessionTTL = 30 * time.Minute
