@@ -373,18 +373,14 @@ const operator = (value: string) => wrapToken('text-slate-400', value)
 const string = (value: string) => wrapToken('text-amber-200', value)
 const comment = (value: string) => wrapToken('text-slate-500', value)
 
+const normalizeGatewayRootEndpoint = (value: string) => value.replace(/\/+$/, '').replace(/\/v1$/, '')
+
 // Syntax highlighting helpers
 // Generate file configs based on platform and active tab
 const currentFiles = computed((): FileConfig[] => {
-  const baseUrl = props.baseUrl || window.location.origin
+  const baseUrl = normalizeGatewayRootEndpoint(props.baseUrl || window.location.origin)
   const apiKey = props.apiKey
-  const baseRoot = baseUrl.replace(/\/v1\/?$/, '').replace(/\/+$/, '')
-  const ensureV1 = (value: string) => {
-    const trimmed = value.replace(/\/+$/, '')
-    return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`
-  }
-  const apiBase = ensureV1(baseRoot)
-  const antigravityBase = ensureV1(`${baseRoot}/antigravity`)
+  const baseRoot = baseUrl
   const antigravityGeminiBase = (() => {
     const trimmed = `${baseRoot}/antigravity`.replace(/\/+$/, '')
     return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
@@ -397,18 +393,18 @@ const currentFiles = computed((): FileConfig[] => {
   if (activeClientTab.value === 'opencode') {
     switch (props.platform) {
       case 'anthropic':
-        return [generateOpenCodeConfig('anthropic', apiBase, apiKey)]
+        return [generateOpenCodeConfig('anthropic', baseRoot, apiKey)]
       case 'openai':
-        return [generateOpenCodeConfig('openai', apiBase, apiKey)]
+        return [generateOpenCodeConfig('openai', baseRoot, apiKey)]
       case 'gemini':
         return [generateOpenCodeConfig('gemini', geminiBase, apiKey)]
       case 'antigravity':
         return [
-          generateOpenCodeConfig('antigravity-claude', antigravityBase, apiKey, 'opencode.json (Claude)'),
+          generateOpenCodeConfig('antigravity-claude', `${baseRoot}/antigravity`, apiKey, 'opencode.json (Claude)'),
           generateOpenCodeConfig('antigravity-gemini', antigravityGeminiBase, apiKey, 'opencode.json (Gemini)')
         ]
       default:
-        return [generateOpenCodeConfig('openai', apiBase, apiKey)]
+        return [generateOpenCodeConfig('openai', baseRoot, apiKey)]
     }
   }
 

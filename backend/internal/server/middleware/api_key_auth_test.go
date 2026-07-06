@@ -19,6 +19,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestIsGatewayUsagePath(t *testing.T) {
+	tests := []struct {
+		path string
+		want bool
+	}{
+		{"/v1/usage", true},
+		{"/v1/v1/usage", true},
+		{"/antigravity/v1/usage", true},
+		{"/antigravity/v1/v1/usage", true},
+		{"/usage", false},
+		{"/messages", false},
+		{"/api/v1/usage", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			require.Equal(t, tt.want, isGatewayUsagePath(tt.path))
+		})
+	}
+}
+
 func TestSimpleModeBypassesQuotaCheck(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

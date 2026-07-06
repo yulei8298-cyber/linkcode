@@ -19,6 +19,10 @@ export interface CcSwitchImportDeeplinkInput {
   usageScript: string
 }
 
+export function normalizeGatewayRootEndpoint(baseUrl: string): string {
+  return baseUrl.replace(/\/+$/, '').replace(/\/v1$/, '')
+}
+
 export function ensureOpenAIV1Endpoint(baseUrl: string): string {
   const trimmed = baseUrl.replace(/\/+$/, '')
   return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`
@@ -29,38 +33,41 @@ export function resolveCcSwitchImportConfig(
   clientType: CcSwitchClientType,
   baseUrl: string
 ): CcSwitchImportConfig {
+  const rootEndpoint = normalizeGatewayRootEndpoint(baseUrl)
+
   switch (platform || 'anthropic') {
     case 'antigravity':
       return {
         app: clientType === 'gemini' ? 'gemini' : 'claude',
-        endpoint: `${baseUrl}/antigravity`
+        endpoint: `${rootEndpoint}/antigravity`
       }
     case 'openai':
       return {
         app: 'codex',
-        endpoint: ensureOpenAIV1Endpoint(baseUrl),
+        endpoint: rootEndpoint,
         model: OPENAI_CC_SWITCH_CODEX_MODEL
       }
     case 'gemini':
       return {
         app: 'gemini',
-        endpoint: baseUrl
+        endpoint: rootEndpoint
       }
     default:
       return {
         app: 'claude',
-        endpoint: baseUrl
+        endpoint: rootEndpoint
       }
   }
 }
 
 export function buildCcSwitchImportDeeplink(input: CcSwitchImportDeeplinkInput): string {
   const config = resolveCcSwitchImportConfig(input.platform, input.clientType, input.baseUrl)
+  const homepage = normalizeGatewayRootEndpoint(input.baseUrl)
   const entries: [string, string][] = [
     ['resource', 'provider'],
     ['app', config.app],
     ['name', input.providerName],
-    ['homepage', input.baseUrl],
+    ['homepage', homepage],
     ['endpoint', config.endpoint],
     ['apiKey', input.apiKey],
     ['configFormat', 'json'],

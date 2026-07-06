@@ -43,6 +43,8 @@ describe('UseKeyModal', () => {
     expect(configToml).toBeDefined()
     expect(configToml).toContain('model = "gpt-5.5"')
     expect(configToml).toContain('review_model = "gpt-5.5"')
+    expect(configToml).toContain('base_url = "https://example.com"')
+    expect(configToml).not.toContain('base_url = "https://example.com/v1"')
     expect(configToml).not.toContain('model = "gpt-5.4"')
     expect(configToml).not.toContain('model_context_window')
     expect(configToml).not.toContain('model_auto_compact_token_limit')
@@ -83,6 +85,8 @@ describe('UseKeyModal', () => {
     expect(configToml).toBeDefined()
     expect(configToml).toContain('model = "gpt-5.5"')
     expect(configToml).toContain('review_model = "gpt-5.5"')
+    expect(configToml).toContain('base_url = "https://example.com"')
+    expect(configToml).not.toContain('base_url = "https://example.com/v1"')
     expect(configToml).not.toContain('model = "gpt-5.4"')
     expect(configToml).not.toContain('model_context_window')
     expect(configToml).not.toContain('model_auto_compact_token_limit')
@@ -120,6 +124,8 @@ describe('UseKeyModal', () => {
     const codeBlock = wrapper.find('pre code')
     expect(codeBlock.exists()).toBe(true)
     expect(codeBlock.text()).toContain('"name": "GPT-5.4 Mini"')
+    expect(codeBlock.text()).toContain('"baseURL": "https://example.com"')
+    expect(codeBlock.text()).not.toContain('"baseURL": "https://example.com/v1"')
     expect(codeBlock.text()).not.toContain('"name": "GPT-5.4 Nano"')
   })
 
@@ -159,6 +165,7 @@ describe('UseKeyModal', () => {
     const parsed = JSON.parse(claudeConfig!)
     const fable = parsed.provider['antigravity-claude'].models['claude-fable-5']
 
+    expect(parsed.provider['antigravity-claude'].options.baseURL).toBe('https://example.com/antigravity')
     expect(fable.name).toBe('Claude Fable 5')
     expect(fable.limit).toEqual({ context: 1048576, output: 128000 })
     expect(fable.options.thinking).toEqual({ type: 'adaptive' })

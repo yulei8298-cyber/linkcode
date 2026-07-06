@@ -31,6 +31,68 @@ func RegisterGatewayRoutes(
 	requireGroupAnthropic := middleware.RequireGroupAssignment(settingService, middleware.AnthropicErrorWriter)
 	requireGroupGoogle := middleware.RequireGroupAssignment(settingService, middleware.GoogleErrorWriter)
 
+	messagesHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformOpenAI {
+			h.OpenAIGateway.Messages(c)
+			return
+		}
+		h.Gateway.Messages(c)
+	}
+	countTokensHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformOpenAI {
+			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
+			c.JSON(http.StatusNotFound, gin.H{
+				"type": "error",
+				"error": gin.H{
+					"type":    "not_found_error",
+					"message": "Token counting is not supported for this platform",
+				},
+			})
+			return
+		}
+		h.Gateway.CountTokens(c)
+	}
+	responsesHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformOpenAI {
+			h.OpenAIGateway.Responses(c)
+			return
+		}
+		h.Gateway.Responses(c)
+	}
+	chatCompletionsHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformOpenAI {
+			h.OpenAIGateway.ChatCompletions(c)
+			return
+		}
+		h.Gateway.ChatCompletions(c)
+	}
+	embeddingsHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) != service.PlatformOpenAI {
+			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": gin.H{
+					"type":    "not_found_error",
+					"message": "Embeddings API is not supported for this platform",
+				},
+			})
+			return
+		}
+		h.OpenAIGateway.Embeddings(c)
+	}
+	imagesHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) != service.PlatformOpenAI {
+			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": gin.H{
+					"type":    "not_found_error",
+					"message": "Images API is not supported for this platform",
+				},
+			})
+			return
+		}
+		h.OpenAIGateway.Images(c)
+	}
+
 	// API网关（Claude API兼容）
 	gateway := r.Group("/v1")
 	gateway.Use(bodyLimit)
@@ -41,93 +103,20 @@ func RegisterGatewayRoutes(
 	gateway.Use(requireGroupAnthropic)
 	{
 		// /v1/messages: auto-route based on group platform
-		gateway.POST("/messages", func(c *gin.Context) {
-			if getGroupPlatform(c) == service.PlatformOpenAI {
-				h.OpenAIGateway.Messages(c)
-				return
-			}
-			h.Gateway.Messages(c)
-		})
+		gateway.POST("/messages", messagesHandler)
 		// /v1/messages/count_tokens: OpenAI groups get 404
-		gateway.POST("/messages/count_tokens", func(c *gin.Context) {
-			if getGroupPlatform(c) == service.PlatformOpenAI {
-				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-				c.JSON(http.StatusNotFound, gin.H{
-					"type": "error",
-					"error": gin.H{
-						"type":    "not_found_error",
-						"message": "Token counting is not supported for this platform",
-					},
-				})
-				return
-			}
-			h.Gateway.CountTokens(c)
-		})
+		gateway.POST("/messages/count_tokens", countTokensHandler)
 		gateway.GET("/models", h.Gateway.Models)
 		gateway.GET("/usage", h.Gateway.Usage)
 		// OpenAI Responses API: auto-route based on group platform
-		gateway.POST("/responses", func(c *gin.Context) {
-			if getGroupPlatform(c) == service.PlatformOpenAI {
-				h.OpenAIGateway.Responses(c)
-				return
-			}
-			h.Gateway.Responses(c)
-		})
-		gateway.POST("/responses/*subpath", func(c *gin.Context) {
-			if getGroupPlatform(c) == service.PlatformOpenAI {
-				h.OpenAIGateway.Responses(c)
-				return
-			}
-			h.Gateway.Responses(c)
-		})
+		gateway.POST("/responses", responsesHandler)
+		gateway.POST("/responses/*subpath", responsesHandler)
 		gateway.GET("/responses", h.OpenAIGateway.ResponsesWebSocket)
 		// OpenAI Chat Completions API: auto-route based on group platform
-		gateway.POST("/chat/completions", func(c *gin.Context) {
-			if getGroupPlatform(c) == service.PlatformOpenAI {
-				h.OpenAIGateway.ChatCompletions(c)
-				return
-			}
-			h.Gateway.ChatCompletions(c)
-		})
-		gateway.POST("/embeddings", func(c *gin.Context) {
-			if getGroupPlatform(c) != service.PlatformOpenAI {
-				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-				c.JSON(http.StatusNotFound, gin.H{
-					"error": gin.H{
-						"type":    "not_found_error",
-						"message": "Embeddings API is not supported for this platform",
-					},
-				})
-				return
-			}
-			h.OpenAIGateway.Embeddings(c)
-		})
-		gateway.POST("/images/generations", func(c *gin.Context) {
-			if getGroupPlatform(c) != service.PlatformOpenAI {
-				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-				c.JSON(http.StatusNotFound, gin.H{
-					"error": gin.H{
-						"type":    "not_found_error",
-						"message": "Images API is not supported for this platform",
-					},
-				})
-				return
-			}
-			h.OpenAIGateway.Images(c)
-		})
-		gateway.POST("/images/edits", func(c *gin.Context) {
-			if getGroupPlatform(c) != service.PlatformOpenAI {
-				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-				c.JSON(http.StatusNotFound, gin.H{
-					"error": gin.H{
-						"type":    "not_found_error",
-						"message": "Images API is not supported for this platform",
-					},
-				})
-				return
-			}
-			h.OpenAIGateway.Images(c)
-		})
+		gateway.POST("/chat/completions", chatCompletionsHandler)
+		gateway.POST("/embeddings", embeddingsHandler)
+		gateway.POST("/images/generations", imagesHandler)
+		gateway.POST("/images/edits", imagesHandler)
 	}
 
 	// Gemini 原生 API 兼容层（Gemini SDK/CLI 直连）
@@ -145,17 +134,33 @@ func RegisterGatewayRoutes(
 		gemini.POST("/models/*modelAction", h.Gateway.GeminiV1BetaModels)
 	}
 
-	// OpenAI Responses API（不带v1前缀的别名）— auto-route based on group platform
-	responsesHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformOpenAI {
-			h.OpenAIGateway.Responses(c)
-			return
-		}
-		h.Gateway.Responses(c)
-	}
+	// Root gateway aliases. New client configs should use the root gateway
+	// address and let the client append protocol paths itself.
+	r.POST("/messages", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, messagesHandler)
+	r.POST("/messages/count_tokens", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, countTokensHandler)
+	r.GET("/models", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.Gateway.Models)
 	r.POST("/responses", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, responsesHandler)
 	r.POST("/responses/*subpath", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, responsesHandler)
 	r.GET("/responses", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.OpenAIGateway.ResponsesWebSocket)
+
+	// Legacy nested aliases protect users whose saved endpoint already ends
+	// with /v1 while their client also appends /v1.
+	legacyNested := r.Group("/v1/v1")
+	legacyNested.Use(bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic)
+	{
+		legacyNested.POST("/messages", messagesHandler)
+		legacyNested.POST("/messages/count_tokens", countTokensHandler)
+		legacyNested.GET("/models", h.Gateway.Models)
+		legacyNested.GET("/usage", h.Gateway.Usage)
+		legacyNested.POST("/responses", responsesHandler)
+		legacyNested.POST("/responses/*subpath", responsesHandler)
+		legacyNested.GET("/responses", h.OpenAIGateway.ResponsesWebSocket)
+		legacyNested.POST("/chat/completions", chatCompletionsHandler)
+		legacyNested.POST("/embeddings", embeddingsHandler)
+		legacyNested.POST("/images/generations", imagesHandler)
+		legacyNested.POST("/images/edits", imagesHandler)
+	}
+
 	codexDirect := r.Group("/backend-api/codex")
 	codexDirect.Use(bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic)
 	{
@@ -164,55 +169,17 @@ func RegisterGatewayRoutes(
 		codexDirect.GET("/responses", h.OpenAIGateway.ResponsesWebSocket)
 	}
 	// OpenAI Chat Completions API（不带v1前缀的别名）— auto-route based on group platform
-	r.POST("/chat/completions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformOpenAI {
-			h.OpenAIGateway.ChatCompletions(c)
-			return
-		}
-		h.Gateway.ChatCompletions(c)
-	})
-	r.POST("/embeddings", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
-		if getGroupPlatform(c) != service.PlatformOpenAI {
-			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": gin.H{
-					"type":    "not_found_error",
-					"message": "Embeddings API is not supported for this platform",
-				},
-			})
-			return
-		}
-		h.OpenAIGateway.Embeddings(c)
-	})
-	r.POST("/images/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
-		if getGroupPlatform(c) != service.PlatformOpenAI {
-			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": gin.H{
-					"type":    "not_found_error",
-					"message": "Images API is not supported for this platform",
-				},
-			})
-			return
-		}
-		h.OpenAIGateway.Images(c)
-	})
-	r.POST("/images/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
-		if getGroupPlatform(c) != service.PlatformOpenAI {
-			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": gin.H{
-					"type":    "not_found_error",
-					"message": "Images API is not supported for this platform",
-				},
-			})
-			return
-		}
-		h.OpenAIGateway.Images(c)
-	})
+	r.POST("/chat/completions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, chatCompletionsHandler)
+	r.POST("/embeddings", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, embeddingsHandler)
+	r.POST("/images/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, imagesHandler)
+	r.POST("/images/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, imagesHandler)
 
 	// Antigravity 模型列表
 	r.GET("/antigravity/models", gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.Gateway.AntigravityModels)
+
+	// Antigravity root aliases for clients configured with /antigravity.
+	r.POST("/antigravity/messages", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, middleware.ForcePlatform(service.PlatformAntigravity), gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.Gateway.Messages)
+	r.POST("/antigravity/messages/count_tokens", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, middleware.ForcePlatform(service.PlatformAntigravity), gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.Gateway.CountTokens)
 
 	// Antigravity 专用路由（仅使用 antigravity 账户，不混合调度）
 	antigravityV1 := r.Group("/antigravity/v1")
@@ -228,6 +195,21 @@ func RegisterGatewayRoutes(
 		antigravityV1.POST("/messages/count_tokens", h.Gateway.CountTokens)
 		antigravityV1.GET("/models", h.Gateway.AntigravityModels)
 		antigravityV1.GET("/usage", h.Gateway.Usage)
+	}
+
+	antigravityLegacyNested := r.Group("/antigravity/v1/v1")
+	antigravityLegacyNested.Use(bodyLimit)
+	antigravityLegacyNested.Use(clientRequestID)
+	antigravityLegacyNested.Use(opsErrorLogger)
+	antigravityLegacyNested.Use(endpointNorm)
+	antigravityLegacyNested.Use(middleware.ForcePlatform(service.PlatformAntigravity))
+	antigravityLegacyNested.Use(gin.HandlerFunc(apiKeyAuth))
+	antigravityLegacyNested.Use(requireGroupAnthropic)
+	{
+		antigravityLegacyNested.POST("/messages", h.Gateway.Messages)
+		antigravityLegacyNested.POST("/messages/count_tokens", h.Gateway.CountTokens)
+		antigravityLegacyNested.GET("/models", h.Gateway.AntigravityModels)
+		antigravityLegacyNested.GET("/usage", h.Gateway.Usage)
 	}
 
 	antigravityV1Beta := r.Group("/antigravity/v1beta")

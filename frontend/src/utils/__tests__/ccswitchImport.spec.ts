@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   OPENAI_CC_SWITCH_CODEX_MODEL,
   buildCcSwitchImportDeeplink,
-  ensureOpenAIV1Endpoint
+  ensureOpenAIV1Endpoint,
+  normalizeGatewayRootEndpoint
 } from '@/utils/ccswitchImport'
 import type { GroupPlatform } from '@/types'
 
@@ -34,9 +35,23 @@ describe('ccswitchImport utils', () => {
 
     expect(params.get('resource')).toBe('provider')
     expect(params.get('app')).toBe('codex')
-    expect(params.get('endpoint')).toBe(`${baseInput.baseUrl}/v1`)
+    expect(params.get('endpoint')).toBe(baseInput.baseUrl)
     expect(params.get('model')).toBe(OPENAI_CC_SWITCH_CODEX_MODEL)
     expect(atob(params.get('usageScript') || '')).toBe(baseInput.usageScript)
+  })
+
+  it('normalizes legacy /v1 base URLs for OpenAI imports', () => {
+    const params = paramsFromDeeplink(
+      buildCcSwitchImportDeeplink({
+        ...baseInput,
+        baseUrl: 'https://api.example.com/v1/',
+        platform: 'openai',
+        clientType: 'claude'
+      })
+    )
+
+    expect(params.get('endpoint')).toBe(baseInput.baseUrl)
+    expect(params.get('homepage')).toBe(baseInput.baseUrl)
   })
 
   it.each([
@@ -46,6 +61,15 @@ describe('ccswitchImport utils', () => {
     ['https://api.example.com/v1/', 'https://api.example.com/v1']
   ])('normalizes OpenAI endpoint %s to %s', (input, expected) => {
     expect(ensureOpenAIV1Endpoint(input)).toBe(expected)
+  })
+
+  it.each([
+    ['https://api.example.com', 'https://api.example.com'],
+    ['https://api.example.com/', 'https://api.example.com'],
+    ['https://api.example.com/v1', 'https://api.example.com'],
+    ['https://api.example.com/v1/', 'https://api.example.com']
+  ])('normalizes gateway root endpoint %s to %s', (input, expected) => {
+    expect(normalizeGatewayRootEndpoint(input)).toBe(expected)
   })
 
   it.each([

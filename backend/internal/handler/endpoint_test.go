@@ -23,11 +23,23 @@ func TestNormalizeInboundEndpoint(t *testing.T) {
 	}{
 		// Direct canonical paths.
 		{"/v1/messages", EndpointMessages},
+		{"/messages", EndpointMessages},
+		{"/v1/v1/messages", EndpointMessages},
 		{"/v1/chat/completions", EndpointChatCompletions},
+		{"/chat/completions", EndpointChatCompletions},
+		{"/v1/v1/chat/completions", EndpointChatCompletions},
 		{"/v1/embeddings", EndpointEmbeddings},
+		{"/embeddings", EndpointEmbeddings},
+		{"/v1/v1/embeddings", EndpointEmbeddings},
 		{"/v1/responses", EndpointResponses},
+		{"/responses", EndpointResponses},
+		{"/v1/v1/responses/compact", EndpointResponses},
 		{"/v1/images/generations", EndpointImagesGenerations},
+		{"/images/generations", EndpointImagesGenerations},
+		{"/v1/v1/images/generations", EndpointImagesGenerations},
 		{"/v1/images/edits", EndpointImagesEdits},
+		{"/images/edits", EndpointImagesEdits},
+		{"/v1/v1/images/edits", EndpointImagesEdits},
 		{"/v1beta/models", EndpointGeminiModels},
 
 		// Prefixed paths (antigravity, openai).
@@ -43,7 +55,7 @@ func TestNormalizeInboundEndpoint(t *testing.T) {
 		{"/v1/responses/*subpath", EndpointResponses},
 
 		// Unknown path is returned as-is.
-		{"/v1/embeddings", "/v1/embeddings"},
+		{"/v1/unknown", "/v1/unknown"},
 		{"", ""},
 		{"  /v1/messages  ", EndpointMessages},
 	}

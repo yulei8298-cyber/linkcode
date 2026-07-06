@@ -33,7 +33,8 @@ func NewAPIKeyAuthMiddleware(apiKeyService *service.APIKeyService, subscriptionS
 //   - 鉴权（Authentication）：验证 Key 有效性、用户状态、IP 限制 —— 始终执行
 //   - 计费执行（Billing Enforcement）：过期/配额/订阅/余额检查 —— skipBilling 时整块跳过
 //
-// /v1/usage 端点只需鉴权，不需要计费执行（允许过期/配额耗尽的 Key 查询自身用量）。
+// Usage endpoints only need authentication, not billing enforcement
+// (allows expired/quota-exhausted keys to query their own usage).
 func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// ── 1. 提取 API Key ──────────────────────────────────────────
@@ -166,8 +167,8 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 
 		// ── 5. 加载订阅（订阅模式时始终加载） ───────────────────────
 
-		// skipBilling: /v1/usage 只需鉴权，跳过所有计费执行
-		skipBilling := c.Request.URL.Path == "/v1/usage"
+		// skipBilling: usage endpoints only need auth and skip all billing enforcement.
+		skipBilling := isGatewayUsagePath(c.Request.URL.Path)
 
 		var subscription *service.UserSubscription
 		isSubscriptionType := apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
@@ -298,6 +299,19 @@ func GetSubscriptionFromContext(c *gin.Context) (*service.UserSubscription, bool
 	}
 	subscription, ok := value.(*service.UserSubscription)
 	return subscription, ok
+}
+
+func isGatewayUsagePath(path string) bool {
+	p := strings.TrimRight(strings.TrimSpace(path), "/")
+	switch p {
+	case "/v1/usage",
+		"/v1/v1/usage",
+		"/antigravity/v1/usage",
+		"/antigravity/v1/v1/usage":
+		return true
+	default:
+		return false
+	}
 }
 
 func setGroupContext(c *gin.Context, group *service.Group) {
