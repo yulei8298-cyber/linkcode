@@ -49,6 +49,12 @@
           {{ t('portal.hero.goToChat') }}
           <Icon name="chat" size="md" :stroke-width="2" />
         </a>
+        <div
+          class="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700 shadow-sm dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200"
+        >
+          <Icon name="users" size="md" :stroke-width="2" />
+          <span>QQ 群 1025176993</span>
+        </div>
         <router-link
           to="/portal/pricing"
           class="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-7 py-3.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-dark-700 dark:bg-dark-800 dark:text-dark-100 dark:hover:bg-dark-700"

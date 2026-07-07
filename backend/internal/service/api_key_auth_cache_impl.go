@@ -15,7 +15,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 13 // v13: include group IP ACL fields
+const apiKeyAuthSnapshotVersion = 13 // v13: include group IP ACL and peak rate fields
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -279,6 +279,10 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			MessagesDispatchModelConfig:     apiKey.Group.MessagesDispatchModelConfig,
 			ModelsListConfig:                apiKey.Group.ModelsListConfig,
 			RPMLimit:                        apiKey.Group.RPMLimit,
+			PeakRateEnabled:                 apiKey.Group.PeakRateEnabled,
+			PeakStart:                       apiKey.Group.PeakStart,
+			PeakEnd:                         apiKey.Group.PeakEnd,
+			PeakRateMultiplier:              apiKey.Group.PeakRateMultiplier,
 		}
 	}
 	return snapshot
@@ -354,6 +358,10 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			MessagesDispatchModelConfig:     snapshot.Group.MessagesDispatchModelConfig,
 			ModelsListConfig:                snapshot.Group.ModelsListConfig,
 			RPMLimit:                        snapshot.Group.RPMLimit,
+			PeakRateEnabled:                 snapshot.Group.PeakRateEnabled,
+			PeakStart:                       snapshot.Group.PeakStart,
+			PeakEnd:                         snapshot.Group.PeakEnd,
+			PeakRateMultiplier:              snapshot.Group.PeakRateMultiplier,
 		}
 		apiKey.Group.CompiledIPWhitelist = ip.CompileIPRules(apiKey.Group.IPWhitelist)
 		apiKey.Group.CompiledIPBlacklist = ip.CompileIPRules(apiKey.Group.IPBlacklist)

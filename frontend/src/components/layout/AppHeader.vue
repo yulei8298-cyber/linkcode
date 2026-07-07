@@ -23,6 +23,15 @@
 
       <!-- Right: Announcements + Docs + Language + Subscriptions + Balance + User Dropdown -->
       <div class="flex items-center gap-3">
+        <!-- QQ Group -->
+        <div
+          v-if="user"
+          class="hidden items-center gap-1.5 rounded-lg border border-sky-400/30 bg-sky-500/10 px-2.5 py-1.5 text-sm font-medium text-sky-700 shadow-sm dark:text-sky-200 sm:inline-flex"
+        >
+          <Icon name="users" size="sm" />
+          <span>QQ 群 1025176993</span>
+        </div>
+
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
 
