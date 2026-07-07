@@ -70,6 +70,13 @@
           >
             {{ t('portal.nav.chat') }}
           </a>
+          <span
+            v-if="showChat"
+            class="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200"
+          >
+            <Icon name="users" size="sm" :stroke-width="2" />
+            QQ 群 1025176993
+          </span>
         </div>
 
         <!-- Right actions -->
@@ -109,6 +116,13 @@
         <RouterLink v-if="showPricing" to="/portal/pricing" class="nav-link-mobile" active-class="nav-link-active">{{ t('portal.nav.pricing') }}</RouterLink>
         <RouterLink v-if="showTutorial" to="/portal/tutorial" class="nav-link-mobile" active-class="nav-link-active">{{ t('portal.nav.tutorial') }}</RouterLink>
         <a v-if="showChat" :href="chatStationUrl" target="_blank" rel="noopener noreferrer" class="nav-link-mobile" @click="handleChatStationClick">{{ t('portal.nav.chat') }}</a>
+        <span
+          v-if="showChat"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200"
+        >
+          <Icon name="users" size="sm" :stroke-width="2" />
+          QQ 群 1025176993
+        </span>
       </div>
     </header>
 
