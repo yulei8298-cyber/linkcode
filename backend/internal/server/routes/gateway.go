@@ -67,6 +67,15 @@ func RegisterGatewayRoutes(
 		}
 		h.Gateway.CountTokens(c)
 	}
+	modelsHandler := func(c *gin.Context) {
+		// Codex CLI / App requests a manifest when client_version is present;
+		// other clients retain the OpenAI-style model list.
+		if isOpenAIGatewayPlatform(c) && c.Query("client_version") != "" {
+			h.OpenAIGateway.CodexModels(c)
+			return
+		}
+		h.Gateway.Models(c)
+	}
 	responsesHandler := func(c *gin.Context) {
 		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
 			h.OpenAIGateway.Responses(c)
@@ -150,7 +159,7 @@ func RegisterGatewayRoutes(
 		// /v1/messages/count_tokens: OpenAI uses Anthropic-compat bridge; other
 		// OpenAI-compatible platforms keep the prior unsupported response.
 		gateway.POST("/messages/count_tokens", countTokensHandler)
-		gateway.GET("/models", h.Gateway.Models)
+		gateway.GET("/models", modelsHandler)
 		gateway.GET("/usage", h.Gateway.Usage)
 		// OpenAI Responses API: auto-route based on group platform
 		gateway.POST("/responses", responsesHandler)
@@ -163,6 +172,16 @@ func RegisterGatewayRoutes(
 		gateway.POST("/embeddings", embeddingsHandler)
 		gateway.POST("/images/generations", imagesHandler)
 		gateway.POST("/images/edits", imagesHandler)
+		gateway.POST("/images/batches", h.BatchImage.Submit)
+		gateway.GET("/images/batches", h.BatchImage.List)
+		gateway.GET("/images/batches/models", h.BatchImage.Models)
+		gateway.GET("/images/batches/:id", h.BatchImage.Get)
+		gateway.GET("/images/batches/:id/items", h.BatchImage.Items)
+		gateway.GET("/images/batches/:id/items/:custom_id/content", h.BatchImage.ItemContent)
+		gateway.GET("/images/batches/:id/download", h.BatchImage.Download)
+		gateway.POST("/images/batches/:id/cancel", h.BatchImage.Cancel)
+		gateway.DELETE("/images/batches/:id", h.BatchImage.DeleteRecord)
+		gateway.DELETE("/images/batches/:id/outputs", h.BatchImage.DeleteOutputs)
 		gateway.POST("/videos/generations", videoGenerationHandler)
 		gateway.GET("/videos/:request_id", videoStatusHandler)
 	}
@@ -186,7 +205,7 @@ func RegisterGatewayRoutes(
 	// address and let the client append protocol paths itself.
 	r.POST("/messages", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, messagesHandler)
 	r.POST("/messages/count_tokens", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, countTokensHandler)
-	r.GET("/models", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.Gateway.Models)
+	r.GET("/models", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, modelsHandler)
 	r.POST("/responses", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, responsesHandler)
 	r.POST("/responses/*subpath", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, responsesHandler)
 	r.GET("/responses", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
@@ -200,7 +219,7 @@ func RegisterGatewayRoutes(
 	{
 		legacyNested.POST("/messages", messagesHandler)
 		legacyNested.POST("/messages/count_tokens", countTokensHandler)
-		legacyNested.GET("/models", h.Gateway.Models)
+		legacyNested.GET("/models", modelsHandler)
 		legacyNested.GET("/usage", h.Gateway.Usage)
 		legacyNested.POST("/responses", responsesHandler)
 		legacyNested.POST("/responses/*subpath", responsesHandler)
@@ -223,6 +242,7 @@ func RegisterGatewayRoutes(
 		codexDirect.GET("/responses", func(c *gin.Context) {
 			h.OpenAIGateway.ResponsesWebSocket(c)
 		})
+		codexDirect.GET("/models", h.OpenAIGateway.CodexModels)
 	}
 	// OpenAI Chat Completions API（不带v1前缀的别名）— auto-route based on group platform
 	r.POST("/chat/completions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, chatCompletionsHandler)

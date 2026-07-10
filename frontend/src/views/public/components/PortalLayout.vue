@@ -163,15 +163,16 @@ import { useAuthStore, useAppStore } from '@/stores'
 import { lobeHubSSOAPI } from '@/api'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { sanitizeUrl } from '@/utils/url'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'linkcode')
-const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
-const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
-const chatStationUrl = computed(() => appStore.cachedPublicSettings?.chat_station_url || '')
+const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
+const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
+const chatStationUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.chat_station_url || ''))
 
 // 状态/定价/教程入口始终显示（页面本身在无数据时有空状态提示）；
 // 对话站仅在后台配置了 URL 后才显示。

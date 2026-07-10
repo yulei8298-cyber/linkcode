@@ -7,7 +7,7 @@
 # =============================================================================
 
 ARG NODE_IMAGE=node:24-alpine
-ARG GOLANG_IMAGE=golang:1.26.4-alpine
+ARG GOLANG_IMAGE=golang:1.26.5-alpine
 ARG ALPINE_IMAGE=alpine:3.20
 ARG GOPROXY=https://goproxy.cn,direct
 ARG GOSUMDB=sum.golang.google.cn
@@ -18,6 +18,7 @@ ARG GOSUMDB=sum.golang.google.cn
 FROM ${NODE_IMAGE} AS frontend-builder
 
 WORKDIR /app/frontend
+ENV NODE_OPTIONS=--max-old-space-size=1536
 
 # Install pnpm
 # 锁定 pnpm 9（与 frontend/pnpm-lock.yaml 的 lockfileVersion 9.0 匹配）。

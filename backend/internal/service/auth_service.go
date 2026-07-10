@@ -436,6 +436,12 @@ func (s *AuthService) IsEmailVerifyEnabled(ctx context.Context) bool {
 	return s.settingService.IsEmailVerifyEnabled(ctx)
 }
 
+// IsEmailVerificationAvailable reports whether OAuth flows can actually
+// complete email verification, not just whether the setting is enabled.
+func (s *AuthService) IsEmailVerificationAvailable(ctx context.Context) bool {
+	return s != nil && s.emailService != nil && s.IsEmailVerifyEnabled(ctx)
+}
+
 // Login 用户登录，返回JWT token
 func (s *AuthService) Login(ctx context.Context, email, password string) (string, *User, error) {
 	// 查找用户

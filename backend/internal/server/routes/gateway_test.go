@@ -141,6 +141,13 @@ func TestGatewayRoutesNonGrokVideosAreRejectedAtPlatformGate(t *testing.T) {
 
 func TestGatewayRoutesRootAndLegacyNestedClaudePathsAreRegistered(t *testing.T) {
 	router := newGatewayRoutesTestRouter()
+	registered := make(map[string]struct{}, len(router.Routes()))
+	for _, route := range router.Routes() {
+		registered[route.Method+" "+route.Path] = struct{}{}
+	}
+	for _, route := range []string{"GET /models", "GET /v1/v1/models"} {
+		require.Contains(t, registered, route)
+	}
 
 	for _, tc := range []struct {
 		method string
@@ -152,8 +159,6 @@ func TestGatewayRoutesRootAndLegacyNestedClaudePathsAreRegistered(t *testing.T) 
 		{http.MethodPost, "/messages/count_tokens", `{"model":"claude-sonnet-4-5","messages":[]}`},
 		{http.MethodPost, "/v1/v1/messages/count_tokens", `{"model":"claude-sonnet-4-5","messages":[]}`},
 		{http.MethodGet, "/v1/v1/usage", ""},
-		{http.MethodGet, "/models", ""},
-		{http.MethodGet, "/v1/v1/models", ""},
 		{http.MethodPost, "/chat/completions", `{"model":"gpt-5.5","messages":[]}`},
 		{http.MethodPost, "/v1/v1/chat/completions", `{"model":"gpt-5.5","messages":[]}`},
 		{http.MethodPost, "/embeddings", `{"model":"text-embedding-3-small","input":"hello"}`},

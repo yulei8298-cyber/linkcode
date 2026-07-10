@@ -60,6 +60,7 @@ type Handlers struct {
 	AvailableChannel *AvailableChannelHandler
 	PublicPricing    *PublicPricingHandler
 	LobeHubSSO       *LobeHubSSOHandler
+	BatchImage       *BatchImageHandler
 }
 
 // BuildInfo contains build-time information

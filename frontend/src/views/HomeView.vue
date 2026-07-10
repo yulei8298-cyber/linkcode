@@ -122,6 +122,7 @@ import { useAuthStore, useAppStore } from '@/stores'
 import PortalLayout from '@/views/public/components/PortalLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { lobeHubSSOAPI } from '@/api'
+import { sanitizeUrl } from '@/utils/url'
 
 const { t } = useI18n()
 
@@ -130,7 +131,7 @@ const appStore = useAppStore()
 
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
-const chatStationUrl = computed(() => appStore.cachedPublicSettings?.chat_station_url || '')
+const chatStationUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.chat_station_url || ''))
 
 const isHomeContentUrl = computed(() => {
   const content = homeContent.value.trim()
