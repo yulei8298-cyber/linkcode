@@ -41,6 +41,31 @@ func TestIsGatewayUsagePath(t *testing.T) {
 	}
 }
 
+func TestChatStationPlatformFromRequest(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		path   string
+		want   string
+	}{
+		{name: "Anthropic messages", method: http.MethodPost, path: "/v1/messages", want: service.PlatformAnthropic},
+		{name: "OpenAI chat", method: http.MethodPost, path: "/v1/chat/completions", want: service.PlatformOpenAI},
+		{name: "OpenAI image", method: http.MethodPost, path: "/v1/images/generations", want: service.PlatformOpenAI},
+		{name: "OpenAI video generation", method: http.MethodPost, path: "/v1/videos/generations", want: service.PlatformOpenAI},
+		{name: "OpenAI video edit", method: http.MethodPost, path: "/v1/videos/edits", want: service.PlatformOpenAI},
+		{name: "OpenAI video extension", method: http.MethodPost, path: "/v1/videos/extensions", want: service.PlatformOpenAI},
+		{name: "Unsupported method", method: http.MethodGet, path: "/v1/images/generations", want: ""},
+		{name: "Unsupported endpoint", method: http.MethodPost, path: "/v1/audio/speech", want: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.path, nil)
+			require.Equal(t, tt.want, chatStationPlatformFromRequest(req))
+		})
+	}
+}
+
 func TestSimpleModeBypassesQuotaCheck(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

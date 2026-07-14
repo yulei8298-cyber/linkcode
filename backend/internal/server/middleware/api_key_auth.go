@@ -481,7 +481,12 @@ func chatStationPlatformFromRequest(req *http.Request) string {
 	switch {
 	case strings.HasSuffix(path, "/messages"):
 		return service.PlatformAnthropic
-	case strings.HasSuffix(path, "/chat/completions"), strings.Contains(path, "/responses"):
+	case strings.HasSuffix(path, "/chat/completions"),
+		strings.Contains(path, "/responses"),
+		strings.HasSuffix(path, "/images/generations"),
+		strings.HasSuffix(path, "/videos/generations"),
+		strings.HasSuffix(path, "/videos/edits"),
+		strings.HasSuffix(path, "/videos/extensions"):
 		return service.PlatformOpenAI
 	default:
 		return ""
