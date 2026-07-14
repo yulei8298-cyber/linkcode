@@ -165,6 +165,29 @@
                     : t("admin.groups.subscription.standard")
                 }}
               </span>
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-if="row.is_free"
+                  class="inline-flex rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                >
+                  {{ t("admin.groups.form.freeGroup") }} ·
+                  {{ formatUsd(row.daily_free_limit_usd || 0) }}/{{
+                    t("admin.groups.limitDay")
+                  }}
+                </span>
+                <span
+                  v-if="row.is_hidden"
+                  class="inline-flex rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                >
+                  {{ t("admin.groups.form.userHidden") }}
+                </span>
+                <span
+                  v-if="row.chat_station_only"
+                  class="inline-flex rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                >
+                  {{ t("admin.groups.form.chatStationOnly") }}
+                </span>
+              </div>
               <!-- Subscription Limits - compact single line -->
               <div
                 v-if="row.subscription_type === 'subscription'"
@@ -661,6 +684,64 @@
             <p class="input-hint">
               {{ t("admin.groups.subscription.typeHint") }}
             </p>
+          </div>
+
+          <div
+            class="mt-4 space-y-4 border-l-2 border-emerald-200 pl-4 dark:border-emerald-800"
+          >
+            <div
+              v-for="item in groupPolicyOptions"
+              :key="item.key"
+              class="flex items-start justify-between gap-4"
+            >
+              <div>
+                <label class="input-label">{{
+                  t("admin.groups.form." + item.label)
+                }}</label>
+                <p class="input-hint">
+                  {{ t("admin.groups.form." + item.hint) }}
+                </p>
+              </div>
+              <button
+                type="button"
+                :disabled="
+                  item.key === 'is_free' &&
+                  createForm.subscription_type === 'subscription'
+                "
+                @click="toggleCreatePolicy(item.key)"
+                :class="[
+                  'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                  isCreatePolicyEnabled(item.key)
+                    ? 'bg-primary-500'
+                    : 'bg-gray-300 dark:bg-dark-600',
+                ]"
+              >
+                <span
+                  :class="[
+                    'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                    isCreatePolicyEnabled(item.key)
+                      ? 'translate-x-6'
+                      : 'translate-x-1',
+                  ]"
+                />
+              </button>
+            </div>
+            <div v-if="createForm.is_free">
+              <label class="input-label">{{
+                t("admin.groups.form.dailyFreeLimit")
+              }}</label>
+              <input
+                v-model.number="createForm.daily_free_limit_usd"
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                class="input"
+                :placeholder="
+                  t('admin.groups.form.dailyFreeLimitPlaceholder')
+                "
+              />
+            </div>
           </div>
 
           <!-- Subscription limits (only show when subscription type is selected) -->
@@ -2196,6 +2277,64 @@
             <p class="input-hint">
               {{ t("admin.groups.subscription.typeNotEditable") }}
             </p>
+          </div>
+
+          <div
+            class="mt-4 space-y-4 border-l-2 border-emerald-200 pl-4 dark:border-emerald-800"
+          >
+            <div
+              v-for="item in groupPolicyOptions"
+              :key="item.key"
+              class="flex items-start justify-between gap-4"
+            >
+              <div>
+                <label class="input-label">{{
+                  t("admin.groups.form." + item.label)
+                }}</label>
+                <p class="input-hint">
+                  {{ t("admin.groups.form." + item.hint) }}
+                </p>
+              </div>
+              <button
+                type="button"
+                :disabled="
+                  item.key === 'is_free' &&
+                  editForm.subscription_type === 'subscription'
+                "
+                @click="toggleEditPolicy(item.key)"
+                :class="[
+                  'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                  isEditPolicyEnabled(item.key)
+                    ? 'bg-primary-500'
+                    : 'bg-gray-300 dark:bg-dark-600',
+                ]"
+              >
+                <span
+                  :class="[
+                    'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                    isEditPolicyEnabled(item.key)
+                      ? 'translate-x-6'
+                      : 'translate-x-1',
+                  ]"
+                />
+              </button>
+            </div>
+            <div v-if="editForm.is_free">
+              <label class="input-label">{{
+                t("admin.groups.form.dailyFreeLimit")
+              }}</label>
+              <input
+                v-model.number="editForm.daily_free_limit_usd"
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                class="input"
+                :placeholder="
+                  t('admin.groups.form.dailyFreeLimitPlaceholder')
+                "
+              />
+            </div>
           </div>
 
           <!-- Subscription limits (only show when subscription type is selected) -->
@@ -3982,6 +4121,10 @@ const createForm = reactive({
   rate_multiplier: 1.0,
   is_exclusive: false,
   subscription_type: "standard" as SubscriptionType,
+  is_hidden: false,
+  is_free: false,
+  daily_free_limit_usd: null as number | null,
+  chat_station_only: false,
   daily_limit_usd: null as number | null,
   weekly_limit_usd: null as number | null,
   monthly_limit_usd: null as number | null,
@@ -4331,6 +4474,10 @@ const editForm = reactive({
   is_exclusive: false,
   status: "active" as "active" | "inactive",
   subscription_type: "standard" as SubscriptionType,
+  is_hidden: false,
+  is_free: false,
+  daily_free_limit_usd: null as number | null,
+  chat_station_only: false,
   daily_limit_usd: null as number | null,
   weekly_limit_usd: null as number | null,
   monthly_limit_usd: null as number | null,
@@ -4384,6 +4531,27 @@ const editForm = reactive({
   // 分组级 RPM 限制（每用户每分钟最大请求数；0 = 不限制）
   rpm_limit: 0 as number,
 });
+
+const groupPolicyOptions = [
+  { key: "is_hidden", label: "userHidden", hint: "userHiddenHint" },
+  { key: "is_free", label: "freeGroup", hint: "freeGroupHint" },
+  {
+    key: "chat_station_only",
+    label: "chatStationOnly",
+    hint: "chatStationOnlyHint",
+  },
+] as const;
+
+type GroupPolicyKey = (typeof groupPolicyOptions)[number]["key"];
+
+const toggleCreatePolicy = (key: GroupPolicyKey) => {
+  createForm[key] = !createForm[key];
+};
+const toggleEditPolicy = (key: GroupPolicyKey) => {
+  editForm[key] = !editForm[key];
+};
+const isCreatePolicyEnabled = (key: GroupPolicyKey) => createForm[key];
+const isEditPolicyEnabled = (key: GroupPolicyKey) => editForm[key];
 
 type ImagePricingFormState = {
   platform: GroupPlatform;
@@ -4740,6 +4908,10 @@ const closeCreateModal = () => {
   createForm.rate_multiplier = 1.0;
   createForm.is_exclusive = false;
   createForm.subscription_type = "standard";
+  createForm.is_hidden = false;
+  createForm.is_free = false;
+  createForm.daily_free_limit_usd = null;
+  createForm.chat_station_only = false;
   createForm.daily_limit_usd = null;
   createForm.weekly_limit_usd = null;
   createForm.monthly_limit_usd = null;
@@ -4815,11 +4987,25 @@ const handleCreateGroup = async () => {
     appStore.showError(t("admin.groups.nameRequired"));
     return;
   }
+  if (
+    createForm.is_free &&
+    (createForm.subscription_type !== "standard" ||
+      !Number.isFinite(Number(createForm.daily_free_limit_usd)) ||
+      Number(createForm.daily_free_limit_usd) <= 0)
+  ) {
+    appStore.showError(t("admin.groups.form.dailyFreeLimitRequired"));
+    return;
+  }
   submitting.value = true;
   try {
     // 构建请求数据，包含模型路由配置
     const requestData = {
       ...createForm,
+      daily_free_limit_usd: createForm.is_free
+        ? normalizeOptionalLimit(
+            createForm.daily_free_limit_usd as number | string | null,
+          )
+        : null,
       daily_limit_usd: normalizeOptionalLimit(
         createForm.daily_limit_usd as number | string | null,
       ),
@@ -4852,6 +5038,9 @@ const handleCreateGroup = async () => {
     };
     // v-model.number 清空输入框时产生 ""，转为 null 让后端设为无限制
     const emptyToNull = (v: any) => (v === "" ? null : v);
+    requestData.daily_free_limit_usd = emptyToNull(
+      requestData.daily_free_limit_usd,
+    );
     requestData.daily_limit_usd = emptyToNull(requestData.daily_limit_usd);
     requestData.weekly_limit_usd = emptyToNull(requestData.weekly_limit_usd);
     requestData.monthly_limit_usd = emptyToNull(requestData.monthly_limit_usd);
@@ -4913,6 +5102,10 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.is_exclusive = group.is_exclusive;
   editForm.status = group.status;
   editForm.subscription_type = group.subscription_type || "standard";
+  editForm.is_hidden = group.is_hidden ?? false;
+  editForm.is_free = group.is_free ?? false;
+  editForm.daily_free_limit_usd = group.daily_free_limit_usd ?? null;
+  editForm.chat_station_only = group.chat_station_only ?? false;
   editForm.daily_limit_usd = group.daily_limit_usd;
   editForm.weekly_limit_usd = group.weekly_limit_usd;
   editForm.monthly_limit_usd = group.monthly_limit_usd;
@@ -5003,12 +5196,26 @@ const handleUpdateGroup = async () => {
     appStore.showError(t("admin.groups.nameRequired"));
     return;
   }
+  if (
+    editForm.is_free &&
+    (editForm.subscription_type !== "standard" ||
+      !Number.isFinite(Number(editForm.daily_free_limit_usd)) ||
+      Number(editForm.daily_free_limit_usd) <= 0)
+  ) {
+    appStore.showError(t("admin.groups.form.dailyFreeLimitRequired"));
+    return;
+  }
 
   submitting.value = true;
   try {
     // 转换 fallback_group_id: null -> 0 (后端使用 0 表示清除)
     const payload = {
       ...editForm,
+      daily_free_limit_usd: editForm.is_free
+        ? normalizeOptionalLimit(
+            editForm.daily_free_limit_usd as number | string | null,
+          )
+        : null,
       daily_limit_usd: normalizeOptionalLimit(
         editForm.daily_limit_usd as number | string | null,
       ),
@@ -5047,6 +5254,9 @@ const handleUpdateGroup = async () => {
     };
     // v-model.number 清空输入框时产生 ""，转为 null 让后端设为无限制
     const emptyToNull = (v: any) => (v === "" ? null : v);
+    payload.daily_free_limit_usd = emptyToNull(
+      payload.daily_free_limit_usd,
+    );
     payload.daily_limit_usd = emptyToNull(payload.daily_limit_usd);
     payload.weekly_limit_usd = emptyToNull(payload.weekly_limit_usd);
     payload.monthly_limit_usd = emptyToNull(payload.monthly_limit_usd);
@@ -5158,6 +5368,8 @@ watch(
   (newVal) => {
     if (newVal === "subscription") {
       createForm.is_exclusive = true;
+      createForm.is_free = false;
+      createForm.daily_free_limit_usd = null;
       createForm.fallback_group_id_on_invalid_request = null;
     } else {
       createForm.peak_rate_enabled = false;
@@ -5172,12 +5384,30 @@ watch(
 watch(
   () => editForm.subscription_type,
   (newVal) => {
+    if (newVal === "subscription") {
+      editForm.is_free = false;
+      editForm.daily_free_limit_usd = null;
+    }
     if (newVal !== "subscription") {
       editForm.peak_rate_enabled = false;
       editForm.peak_start = "";
       editForm.peak_end = "";
       editForm.peak_rate_multiplier = 1.0;
     }
+  },
+);
+
+watch(
+  () => createForm.is_free,
+  (isFree) => {
+    if (!isFree) createForm.daily_free_limit_usd = null;
+  },
+);
+
+watch(
+  () => editForm.is_free,
+  (isFree) => {
+    if (!isFree) editForm.daily_free_limit_usd = null;
   },
 );
 

@@ -516,6 +516,10 @@ export interface Group {
   is_exclusive: boolean
   status: 'active' | 'inactive'
   subscription_type: SubscriptionType
+  is_hidden: boolean
+  is_free: boolean
+  daily_free_limit_usd: number | null
+  chat_station_only: boolean
   daily_limit_usd: number | null
   weekly_limit_usd: number | null
   monthly_limit_usd: number | null
@@ -654,6 +658,10 @@ export interface CreateGroupRequest {
   rate_multiplier?: number
   is_exclusive?: boolean
   subscription_type?: SubscriptionType
+  is_hidden?: boolean
+  is_free?: boolean
+  daily_free_limit_usd?: number | null
+  chat_station_only?: boolean
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
@@ -704,6 +712,10 @@ export interface UpdateGroupRequest {
   is_exclusive?: boolean
   status?: 'active' | 'inactive'
   subscription_type?: SubscriptionType
+  is_hidden?: boolean
+  is_free?: boolean
+  daily_free_limit_usd?: number | null
+  chat_station_only?: boolean
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null

@@ -236,6 +236,75 @@ func (_u *GroupUpdate) SetNillableSubscriptionType(v *string) *GroupUpdate {
 	return _u
 }
 
+// SetIsHidden sets the "is_hidden" field.
+func (_u *GroupUpdate) SetIsHidden(v bool) *GroupUpdate {
+	_u.mutation.SetIsHidden(v)
+	return _u
+}
+
+// SetNillableIsHidden sets the "is_hidden" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableIsHidden(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetIsHidden(*v)
+	}
+	return _u
+}
+
+// SetIsFree sets the "is_free" field.
+func (_u *GroupUpdate) SetIsFree(v bool) *GroupUpdate {
+	_u.mutation.SetIsFree(v)
+	return _u
+}
+
+// SetNillableIsFree sets the "is_free" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableIsFree(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetIsFree(*v)
+	}
+	return _u
+}
+
+// SetDailyFreeLimitUsd sets the "daily_free_limit_usd" field.
+func (_u *GroupUpdate) SetDailyFreeLimitUsd(v float64) *GroupUpdate {
+	_u.mutation.ResetDailyFreeLimitUsd()
+	_u.mutation.SetDailyFreeLimitUsd(v)
+	return _u
+}
+
+// SetNillableDailyFreeLimitUsd sets the "daily_free_limit_usd" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableDailyFreeLimitUsd(v *float64) *GroupUpdate {
+	if v != nil {
+		_u.SetDailyFreeLimitUsd(*v)
+	}
+	return _u
+}
+
+// AddDailyFreeLimitUsd adds value to the "daily_free_limit_usd" field.
+func (_u *GroupUpdate) AddDailyFreeLimitUsd(v float64) *GroupUpdate {
+	_u.mutation.AddDailyFreeLimitUsd(v)
+	return _u
+}
+
+// ClearDailyFreeLimitUsd clears the value of the "daily_free_limit_usd" field.
+func (_u *GroupUpdate) ClearDailyFreeLimitUsd() *GroupUpdate {
+	_u.mutation.ClearDailyFreeLimitUsd()
+	return _u
+}
+
+// SetChatStationOnly sets the "chat_station_only" field.
+func (_u *GroupUpdate) SetChatStationOnly(v bool) *GroupUpdate {
+	_u.mutation.SetChatStationOnly(v)
+	return _u
+}
+
+// SetNillableChatStationOnly sets the "chat_station_only" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableChatStationOnly(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetChatStationOnly(*v)
+	}
+	return _u
+}
+
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (_u *GroupUpdate) SetDailyLimitUsd(v float64) *GroupUpdate {
 	_u.mutation.ResetDailyLimitUsd()
@@ -1279,6 +1348,24 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.SubscriptionType(); ok {
 		_spec.SetField(group.FieldSubscriptionType, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.IsHidden(); ok {
+		_spec.SetField(group.FieldIsHidden, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsFree(); ok {
+		_spec.SetField(group.FieldIsFree, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DailyFreeLimitUsd(); ok {
+		_spec.SetField(group.FieldDailyFreeLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDailyFreeLimitUsd(); ok {
+		_spec.AddField(group.FieldDailyFreeLimitUsd, field.TypeFloat64, value)
+	}
+	if _u.mutation.DailyFreeLimitUsdCleared() {
+		_spec.ClearField(group.FieldDailyFreeLimitUsd, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.ChatStationOnly(); ok {
+		_spec.SetField(group.FieldChatStationOnly, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.DailyLimitUsd(); ok {
 		_spec.SetField(group.FieldDailyLimitUsd, field.TypeFloat64, value)
 	}
@@ -1992,6 +2079,75 @@ func (_u *GroupUpdateOne) SetSubscriptionType(v string) *GroupUpdateOne {
 func (_u *GroupUpdateOne) SetNillableSubscriptionType(v *string) *GroupUpdateOne {
 	if v != nil {
 		_u.SetSubscriptionType(*v)
+	}
+	return _u
+}
+
+// SetIsHidden sets the "is_hidden" field.
+func (_u *GroupUpdateOne) SetIsHidden(v bool) *GroupUpdateOne {
+	_u.mutation.SetIsHidden(v)
+	return _u
+}
+
+// SetNillableIsHidden sets the "is_hidden" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableIsHidden(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetIsHidden(*v)
+	}
+	return _u
+}
+
+// SetIsFree sets the "is_free" field.
+func (_u *GroupUpdateOne) SetIsFree(v bool) *GroupUpdateOne {
+	_u.mutation.SetIsFree(v)
+	return _u
+}
+
+// SetNillableIsFree sets the "is_free" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableIsFree(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetIsFree(*v)
+	}
+	return _u
+}
+
+// SetDailyFreeLimitUsd sets the "daily_free_limit_usd" field.
+func (_u *GroupUpdateOne) SetDailyFreeLimitUsd(v float64) *GroupUpdateOne {
+	_u.mutation.ResetDailyFreeLimitUsd()
+	_u.mutation.SetDailyFreeLimitUsd(v)
+	return _u
+}
+
+// SetNillableDailyFreeLimitUsd sets the "daily_free_limit_usd" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableDailyFreeLimitUsd(v *float64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetDailyFreeLimitUsd(*v)
+	}
+	return _u
+}
+
+// AddDailyFreeLimitUsd adds value to the "daily_free_limit_usd" field.
+func (_u *GroupUpdateOne) AddDailyFreeLimitUsd(v float64) *GroupUpdateOne {
+	_u.mutation.AddDailyFreeLimitUsd(v)
+	return _u
+}
+
+// ClearDailyFreeLimitUsd clears the value of the "daily_free_limit_usd" field.
+func (_u *GroupUpdateOne) ClearDailyFreeLimitUsd() *GroupUpdateOne {
+	_u.mutation.ClearDailyFreeLimitUsd()
+	return _u
+}
+
+// SetChatStationOnly sets the "chat_station_only" field.
+func (_u *GroupUpdateOne) SetChatStationOnly(v bool) *GroupUpdateOne {
+	_u.mutation.SetChatStationOnly(v)
+	return _u
+}
+
+// SetNillableChatStationOnly sets the "chat_station_only" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableChatStationOnly(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetChatStationOnly(*v)
 	}
 	return _u
 }
@@ -3068,6 +3224,24 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.SubscriptionType(); ok {
 		_spec.SetField(group.FieldSubscriptionType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.IsHidden(); ok {
+		_spec.SetField(group.FieldIsHidden, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsFree(); ok {
+		_spec.SetField(group.FieldIsFree, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DailyFreeLimitUsd(); ok {
+		_spec.SetField(group.FieldDailyFreeLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDailyFreeLimitUsd(); ok {
+		_spec.AddField(group.FieldDailyFreeLimitUsd, field.TypeFloat64, value)
+	}
+	if _u.mutation.DailyFreeLimitUsdCleared() {
+		_spec.ClearField(group.FieldDailyFreeLimitUsd, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.ChatStationOnly(); ok {
+		_spec.SetField(group.FieldChatStationOnly, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.DailyLimitUsd(); ok {
 		_spec.SetField(group.FieldDailyLimitUsd, field.TypeFloat64, value)

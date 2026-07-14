@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 var ErrUsageBillingRequestIDRequired = errors.New("usage billing request_id is required")
@@ -36,6 +37,9 @@ type UsageBillingCommand struct {
 
 	BalanceCost         float64
 	SubscriptionCost    float64
+	FreeGroupID         *int64
+	FreeUsageDate       time.Time
+	FreeUsageCost       float64
 	APIKeyQuotaCost     float64
 	APIKeyRateLimitCost float64
 	AccountQuotaCost    float64
@@ -80,6 +84,9 @@ func buildUsageBillingFingerprint(c *UsageBillingCommand) string {
 	)
 	if payloadHash := strings.TrimSpace(c.RequestPayloadHash); payloadHash != "" {
 		raw += "|" + payloadHash
+	}
+	if c.FreeGroupID != nil || c.FreeUsageCost > 0 {
+		raw += fmt.Sprintf("|free:%d|%s|%0.10f", valueOrZero(c.FreeGroupID), c.FreeUsageDate.Format("2006-01-02"), c.FreeUsageCost)
 	}
 	sum := sha256.Sum256([]byte(raw))
 	return hex.EncodeToString(sum[:])

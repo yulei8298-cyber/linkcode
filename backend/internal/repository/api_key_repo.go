@@ -186,6 +186,10 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				group.FieldIsExclusive,
 				group.FieldStatus,
 				group.FieldSubscriptionType,
+				group.FieldIsHidden,
+				group.FieldIsFree,
+				group.FieldDailyFreeLimitUsd,
+				group.FieldChatStationOnly,
 				group.FieldRateMultiplier,
 				group.FieldDailyLimitUsd,
 				group.FieldWeeklyLimitUsd,
@@ -416,6 +420,12 @@ func (r *apiKeyRepository) deleteWithAudit(ctx context.Context, exec *dbent.Clie
 
 func (r *apiKeyRepository) apiKeyListByUserIDQuery(userID int64, filters service.APIKeyListFilters) *dbent.APIKeyQuery {
 	q := r.activeQuery().Where(apikey.UserIDEQ(userID))
+	if filters.UserVisibleOnly {
+		q = q.Where(apikey.Or(
+			apikey.GroupIDIsNil(),
+			apikey.HasGroupWith(group.IsHiddenEQ(false)),
+		))
+	}
 
 	if filters.Search != "" {
 		q = q.Where(apikey.Or(
@@ -583,7 +593,15 @@ func (r *apiKeyRepository) VerifyOwnership(ctx context.Context, userID int64, ap
 	}
 
 	ids, err := r.client.APIKey.Query().
-		Where(apikey.UserIDEQ(userID), apikey.IDIn(apiKeyIDs...), apikey.DeletedAtIsNil()).
+		Where(
+			apikey.UserIDEQ(userID),
+			apikey.IDIn(apiKeyIDs...),
+			apikey.DeletedAtIsNil(),
+			apikey.Or(
+				apikey.GroupIDIsNil(),
+				apikey.HasGroupWith(group.IsHiddenEQ(false)),
+			),
+		).
 		IDs(ctx)
 	if err != nil {
 		return nil, err
@@ -687,6 +705,40 @@ func (r *apiKeyRepository) SearchAPIKeys(ctx context.Context, userID int64, keyw
 		outKeys = append(outKeys, *apiKeyEntityToService(keys[i]))
 	}
 	return outKeys, nil
+}
+
+// FindActiveChatStationKey is an internal-only lookup used by trusted
+// chat-station bootstrap requests.
+func (r *apiKeyRepository) FindActiveChatStationKey(ctx context.Context, userID, groupID int64) (*service.APIKey, error) {
+	m, err := r.activeQuery().
+		Where(
+			apikey.UserIDEQ(userID),
+			apikey.GroupIDEQ(groupID),
+			apikey.NameEQ(service.ChatStationAPIKeyName),
+			apikey.StatusEQ(service.StatusAPIKeyActive),
+		).
+		Order(dbent.Asc(apikey.FieldID)).
+		First(ctx)
+	if dbent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return apiKeyEntityToService(m), nil
+}
+
+func (r *apiKeyRepository) GetDailyFreeUsage(ctx context.Context, userID, groupID int64, usageDate time.Time) (float64, error) {
+	if r == nil || r.sql == nil {
+		return 0, errors.New("api key repository sql is nil")
+	}
+	const query = "SELECT COALESCE(usage_usd, 0) FROM daily_free_usages WHERE user_id = $1 AND group_id = $2 AND usage_date = $3"
+	var usage float64
+	err := scanSingleRow(ctx, r.sql, query, []any{userID, groupID, usageDate.Format("2006-01-02")}, &usage)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return usage, err
 }
 
 // ClearGroupIDByGroupID 将指定分组的所有 API Key 的 group_id 设为 nil
@@ -947,6 +999,10 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		Status:                          g.Status,
 		Hydrated:                        true,
 		SubscriptionType:                g.SubscriptionType,
+		IsHidden:                        g.IsHidden,
+		IsFree:                          g.IsFree,
+		DailyFreeLimitUSD:               g.DailyFreeLimitUsd,
+		ChatStationOnly:                 g.ChatStationOnly,
 		DailyLimitUSD:                   g.DailyLimitUsd,
 		WeeklyLimitUSD:                  g.WeeklyLimitUsd,
 		MonthlyLimitUSD:                 g.MonthlyLimitUsd,

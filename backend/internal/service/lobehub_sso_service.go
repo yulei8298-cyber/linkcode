@@ -20,12 +20,6 @@ var (
 	ErrLobeHubSSOCodeInvalid  = infraerrors.Unauthorized("LOBEHUB_SSO_CODE_INVALID", "SSO code is invalid or expired")
 )
 
-const (
-	lobeHubProviderGPT = "gpt"
-
-	lobeHubGroupOpenAI = "OpenAI-chat"
-)
-
 type LobeHubSSOCodeStore interface {
 	Store(ctx context.Context, code string, payload LobeHubSSOCodePayload, ttl time.Duration) error
 	Take(ctx context.Context, code string) (*LobeHubSSOCodePayload, error)
@@ -170,14 +164,6 @@ func (s *LobeHubSSOService) Exchange(ctx context.Context, input LobeHubSSOExchan
 		return nil, ErrUserNotActive
 	}
 
-	keys := []LobeHubSSOAPIKey{}
-	if s.cfg.LobeHubSSO.AutoCreateAPIKeys {
-		keys, err = s.prepareProviderKeys(ctx, user.ID)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &LobeHubSSOExchangeResult{
 		User: LobeHubSSOUser{
 			ID:        user.ID,
@@ -186,173 +172,8 @@ func (s *LobeHubSSOService) Exchange(ctx context.Context, input LobeHubSSOExchan
 			AvatarURL: user.AvatarURL,
 		},
 		APIBaseURL: s.apiBaseURL(),
-		Keys:       keys,
+		Keys:       []LobeHubSSOAPIKey{},
 	}, nil
-}
-
-func (s *LobeHubSSOService) prepareProviderKeys(ctx context.Context, userID int64) ([]LobeHubSSOAPIKey, error) {
-	availableGroups, err := s.listLobeHubCandidateGroups(ctx)
-	if err != nil {
-		return nil, err
-	}
-	groupByPlatform := make(map[string]Group)
-	for _, g := range availableGroups {
-		if g.Status != StatusActive {
-			continue
-		}
-		if !isLobeHubChatGroup(g.Platform, g.Name) {
-			continue
-		}
-		current, ok := groupByPlatform[g.Platform]
-		if !ok || preferLobeHubGroup(g, current) {
-			groupByPlatform[g.Platform] = g
-		}
-	}
-
-	targets := []struct {
-		provider string
-		platform string
-	}{
-		{provider: lobeHubProviderGPT, platform: PlatformOpenAI},
-	}
-
-	out := make([]LobeHubSSOAPIKey, 0, len(targets))
-	for _, target := range targets {
-		group, ok := groupByPlatform[target.platform]
-		if !ok {
-			continue
-		}
-		groupID := group.ID
-		if err := s.ensureLobeHubGroupAccess(ctx, userID, group); err != nil {
-			return nil, err
-		}
-		key, err := s.findOrCreateProviderKey(ctx, userID, target.provider, target.platform, groupID)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, LobeHubSSOAPIKey{
-			Provider: target.provider,
-			Platform: target.platform,
-			Key:      key.Key,
-			GroupID:  groupID,
-		})
-	}
-	return out, nil
-}
-
-func (s *LobeHubSSOService) listLobeHubCandidateGroups(ctx context.Context) ([]Group, error) {
-	if s.groupRepo == nil {
-		return nil, fmt.Errorf("group repository is not configured")
-	}
-	groups, err := s.groupRepo.ListActiveByPlatform(ctx, PlatformOpenAI)
-	if err != nil {
-		return nil, fmt.Errorf("list lobehub chat groups: %w", err)
-	}
-	return groups, nil
-}
-
-func isLobeHubChatGroup(platform, name string) bool {
-	switch platform {
-	case PlatformOpenAI:
-		return strings.TrimSpace(name) == lobeHubGroupOpenAI
-	default:
-		return false
-	}
-}
-
-func preferLobeHubGroup(candidate, current Group) bool {
-	if candidate.SortOrder == current.SortOrder {
-		return candidate.ID < current.ID
-	}
-	return candidate.SortOrder < current.SortOrder
-}
-
-func (s *LobeHubSSOService) activeChannelPlatforms(ctx context.Context) (map[string]struct{}, error) {
-	channels, err := s.channelService.ListAvailable(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list available channels: %w", err)
-	}
-	out := make(map[string]struct{})
-	for _, ch := range channels {
-		if ch.Status != StatusActive {
-			continue
-		}
-		for _, g := range ch.Groups {
-			if g.Platform != "" {
-				out[g.Platform] = struct{}{}
-			}
-		}
-	}
-	return out, nil
-}
-
-func (s *LobeHubSSOService) ensureLobeHubGroupAccess(ctx context.Context, userID int64, group Group) error {
-	if !group.IsSubscriptionType() {
-		if group.IsExclusive {
-			if s.userRepo == nil {
-				return fmt.Errorf("lobehub user repository is not configured")
-			}
-			if err := s.userRepo.AddGroupToAllowedGroups(ctx, userID, group.ID); err != nil {
-				return fmt.Errorf("assign lobehub chat group access: %w", err)
-			}
-		}
-		return nil
-	}
-	if s.userSubRepo == nil || s.defaultSubAssigner == nil {
-		return fmt.Errorf("lobehub subscription assigner is not configured")
-	}
-	if _, err := s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, userID, group.ID); err == nil {
-		return nil
-	}
-	validityDays := group.DefaultValidityDays
-	if validityDays <= 0 {
-		validityDays = MaxValidityDays
-	}
-	_, _, err := s.defaultSubAssigner.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
-		UserID:       userID,
-		GroupID:      group.ID,
-		ValidityDays: validityDays,
-		AssignedBy:   0,
-		Notes:        "auto assigned by LobeHub SSO",
-	})
-	if err != nil {
-		return fmt.Errorf("assign lobehub chat subscription: %w", err)
-	}
-	return nil
-}
-
-func (s *LobeHubSSOService) findOrCreateProviderKey(ctx context.Context, userID int64, provider, platform string, groupID int64) (*APIKey, error) {
-	name := s.providerKeyName(provider)
-	existing, err := s.apiKeyService.SearchAPIKeys(ctx, userID, name, 20)
-	if err != nil {
-		return nil, err
-	}
-	for i := range existing {
-		k := &existing[i]
-		if k.Name != name || !k.IsActive() {
-			continue
-		}
-		if k.GroupID != nil && *k.GroupID == groupID {
-			return k, nil
-		}
-	}
-	return s.apiKeyService.Create(ctx, userID, CreateAPIKeyRequest{
-		Name:    name,
-		GroupID: &groupID,
-	})
-}
-
-func (s *LobeHubSSOService) providerKeyName(provider string) string {
-	prefix := strings.TrimSpace(s.cfg.LobeHubSSO.APIKeyNamePrefix)
-	if prefix == "" {
-		prefix = "LobeHub"
-	}
-	switch provider {
-	case lobeHubProviderGPT:
-		return prefix + " GPT"
-	default:
-		return prefix + " " + provider
-	}
 }
 
 func (s *LobeHubSSOService) ensureEnabled() error {

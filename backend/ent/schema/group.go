@@ -74,6 +74,20 @@ func (Group) Fields() []ent.Field {
 		field.String("subscription_type").
 			MaxLen(20).
 			Default(domain.SubscriptionTypeStandard),
+		field.Bool("is_hidden").
+			Default(false).
+			Comment("是否对普通用户隐藏该分组"),
+		field.Bool("is_free").
+			Default(false).
+			Comment("是否使用按用户、分组、自然日核算的免费额度"),
+		field.Float("daily_free_limit_usd").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,10)"}).
+			Comment("每日免费额度（USD）；仅 is_free=true 时允许设置且必须大于 0"),
+		field.Bool("chat_station_only").
+			Default(false).
+			Comment("是否仅允许对话站可信来源使用"),
 		field.Float("daily_limit_usd").
 			Optional().
 			Nillable().
@@ -241,6 +255,8 @@ func (Group) Indexes() []ent.Index {
 		index.Fields("status"),
 		index.Fields("platform"),
 		index.Fields("subscription_type"),
+		index.Fields("is_free"),
+		index.Fields("chat_station_only"),
 		index.Fields("is_exclusive"),
 		index.Fields("deleted_at"),
 		index.Fields("sort_order"),

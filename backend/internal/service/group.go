@@ -31,6 +31,10 @@ type Group struct {
 	Hydrated           bool // indicates the group was loaded from a trusted repository source
 
 	SubscriptionType    string
+	IsHidden            bool
+	IsFree              bool
+	DailyFreeLimitUSD   *float64
+	ChatStationOnly     bool
 	DailyLimitUSD       *float64
 	WeeklyLimitUSD      *float64
 	MonthlyLimitUSD     *float64

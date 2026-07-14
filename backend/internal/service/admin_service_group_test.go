@@ -174,6 +174,164 @@ func TestAdminService_CreateGroup_WithImagePricing(t *testing.T) {
 	require.InDelta(t, 0.30, *repo.created.ImagePrice4K, 0.0001)
 }
 
+func TestAdminService_CreateGroup_WithDailyFreeConfig(t *testing.T) {
+	repo := &groupRepoStubForAdmin{}
+	svc := &adminServiceImpl{groupRepo: repo}
+	limit := 0.5
+
+	group, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
+		Name:              "chat-free",
+		Platform:          PlatformOpenAI,
+		RateMultiplier:    1,
+		SubscriptionType:  SubscriptionTypeStandard,
+		IsHidden:          true,
+		IsFree:            true,
+		DailyFreeLimitUSD: &limit,
+		ChatStationOnly:   true,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.created)
+	require.True(t, repo.created.IsHidden)
+	require.True(t, repo.created.IsFree)
+	require.NotNil(t, repo.created.DailyFreeLimitUSD)
+	require.InDelta(t, limit, *repo.created.DailyFreeLimitUSD, 1e-12)
+	require.True(t, repo.created.ChatStationOnly)
+}
+
+func TestAdminService_CreateGroup_DailyFreeValidation(t *testing.T) {
+	positive := 0.5
+	zero := 0.0
+	tooLarge := 1e10
+	tests := []struct {
+		name             string
+		subscriptionType string
+		limit            *float64
+		wantMessage      string
+	}{
+		{name: "subscription mode", subscriptionType: SubscriptionTypeSubscription, limit: &positive, wantMessage: "free groups must use standard"},
+		{name: "missing limit", subscriptionType: SubscriptionTypeStandard, wantMessage: "daily_free_limit_usd must be > 0"},
+		{name: "zero limit", subscriptionType: SubscriptionTypeStandard, limit: &zero, wantMessage: "daily_free_limit_usd must be > 0"},
+		{name: "numeric overflow", subscriptionType: SubscriptionTypeStandard, limit: &tooLarge, wantMessage: "daily_free_limit_usd must be less than"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &groupRepoStubForAdmin{}
+			svc := &adminServiceImpl{groupRepo: repo}
+			_, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
+				Name:              "invalid-free",
+				RateMultiplier:    1,
+				SubscriptionType:  tc.subscriptionType,
+				IsFree:            true,
+				DailyFreeLimitUSD: tc.limit,
+			})
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.wantMessage)
+			require.Nil(t, repo.created)
+		})
+	}
+}
+
+func TestAdminService_CreateGroup_NonFreeClearsDailyFreeLimit(t *testing.T) {
+	repo := &groupRepoStubForAdmin{}
+	svc := &adminServiceImpl{groupRepo: repo}
+	limit := 1.25
+
+	_, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
+		Name:              "paid",
+		RateMultiplier:    1,
+		SubscriptionType:  SubscriptionTypeStandard,
+		DailyFreeLimitUSD: &limit,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, repo.created)
+	require.False(t, repo.created.IsFree)
+	require.Nil(t, repo.created.DailyFreeLimitUSD)
+}
+
+func TestAdminService_UpdateGroup_DailyFreeConfig(t *testing.T) {
+	existing := &Group{
+		ID:               1,
+		Name:             "group",
+		Platform:         PlatformOpenAI,
+		RateMultiplier:   1,
+		Status:           StatusActive,
+		SubscriptionType: SubscriptionTypeStandard,
+	}
+	repo := &groupRepoStubForAdmin{getByID: existing}
+	svc := &adminServiceImpl{groupRepo: repo}
+	isFree := true
+	isHidden := true
+	chatOnly := true
+	limit := 0.8
+
+	_, err := svc.UpdateGroup(context.Background(), existing.ID, &UpdateGroupInput{
+		IsHidden:          &isHidden,
+		IsFree:            &isFree,
+		DailyFreeLimitUSD: &limit,
+		ChatStationOnly:   &chatOnly,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, repo.updated)
+	require.True(t, repo.updated.IsHidden)
+	require.True(t, repo.updated.IsFree)
+	require.NotNil(t, repo.updated.DailyFreeLimitUSD)
+	require.InDelta(t, limit, *repo.updated.DailyFreeLimitUSD, 1e-12)
+	require.True(t, repo.updated.ChatStationOnly)
+}
+
+func TestAdminService_UpdateGroup_DisablingFreeClearsLimit(t *testing.T) {
+	limit := 0.8
+	existing := &Group{
+		ID:                1,
+		Name:              "group",
+		Platform:          PlatformOpenAI,
+		RateMultiplier:    1,
+		Status:            StatusActive,
+		SubscriptionType:  SubscriptionTypeStandard,
+		IsFree:            true,
+		DailyFreeLimitUSD: &limit,
+	}
+	repo := &groupRepoStubForAdmin{getByID: existing}
+	svc := &adminServiceImpl{groupRepo: repo}
+	isFree := false
+
+	_, err := svc.UpdateGroup(context.Background(), existing.ID, &UpdateGroupInput{IsFree: &isFree})
+
+	require.NoError(t, err)
+	require.NotNil(t, repo.updated)
+	require.False(t, repo.updated.IsFree)
+	require.Nil(t, repo.updated.DailyFreeLimitUSD)
+}
+
+func TestAdminService_UpdateGroup_RejectsSubscriptionModeForFreeGroup(t *testing.T) {
+	limit := 0.8
+	existing := &Group{
+		ID:                1,
+		Name:              "group",
+		Platform:          PlatformOpenAI,
+		RateMultiplier:    1,
+		Status:            StatusActive,
+		SubscriptionType:  SubscriptionTypeStandard,
+		IsFree:            true,
+		DailyFreeLimitUSD: &limit,
+	}
+	repo := &groupRepoStubForAdmin{getByID: existing}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	_, err := svc.UpdateGroup(context.Background(), existing.ID, &UpdateGroupInput{
+		SubscriptionType: SubscriptionTypeSubscription,
+	})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "free groups must use standard")
+	require.Nil(t, repo.updated)
+}
+
 func TestAdminService_CreateGroup_WithVideoPricing(t *testing.T) {
 	repo := &groupRepoStubForAdmin{}
 	svc := &adminServiceImpl{groupRepo: repo}

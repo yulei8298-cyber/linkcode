@@ -90,7 +90,7 @@ func (h *UsageHandler) parseUserUsageFilters(c *gin.Context, requireRange bool) 
 			response.ErrorFrom(c, err)
 			return nil, false
 		}
-		if apiKey.UserID != subject.UserID {
+		if apiKey.UserID != subject.UserID || !apiKey.IsUserVisible() {
 			response.Forbidden(c, "Not authorized to access this API key's usage records")
 			return nil, false
 		}
@@ -691,7 +691,7 @@ func (h *UsageHandler) GetMyAPIKeyDailyUsage(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	if apiKey.UserID != subject.UserID {
+	if apiKey.UserID != subject.UserID || !apiKey.IsUserVisible() {
 		response.Forbidden(c, "Not authorized to access this API key's usage")
 		return
 	}

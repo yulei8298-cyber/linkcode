@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
@@ -187,6 +188,12 @@ func (r *usageBillingRepository) applyUsageBillingEffects(ctx context.Context, t
 		result.BalanceOverdrafted = !sufficient
 	}
 
+	if cmd.FreeUsageCost > 0 && cmd.FreeGroupID != nil {
+		if err := incrementDailyFreeUsage(ctx, tx, cmd.UserID, *cmd.FreeGroupID, cmd.FreeUsageDate, cmd.FreeUsageCost); err != nil {
+			return err
+		}
+	}
+
 	if cmd.APIKeyQuotaCost > 0 {
 		exhausted, err := incrementUsageBillingAPIKeyQuota(ctx, tx, cmd.APIKeyID, cmd.APIKeyQuotaCost)
 		if err != nil {
@@ -210,6 +217,15 @@ func (r *usageBillingRepository) applyUsageBillingEffects(ctx context.Context, t
 	}
 
 	return nil
+}
+
+func incrementDailyFreeUsage(ctx context.Context, tx *sql.Tx, userID, groupID int64, usageDate time.Time, amount float64) error {
+	if usageDate.IsZero() {
+		return errors.New("daily free usage date is required")
+	}
+	const query = "INSERT INTO daily_free_usages (user_id, group_id, usage_date, usage_usd, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW()) ON CONFLICT (user_id, group_id, usage_date) DO UPDATE SET usage_usd = daily_free_usages.usage_usd + EXCLUDED.usage_usd, updated_at = NOW()"
+	_, err := tx.ExecContext(ctx, query, userID, groupID, usageDate.Format("2006-01-02"), amount)
+	return err
 }
 
 func incrementUsageBillingSubscription(ctx context.Context, tx *sql.Tx, subscriptionID int64, costUSD float64) error {

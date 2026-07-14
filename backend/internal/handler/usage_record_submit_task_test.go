@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/require"
 )
@@ -38,6 +39,15 @@ func TestGatewayHandlerSubmitUsageRecordTask_WithPool(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("task not executed")
 	}
+}
+
+func TestUsageRecordContextPreservesDailyFreeUsageDate(t *testing.T) {
+	usageDate := time.Date(2026, time.July, 14, 23, 59, 0, 0, time.UTC)
+	parent := context.WithValue(context.Background(), ctxkey.DailyFreeUsageDate, usageDate)
+
+	got, ok := usageRecordContext(parent, context.Background()).Value(ctxkey.DailyFreeUsageDate).(time.Time)
+	require.True(t, ok)
+	require.Equal(t, usageDate, got)
 }
 
 func TestGatewayHandlerSubmitUsageRecordTask_WithoutPoolSyncFallback(t *testing.T) {

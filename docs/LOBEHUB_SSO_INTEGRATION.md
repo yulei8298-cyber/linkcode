@@ -1,40 +1,54 @@
-# LobeHub 对话站 SSO 集成指南
+# LobeHub 对话站 SSO 与首聊密钥集成指南
 
-本文档只说明 LinkCode 侧需要做什么，适用于把 LinkCode 作为统一身份源和 API Key 来源，接入一个基于 LobeHub 的对话站。
+本文档说明 LinkCode 与 LobeHub 的当前集成协议。SSO 只负责登录和用户绑定；Provider API Key 在用户第一次对话且未配置密钥时，由 LinkCode 按分组字段动态创建。
 
 ## 功能效果
 
-开启后可以实现：
-
-- 用户已登录 LinkCode 时，点击公开门户里的「对话站」入口，会自动进入 LobeHub 并完成登录。
-- 用户未登录 LinkCode 时，也可以直接进入 LobeHub，不会先被 LinkCode 登录页拦住。
-- LobeHub 需要用户登录时，可以跳回 LinkCode 登录；登录完成后继续回到 LobeHub。
-- 首次 SSO 时，LinkCode 可以自动创建或复用 GPT/OpenAI 用户 API Key，并返回给 LobeHub。
-- 如果 LinkCode 没有某个平台的可用渠道，则不会生成该平台的 key。
+- LinkCode 已登录用户可从公开门户自动进入 LobeHub 并完成登录。
+- SSO exchange 只返回用户身份和 API 根地址，不再创建密钥或订阅。
+- OpenAI 或 Anthropic Provider 没有密钥时，LobeHub 服务端以共享密钥和 LinkCode 用户 ID 发起首次请求。
+- LinkCode 从同平台的隐藏、免费、仅对话站分组中选组，创建专用密钥，并在同次回答的响应头中返回。
+- LobeHub 服务端使用 KeyVault 加密保存密钥；保存失败时本次请求失败，不伪装成已完成。
 
 ## 工作流程
 
-SSO 使用短时一次性 code：
+### SSO 登录
 
 1. 用户在 LinkCode 公开门户点击「对话站」。
-2. 如果用户已登录，LinkCode 创建一个一次性 SSO code，并返回 LobeHub callback URL。
-3. 浏览器跳转到 LobeHub callback。
-4. LobeHub 后端携带 code 和共享密钥请求 LinkCode 的 exchange 接口。
-5. LinkCode 校验共享密钥，消费一次性 code，返回用户邮箱、用户名、头像，以及可选的 provider API Key。
-6. LobeHub 用邮箱创建或登录本地用户，并保存 LinkCode 返回的 provider key。
+2. LinkCode 生成 Redis 短时一次性 code，浏览器跳转到 LobeHub callback。
+3. LobeHub 服务端携带 code 和共享密钥请求 `POST /api/v1/lobehub-sso/exchange`。
+4. LinkCode 返回用户信息和 `api_base_url`，`keys` 为空数组。
+5. LobeHub 创建或登录本地用户，并在 Better Auth `accounts` 中保存 LinkCode 用户 ID。
 
-SSO code 存在 Redis 中，并通过 `GETDEL` 消费，因此只能使用一次。
+### 首次无密钥对话
+
+1. LobeHub 服务端发现 OpenAI/Anthropic Provider 没有 API Key。
+2. LobeHub 删除占位 Authorization，添加以下请求头：
+
+```text
+X-LinkCode-Chat-Station-Secret: <shared_secret>
+X-LinkCode-Chat-Station-User-ID: <linkcode_user_id>
+```
+
+3. LinkCode 选择满足 `active + standard + is_hidden + is_free + chat_station_only` 且每日额度大于 0 的同平台分组，按 `sort_order,id` 排序。
+4. LinkCode 复用或创建名为 `LobeHub Chat Station` 的专用密钥，继续完成同一次请求。
+5. LinkCode 在响应头返回：
+
+```text
+X-LinkCode-Chat-Station-API-Key: sk-...
+```
+
+6. LobeHub 服务端加密保存密钥，之后的请求使用已保存密钥。共享密钥和自动密钥均不下发浏览器。
 
 ## 前置条件
 
-- LinkCode 后端、前端、PostgreSQL、Redis 正常运行。
-- LinkCode 公开门户已启用，并配置了 `chat_station_url`。
-- LobeHub 后端可以访问 LinkCode 的 `/api/v1/lobehub-sso/exchange` 接口。
-- 如果要自动生成 provider key，LinkCode 中需要存在 OpenAI active channel，并且用户有固定分组：`OpenAI-chat`。
+- LinkCode 后端、PostgreSQL 和 Redis 正常运行。
+- LinkCode 公开门户已配置 `chat_station_url`。
+- LobeHub 后端可访问 LinkCode exchange 和网关地址。
+- 管理员至少配置一个符合条件的 OpenAI 或 Anthropic 分组，并绑定可调度上游账号。
+- LobeHub 已配置用于加密 Provider 密钥的 `KEY_VAULTS_SECRET`。
 
 ## LinkCode 后端配置
-
-在 LinkCode 配置文件中增加：
 
 ```yaml
 lobehub_sso:
@@ -44,105 +58,51 @@ lobehub_sso:
   callback_path: "/linkcode/sso/callback"
   code_ttl_seconds: 120
   api_base_url: "https://linkcode.example.com"
-  auto_create_api_keys: true
-  api_key_name_prefix: "LobeHub"
 ```
 
-字段说明：
+| 字段 | 说明 |
+| --- | --- |
+| `enabled` | 是否启用 LinkCode -> LobeHub SSO。 |
+| `shared_secret` | SSO exchange 和首聊请求共用的服务端密钥，至少 32 字节。 |
+| `lobehub_base_url` | LobeHub 对话站根地址。 |
+| `callback_path` | LobeHub 接收 SSO code 的路径，默认 `/linkcode/sso/callback`。 |
+| `code_ttl_seconds` | SSO code 有效期，允许 30-600 秒。 |
+| `api_base_url` | LinkCode 网关根地址，不要带 `/api/v1`。 |
 
-| 字段 | 是否必填 | 默认值 | 说明 |
-|---|---:|---|---|
-| `enabled` | 是 | `false` | 是否启用 LinkCode -> LobeHub SSO。 |
-| `shared_secret` | 启用时必填 | 空 | LobeHub 调用 exchange 接口时使用的共享密钥，至少 32 字节。 |
-| `lobehub_base_url` | 启用时必填 | 空 | LobeHub 对话站根地址，例如 `https://chat.example.com`。 |
-| `callback_path` | 否 | `/linkcode/sso/callback` | LobeHub 接收 SSO code 的 callback path。 |
-| `code_ttl_seconds` | 否 | `120` | SSO code 有效期，允许范围 30 到 600 秒。 |
-| `api_base_url` | 建议填写 | 空 | LinkCode 网关根地址，不要带 `/api/v1`。 |
-| `auto_create_api_keys` | 否 | `true` | SSO exchange 时是否自动创建或复用 provider API Key。 |
-| `api_key_name_prefix` | 否 | `LobeHub` | 自动生成 API Key 的名称前缀。 |
+`auto_create_api_keys` 和 `api_key_name_prefix` 仅作为旧配置兼容字段保留，当前 exchange 不再使用它们预创建密钥。
 
-建议用下面的命令生成共享密钥：
+## 分组配置
 
-```bash
-openssl rand -hex 32
+对话站免费候选分组必须同时满足：
+
+- 状态为启用。
+- 订阅类型为标准/余额模式。
+- 开启「对用户隐藏」。
+- 开启「每日免费」并设置正数额度。
+- 开启「仅对话站请求」。
+- 平台为 `openai` 或 `anthropic`。
+
+普通用户不能在分组或 API 密钥页看到隐藏分组，也不能创建、改绑、修改或删除其中的密钥。管理员仍可查看和管理。
+
+## LobeHub 环境变量
+
+```env
+LINKCODE_SSO_ENABLED=1
+LINKCODE_BASE_URL=https://linkcode.example.com
+LINKCODE_PROVIDER_API_BASE_URL=https://linkcode.example.com
+LINKCODE_SSO_SHARED_SECRET=<与 lobehub_sso.shared_secret 完全一致>
 ```
 
-LobeHub 侧的 `LINKCODE_SSO_SHARED_SECRET` 必须和这里的 `lobehub_sso.shared_secret` 完全一致。
+可选覆盖：
 
-## 公开门户入口配置
-
-在 LinkCode 管理后台中配置公开门户的对话站入口：
-
-```text
-chat_station_url = https://chat.example.com
+```env
+LINKCODE_LOGIN_URL=https://linkcode.example.com/login
+LINKCODE_SSO_EXCHANGE_URL=https://linkcode.example.com/api/v1/lobehub-sso/exchange
 ```
 
-行为说明：
+OpenAI 会使用 `${LINKCODE_PROVIDER_API_BASE_URL}/v1`，Anthropic 使用网关根地址。共享密钥只会发送到 LinkCode 官方 HTTPS 域名或明确配置的内网地址；公网 HTTP 地址失败关闭。
 
-- 用户已登录 LinkCode：点击入口后会先调用 `POST /api/v1/lobehub-sso/authorize`，再跳转到 LobeHub callback。
-- 用户未登录 LinkCode：点击入口会直接打开 `chat_station_url`。
-- 用户从 LobeHub 跳回 LinkCode 登录：登录完成后会进入 `/lobehub-sso/continue`，继续发起 SSO，再返回 LobeHub。
-
-## 自动 API Key 生成规则
-
-当 `auto_create_api_keys=true` 时，LinkCode 会尝试创建或复用以下 key：
-
-| LobeHub provider | LinkCode platform | 固定分组名 | 默认 key 名称 |
-|---|---|---|---|
-| GPT | OpenAI | `OpenAI-chat` | `LobeHub GPT` |
-
-实际名称会使用 `api_key_name_prefix` 作为前缀。
-
-OpenAI 必须同时满足下面两个条件，才会返回 key：
-
-- LinkCode 中存在 OpenAI active channel。
-- 当前用户有 `OpenAI-chat` 固定分组，且该分组为 active。
-
-如果已经存在同名、同 group 的 active API Key，LinkCode 会复用它，不会重复创建。
-如果缺少 `OpenAI-chat` 固定分组，LinkCode 会跳过 provider key，不会退回到其它分组。
-
-## 新增接口
-
-### `POST /api/v1/lobehub-sso/authorize`
-
-用户已登录后调用，用来创建短时一次性 SSO code。
-
-请求：
-
-```json
-{
-  "return_to": "/"
-}
-```
-
-响应：
-
-```json
-{
-  "redirect_url": "https://chat.example.com/linkcode/sso/callback?code=...",
-  "expires_at": "2026-06-20T12:00:00Z"
-}
-```
-
-### `POST /api/v1/lobehub-sso/exchange`
-
-供 LobeHub 后端调用，用一次性 code 换取用户信息和 provider key。
-
-请求头：
-
-```text
-X-LobeHub-SSO-Secret: <shared_secret>
-```
-
-请求体：
-
-```json
-{
-  "code": "one-time-sso-code"
-}
-```
-
-响应数据：
+## exchange 响应示例
 
 ```json
 {
@@ -153,71 +113,30 @@ X-LobeHub-SSO-Secret: <shared_secret>
     "avatar_url": "https://example.com/avatar.png"
   },
   "api_base_url": "https://linkcode.example.com",
-  "keys": [
-    {
-      "provider": "gpt",
-      "platform": "openai",
-      "key": "sk-...",
-      "group_id": 1
-    }
-  ]
+  "keys": []
 }
 ```
 
-外层响应格式仍使用 LinkCode 统一 API 响应结构。
+## 错误契约
 
-## LobeHub 侧配置摘要
+| 场景 | HTTP | 提示 |
+| --- | ---: | --- |
+| 没有可用候选分组 | 401 | 当前没有可用的对话站免费分组，请前往设置密钥 |
+| 密钥所属分组已删除 | 401 | API 密钥无效或所属分组不存在 |
+| 非对话站使用受限分组 | 403 | 当前分组仅允许通过对话站调用 |
+| 当日免费额度用完 | 429 | 当前每日免费额度已用完，请明天再使用 |
+| LobeHub 保存返回密钥失败 | 请求失败 | 不返回伪成功结果，保留后端错误日志 |
 
-本仓库只实现 LinkCode 侧。LobeHub 侧需要配置：
+## 上线检查
 
-```env
-LINKCODE_SSO_ENABLED=1
-LINKCODE_BASE_URL=https://linkcode.example.com
-LINKCODE_SSO_SHARED_SECRET=<和 lobehub_sso.shared_secret 完全一致>
-```
+1. 备份 `groups` 和 `user_subscriptions`，或创建完整数据库快照。
+2. 确认旧 `OpenAI-chat` 自动订阅的 `notes` 为 `auto assigned by LobeHub SSO`。
+3. 如该分组存在人工或付费订阅，迁移会保留原订阅分组，只失效旧 SSO 自动订阅；管理员需另行配置新免费分组。
+4. 验证 OpenAI 和 Claude 各一次首聊无密钥、第二次已保存密钥、额度耗尽和外部调用拒绝。
+5. 数据迁移不会随 Git 回退自动恢复；需要回滚时同时回复数据库快照。
 
-如果默认路径不符合你的部署，可以额外配置：
+## 安全要求
 
-```env
-LINKCODE_LOGIN_URL=https://linkcode.example.com/login
-LINKCODE_SSO_EXCHANGE_URL=https://linkcode.example.com/api/v1/lobehub-sso/exchange
-```
-
-LobeHub 还需要正确配置自己的 `APP_URL`、数据库，以及用于加密保存 provider key 的 `KEY_VAULTS_SECRET`。
-
-## 上线检查清单
-
-1. LinkCode 后端配置 `lobehub_sso` 并重启。
-2. LinkCode 前端部署最新代码。
-3. LinkCode 后台配置 `chat_station_url`。
-4. LobeHub 配置 `LINKCODE_SSO_ENABLED=1` 和同一个 `LINKCODE_SSO_SHARED_SECRET`。
-5. 确认 LinkCode 中 OpenAI 对应渠道和固定分组状态正确：`OpenAI-chat`。
-6. 使用普通用户验证已登录点击入口、未登录直接进入、LobeHub 触发登录、provider key 自动写入。
-
-## 验证方式
-
-| 场景 | 预期结果 |
-|---|---|
-| 已登录 LinkCode 后点击「对话站」 | 跳到 LobeHub 并自动登录。 |
-| 未登录 LinkCode 时点击「对话站」 | 直接打开 LobeHub，不先要求 LinkCode 登录。 |
-| 未登录状态在 LobeHub 开始对话 | LobeHub 提示需要登录，并跳转到 LinkCode 登录。 |
-| LinkCode 登录完成 | 自动继续 SSO，并回到 LobeHub。 |
-| 用户有 active channel 和固定 active group | 自动创建或复用对应 provider API Key。 |
-| 某平台没有 active channel | 不生成该平台 key。 |
-
-## 常见问题
-
-| 问题 | 排查方向 |
-|---|---|
-| LinkCode 启动时报配置错误 | 检查 `shared_secret` 长度、`lobehub_base_url` 是否为合法 HTTP/HTTPS URL、`code_ttl_seconds` 是否在 30 到 600 之间。 |
-| LobeHub callback 换码失败 | 检查 LobeHub 的 `LINKCODE_SSO_SHARED_SECRET` 是否和 LinkCode 完全一致；检查 LobeHub 后端是否能访问 exchange 接口。 |
-| 刷新 callback 页面后失败 | 正常现象。SSO code 是一次性 code，刷新后不能重复使用。 |
-| 没有返回 provider key | 检查 OpenAI 是否有 active channel，以及是否存在固定分组：`OpenAI-chat`。 |
-| GPT/OpenAI base URL 不正确 | `api_base_url` 应填写 LinkCode 网关根地址，不要填写 `/api/v1`。 |
-
-## 安全建议
-
-- 不要把 `lobehub_sso.shared_secret` 提交到 Git。
-- 生产环境建议全站使用 HTTPS。
-- Redis 中保存短时 SSO code，应避免暴露到公网。
-- 轮换 shared secret 时，需要同时更新 LinkCode 和 LobeHub，并安排维护窗口。
+- 不要把 `lobehub_sso.shared_secret` 或 `LINKCODE_SSO_SHARED_SECRET` 提交到 Git。
+- 不接受客户端自报的对话站来源，只信任服务端共享密钥。
+- 不向浏览器暴露共享密钥、LinkCode 用户 ID 请求头或自动密钥。

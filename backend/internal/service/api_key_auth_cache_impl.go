@@ -15,7 +15,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 15 // v15: include group IP ACL, peak rate, video pricing, and web search per-call pricing
+const apiKeyAuthSnapshotVersion = 16 // v16: include free-group billing and chat-station-only authorization fields
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -256,6 +256,9 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			Status:                          apiKey.Group.Status,
 			SubscriptionType:                apiKey.Group.SubscriptionType,
 			RateMultiplier:                  apiKey.Group.RateMultiplier,
+			IsFree:                          apiKey.Group.IsFree,
+			DailyFreeLimitUSD:               apiKey.Group.DailyFreeLimitUSD,
+			ChatStationOnly:                 apiKey.Group.ChatStationOnly,
 			DailyLimitUSD:                   apiKey.Group.DailyLimitUSD,
 			WeeklyLimitUSD:                  apiKey.Group.WeeklyLimitUSD,
 			MonthlyLimitUSD:                 apiKey.Group.MonthlyLimitUSD,
@@ -342,6 +345,9 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			Hydrated:                        true,
 			SubscriptionType:                snapshot.Group.SubscriptionType,
 			RateMultiplier:                  snapshot.Group.RateMultiplier,
+			IsFree:                          snapshot.Group.IsFree,
+			DailyFreeLimitUSD:               snapshot.Group.DailyFreeLimitUSD,
+			ChatStationOnly:                 snapshot.Group.ChatStationOnly,
 			DailyLimitUSD:                   snapshot.Group.DailyLimitUSD,
 			WeeklyLimitUSD:                  snapshot.Group.WeeklyLimitUSD,
 			MonthlyLimitUSD:                 snapshot.Group.MonthlyLimitUSD,

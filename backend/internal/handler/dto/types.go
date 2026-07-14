@@ -149,6 +149,10 @@ type Group struct {
 // 注意：普通用户接口不得返回 model_routing/account_count/account_groups 等内部信息。
 type AdminGroup struct {
 	Group
+	IsHidden          bool     `json:"is_hidden"`
+	IsFree            bool     `json:"is_free"`
+	DailyFreeLimitUSD *float64 `json:"daily_free_limit_usd"`
+	ChatStationOnly   bool     `json:"chat_station_only"`
 
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64 `json:"model_routing"`

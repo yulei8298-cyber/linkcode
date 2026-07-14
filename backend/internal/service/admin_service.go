@@ -191,17 +191,21 @@ type AdminBoundAuthIdentityChannel struct {
 }
 
 type CreateGroupInput struct {
-	Name             string
-	Description      string
-	Platform         string
-	RateMultiplier   float64
-	IsExclusive      bool
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
-	IPWhitelist      []string
-	IPBlacklist      []string
+	Name              string
+	Description       string
+	Platform          string
+	RateMultiplier    float64
+	IsExclusive       bool
+	SubscriptionType  string   // standard/subscription
+	IsHidden          bool     // 是否对普通用户隐藏
+	IsFree            bool     // 是否启用每日免费额度
+	DailyFreeLimitUSD *float64 // 每日免费额度 (USD)
+	ChatStationOnly   bool     // 是否仅允许对话站来源
+	DailyLimitUSD     *float64 // 日限额 (USD)
+	WeeklyLimitUSD    *float64 // 周限额 (USD)
+	MonthlyLimitUSD   *float64 // 月限额 (USD)
+	IPWhitelist       []string
+	IPBlacklist       []string
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration         bool
 	AllowBatchImageGeneration    bool
@@ -248,18 +252,22 @@ type CreateGroupInput struct {
 }
 
 type UpdateGroupInput struct {
-	Name             string
-	Description      *string
-	Platform         string
-	RateMultiplier   *float64 // 使用指针以支持设置为0
-	IsExclusive      *bool
-	Status           string
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
-	IPWhitelist      *[]string
-	IPBlacklist      *[]string
+	Name              string
+	Description       *string
+	Platform          string
+	RateMultiplier    *float64 // 使用指针以支持设置为0
+	IsExclusive       *bool
+	Status            string
+	SubscriptionType  string   // standard/subscription
+	IsHidden          *bool    // nil 表示不修改
+	IsFree            *bool    // nil 表示不修改
+	DailyFreeLimitUSD *float64 // nil 表示不修改；0/负数表示清除
+	ChatStationOnly   *bool    // nil 表示不修改
+	DailyLimitUSD     *float64 // 日限额 (USD)
+	WeeklyLimitUSD    *float64 // 周限额 (USD)
+	MonthlyLimitUSD   *float64 // 月限额 (USD)
+	IPWhitelist       *[]string
+	IPBlacklist       *[]string
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration         *bool
 	AllowBatchImageGeneration    *bool

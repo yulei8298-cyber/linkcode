@@ -67,8 +67,9 @@ func (s *lobeHubSSOUserRepoStub) AddGroupToAllowedGroups(ctx context.Context, us
 }
 
 type lobeHubSSOAPIKeyRepoStub struct {
-	created []APIKey
-	nextID  int64
+	created    []APIKey
+	nextID     int64
+	dailyUsage float64
 }
 
 func (s *lobeHubSSOAPIKeyRepoStub) Create(_ context.Context, key *APIKey) error {
@@ -102,6 +103,21 @@ func (s *lobeHubSSOAPIKeyRepoStub) ExistsByKey(_ context.Context, key string) (b
 		}
 	}
 	return false, nil
+}
+
+func (s *lobeHubSSOAPIKeyRepoStub) FindActiveChatStationKey(_ context.Context, userID, groupID int64) (*APIKey, error) {
+	for i := range s.created {
+		key := s.created[i]
+		if key.UserID == userID && key.GroupID != nil && *key.GroupID == groupID &&
+			key.Name == ChatStationAPIKeyName && key.IsActive() {
+			return &key, nil
+		}
+	}
+	return nil, nil
+}
+
+func (s *lobeHubSSOAPIKeyRepoStub) GetDailyFreeUsage(context.Context, int64, int64, time.Time) (float64, error) {
+	return s.dailyUsage, nil
 }
 
 func (s *lobeHubSSOAPIKeyRepoStub) GetByID(context.Context, int64) (*APIKey, error) {
@@ -168,17 +184,38 @@ func (s *lobeHubSSOAPIKeyRepoStub) GetRateLimitData(context.Context, int64) (*AP
 	panic("unexpected GetRateLimitData call")
 }
 
-func TestLobeHubSSOPrepareProviderKeysCreatesKeyForExclusiveOpenAIChatGroupWithoutChannel(t *testing.T) {
-	groupID := int64(88)
+type lobeHubSSOCodeStoreStub struct {
+	payload *LobeHubSSOCodePayload
+}
+
+func (s *lobeHubSSOCodeStoreStub) Store(context.Context, string, LobeHubSSOCodePayload, time.Duration) error {
+	panic("unexpected Store call")
+}
+
+func (s *lobeHubSSOCodeStoreStub) Take(context.Context, string) (*LobeHubSSOCodePayload, error) {
+	return s.payload, nil
+}
+
+func TestAPIKeyServiceResolveChatStationAPIKeyCreatesAndReusesSortedCandidate(t *testing.T) {
+	limit := 2.5
+	selectedGroupID := int64(88)
 	groupRepo := &lobeHubSSOGroupRepoStub{
-		groups: []Group{{
-			ID:               groupID,
-			Name:             lobeHubGroupOpenAI,
-			Platform:         PlatformOpenAI,
-			Status:           StatusActive,
-			IsExclusive:      true,
-			SubscriptionType: SubscriptionTypeStandard,
-		}},
+		groups: []Group{
+			{
+				ID: selectedGroupID, Name: "free-chat", Platform: PlatformOpenAI,
+				Status: StatusActive, SubscriptionType: SubscriptionTypeStandard,
+				IsHidden: true, IsFree: true, DailyFreeLimitUSD: &limit, ChatStationOnly: true, SortOrder: 5,
+			},
+			{
+				ID: 89, Name: "later-free-chat", Platform: PlatformOpenAI,
+				Status: StatusActive, SubscriptionType: SubscriptionTypeStandard,
+				IsHidden: true, IsFree: true, DailyFreeLimitUSD: &limit, ChatStationOnly: true, SortOrder: 10,
+			},
+			{
+				ID: 70, Name: "not-free", Platform: PlatformOpenAI,
+				Status: StatusActive, SubscriptionType: SubscriptionTypeStandard, SortOrder: 1,
+			},
+		},
 	}
 	userRepo := &lobeHubSSOUserRepoStub{
 		user: &User{ID: 1001, Email: "new@example.com", Status: StatusActive},
@@ -186,25 +223,134 @@ func TestLobeHubSSOPrepareProviderKeysCreatesKeyForExclusiveOpenAIChatGroupWitho
 	apiKeyRepo := &lobeHubSSOAPIKeyRepoStub{}
 	cfg := &config.Config{}
 	cfg.Default.APIKeyPrefix = "sk-test-"
-	cfg.LobeHubSSO.APIKeyNamePrefix = "Link AI"
 
 	apiKeyService := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, nil, nil, nil, cfg)
-	svc := NewLobeHubSSOService(cfg, nil, userRepo, groupRepo, nil, apiKeyService, nil, nil)
-
-	keys, err := svc.prepareProviderKeys(context.Background(), userRepo.user.ID)
+	key, err := apiKeyService.ResolveChatStationAPIKey(context.Background(), userRepo.user.ID, PlatformOpenAI)
 	require.NoError(t, err)
-	require.Len(t, keys, 1)
-	require.Equal(t, lobeHubProviderGPT, keys[0].Provider)
-	require.Equal(t, PlatformOpenAI, keys[0].Platform)
-	require.Equal(t, groupID, keys[0].GroupID)
-	require.NotEmpty(t, keys[0].Key)
-
-	require.True(t, userRepo.addGroupCalled)
-	require.Equal(t, userRepo.user.ID, userRepo.addedUserID)
-	require.Equal(t, groupID, userRepo.addedGroupID)
-
+	require.NotEmpty(t, key)
 	require.Len(t, apiKeyRepo.created, 1)
-	require.Equal(t, "Link AI GPT", apiKeyRepo.created[0].Name)
+	require.Equal(t, ChatStationAPIKeyName, apiKeyRepo.created[0].Name)
 	require.NotNil(t, apiKeyRepo.created[0].GroupID)
-	require.Equal(t, groupID, *apiKeyRepo.created[0].GroupID)
+	require.Equal(t, selectedGroupID, *apiKeyRepo.created[0].GroupID)
+	require.False(t, userRepo.addGroupCalled)
+
+	reused, err := apiKeyService.ResolveChatStationAPIKey(context.Background(), userRepo.user.ID, PlatformOpenAI)
+	require.NoError(t, err)
+	require.Equal(t, key, reused)
+	require.Len(t, apiKeyRepo.created, 1)
+}
+
+func TestAPIKeyServiceResolveChatStationAPIKeySkipsVisibleCandidate(t *testing.T) {
+	limit := 2.5
+	groupRepo := &lobeHubSSOGroupRepoStub{
+		groups: []Group{
+			{
+				ID: 87, Name: "visible-free-chat", Platform: PlatformOpenAI,
+				Status: StatusActive, SubscriptionType: SubscriptionTypeStandard,
+				IsFree: true, DailyFreeLimitUSD: &limit, ChatStationOnly: true, SortOrder: 1,
+			},
+			{
+				ID: 88, Name: "hidden-free-chat", Platform: PlatformOpenAI,
+				Status: StatusActive, SubscriptionType: SubscriptionTypeStandard,
+				IsHidden: true, IsFree: true, DailyFreeLimitUSD: &limit, ChatStationOnly: true, SortOrder: 2,
+			},
+		},
+	}
+	userRepo := &lobeHubSSOUserRepoStub{user: &User{ID: 1001, Status: StatusActive}}
+	apiKeyRepo := &lobeHubSSOAPIKeyRepoStub{}
+	cfg := &config.Config{}
+	cfg.Default.APIKeyPrefix = "sk-test-"
+
+	svc := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, nil, nil, nil, cfg)
+	_, err := svc.ResolveChatStationAPIKey(context.Background(), userRepo.user.ID, PlatformOpenAI)
+	require.NoError(t, err)
+	require.Len(t, apiKeyRepo.created, 1)
+	require.Equal(t, int64(88), *apiKeyRepo.created[0].GroupID)
+}
+
+func TestAPIKeyServiceResolveChatStationAPIKeyDoesNotReuseOrdinaryKey(t *testing.T) {
+	limit := 2.5
+	groupID := int64(88)
+	groupRepo := &lobeHubSSOGroupRepoStub{groups: []Group{{
+		ID: groupID, Name: "hidden-free-chat", Platform: PlatformOpenAI,
+		Status: StatusActive, SubscriptionType: SubscriptionTypeStandard,
+		IsHidden: true, IsFree: true, DailyFreeLimitUSD: &limit, ChatStationOnly: true,
+	}}}
+	userRepo := &lobeHubSSOUserRepoStub{user: &User{ID: 1001, Status: StatusActive}}
+	apiKeyRepo := &lobeHubSSOAPIKeyRepoStub{created: []APIKey{{
+		ID: 1, UserID: userRepo.user.ID, Name: "ordinary-key", GroupID: &groupID,
+		Key: "sk-ordinary", Status: StatusAPIKeyActive,
+	}}}
+	cfg := &config.Config{}
+	cfg.Default.APIKeyPrefix = "sk-test-"
+
+	svc := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, nil, nil, nil, cfg)
+	key, err := svc.ResolveChatStationAPIKey(context.Background(), userRepo.user.ID, PlatformOpenAI)
+	require.NoError(t, err)
+	require.NotEqual(t, "sk-ordinary", key)
+	require.Len(t, apiKeyRepo.created, 2)
+	require.Equal(t, ChatStationAPIKeyName, apiKeyRepo.created[1].Name)
+}
+
+func TestAPIKeyServiceResolveChatStationAPIKeyReplacesInactiveAutomaticKey(t *testing.T) {
+	limit := 2.5
+	groupID := int64(88)
+	groupRepo := &lobeHubSSOGroupRepoStub{groups: []Group{{
+		ID: groupID, Name: "hidden-free-chat", Platform: PlatformOpenAI,
+		Status: StatusActive, SubscriptionType: SubscriptionTypeStandard,
+		IsHidden: true, IsFree: true, DailyFreeLimitUSD: &limit, ChatStationOnly: true,
+	}}}
+	userRepo := &lobeHubSSOUserRepoStub{user: &User{ID: 1001, Status: StatusActive}}
+	apiKeyRepo := &lobeHubSSOAPIKeyRepoStub{created: []APIKey{{
+		ID: 1, UserID: userRepo.user.ID, Name: ChatStationAPIKeyName, GroupID: &groupID,
+		Key: "sk-disabled", Status: StatusAPIKeyDisabled,
+	}}}
+	cfg := &config.Config{}
+	cfg.Default.APIKeyPrefix = "sk-test-"
+
+	svc := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, nil, nil, nil, cfg)
+	key, err := svc.ResolveChatStationAPIKey(context.Background(), userRepo.user.ID, PlatformOpenAI)
+	require.NoError(t, err)
+	require.NotEqual(t, "sk-disabled", key)
+	require.Len(t, apiKeyRepo.created, 2)
+	require.Equal(t, StatusAPIKeyActive, apiKeyRepo.created[1].Status)
+}
+
+func TestAPIKeyServiceValidateDailyFreeAllowance(t *testing.T) {
+	limit := 1.0
+	repo := &lobeHubSSOAPIKeyRepoStub{dailyUsage: limit}
+	svc := NewAPIKeyService(repo, nil, nil, nil, nil, nil, &config.Config{})
+
+	err := svc.ValidateDailyFreeAllowance(context.Background(), &APIKey{
+		User:  &User{ID: 1001},
+		Group: &Group{ID: 88, IsFree: true, SubscriptionType: SubscriptionTypeStandard, DailyFreeLimitUSD: &limit},
+	})
+	require.ErrorIs(t, err, ErrDailyFreeLimitExceeded)
+}
+
+func TestLobeHubSSOExchangeDoesNotCreateLegacySubscriptionOrAPIKey(t *testing.T) {
+	userRepo := &lobeHubSSOUserRepoStub{
+		user: &User{ID: 1001, Email: "new@example.com", Status: StatusActive},
+	}
+	apiKeyRepo := &lobeHubSSOAPIKeyRepoStub{}
+	cfg := &config.Config{}
+	cfg.LobeHubSSO.Enabled = true
+	cfg.LobeHubSSO.SharedSecret = "0123456789abcdef0123456789abcdef"
+	cfg.LobeHubSSO.AutoCreateAPIKeys = true
+	cfg.LobeHubSSO.APIBaseURL = "https://api.example.com"
+	store := &lobeHubSSOCodeStoreStub{payload: &LobeHubSSOCodePayload{
+		UserID: userRepo.user.ID, ExpiresAt: time.Now().Add(time.Minute),
+	}}
+	apiKeyService := NewAPIKeyService(apiKeyRepo, userRepo, nil, nil, nil, nil, cfg)
+	svc := NewLobeHubSSOService(cfg, store, userRepo, nil, nil, apiKeyService, nil, nil)
+
+	result, err := svc.Exchange(context.Background(), LobeHubSSOExchangeInput{
+		Code: "one-time-code", SharedSecret: cfg.LobeHubSSO.SharedSecret,
+	})
+	require.NoError(t, err)
+	require.Equal(t, userRepo.user.ID, result.User.ID)
+	require.Equal(t, "https://api.example.com", result.APIBaseURL)
+	require.Empty(t, result.Keys)
+	require.Empty(t, apiKeyRepo.created)
+	require.False(t, userRepo.addGroupCalled)
 }

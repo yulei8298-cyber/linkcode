@@ -125,6 +125,26 @@ func SubscriptionType(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldSubscriptionType, v))
 }
 
+// IsHidden applies equality check predicate on the "is_hidden" field. It's identical to IsHiddenEQ.
+func IsHidden(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsHidden, v))
+}
+
+// IsFree applies equality check predicate on the "is_free" field. It's identical to IsFreeEQ.
+func IsFree(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsFree, v))
+}
+
+// DailyFreeLimitUsd applies equality check predicate on the "daily_free_limit_usd" field. It's identical to DailyFreeLimitUsdEQ.
+func DailyFreeLimitUsd(v float64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldDailyFreeLimitUsd, v))
+}
+
+// ChatStationOnly applies equality check predicate on the "chat_station_only" field. It's identical to ChatStationOnlyEQ.
+func ChatStationOnly(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldChatStationOnly, v))
+}
+
 // DailyLimitUsd applies equality check predicate on the "daily_limit_usd" field. It's identical to DailyLimitUsdEQ.
 func DailyLimitUsd(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDailyLimitUsd, v))
@@ -968,6 +988,86 @@ func SubscriptionTypeEqualFold(v string) predicate.Group {
 // SubscriptionTypeContainsFold applies the ContainsFold predicate on the "subscription_type" field.
 func SubscriptionTypeContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldSubscriptionType, v))
+}
+
+// IsHiddenEQ applies the EQ predicate on the "is_hidden" field.
+func IsHiddenEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsHidden, v))
+}
+
+// IsHiddenNEQ applies the NEQ predicate on the "is_hidden" field.
+func IsHiddenNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldIsHidden, v))
+}
+
+// IsFreeEQ applies the EQ predicate on the "is_free" field.
+func IsFreeEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsFree, v))
+}
+
+// IsFreeNEQ applies the NEQ predicate on the "is_free" field.
+func IsFreeNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldIsFree, v))
+}
+
+// DailyFreeLimitUsdEQ applies the EQ predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdEQ(v float64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldDailyFreeLimitUsd, v))
+}
+
+// DailyFreeLimitUsdNEQ applies the NEQ predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdNEQ(v float64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldDailyFreeLimitUsd, v))
+}
+
+// DailyFreeLimitUsdIn applies the In predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdIn(vs ...float64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldDailyFreeLimitUsd, vs...))
+}
+
+// DailyFreeLimitUsdNotIn applies the NotIn predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdNotIn(vs ...float64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldDailyFreeLimitUsd, vs...))
+}
+
+// DailyFreeLimitUsdGT applies the GT predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdGT(v float64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldDailyFreeLimitUsd, v))
+}
+
+// DailyFreeLimitUsdGTE applies the GTE predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdGTE(v float64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldDailyFreeLimitUsd, v))
+}
+
+// DailyFreeLimitUsdLT applies the LT predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdLT(v float64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldDailyFreeLimitUsd, v))
+}
+
+// DailyFreeLimitUsdLTE applies the LTE predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdLTE(v float64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldDailyFreeLimitUsd, v))
+}
+
+// DailyFreeLimitUsdIsNil applies the IsNil predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldDailyFreeLimitUsd))
+}
+
+// DailyFreeLimitUsdNotNil applies the NotNil predicate on the "daily_free_limit_usd" field.
+func DailyFreeLimitUsdNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldDailyFreeLimitUsd))
+}
+
+// ChatStationOnlyEQ applies the EQ predicate on the "chat_station_only" field.
+func ChatStationOnlyEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldChatStationOnly, v))
+}
+
+// ChatStationOnlyNEQ applies the NEQ predicate on the "chat_station_only" field.
+func ChatStationOnlyNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldChatStationOnly, v))
 }
 
 // DailyLimitUsdEQ applies the EQ predicate on the "daily_limit_usd" field.

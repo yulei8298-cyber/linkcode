@@ -411,11 +411,12 @@ func TestApiKeyAuthWithSubscriptionGoogle_OpenAIChatGroupRequiresChatStationSecr
 		Status:  service.StatusActive,
 		User:    user,
 		Group: &service.Group{
-			ID:       groupID,
-			Name:     chatStationOnlyGroupName,
-			Status:   service.StatusActive,
-			Platform: service.PlatformOpenAI,
-			Hydrated: true,
+			ID:              groupID,
+			Name:            "chat-station-only-group",
+			Status:          service.StatusActive,
+			Platform:        service.PlatformOpenAI,
+			ChatStationOnly: true,
+			Hydrated:        true,
 		},
 	}
 
@@ -501,10 +502,12 @@ func TestApiKeyAuthWithSubscriptionGoogle_MarksUnavailableGroupBusinessLimited(t
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusForbidden, rec.Code)
+	require.Equal(t, http.StatusUnauthorized, rec.Code)
 	var resp googleErrorResponse
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.Equal(t, "API Key 所属分组已删除", resp.Error.Message)
+	require.Equal(t, http.StatusUnauthorized, resp.Error.Code)
+	require.Equal(t, "API 密钥无效或所属分组不存在", resp.Error.Message)
+	require.Equal(t, "UNAUTHENTICATED", resp.Error.Status)
 	require.True(t, markedBusinessLimited)
 	require.Equal(t, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable, businessLimitedReason)
 }

@@ -5,21 +5,25 @@ import (
 	"crypto/subtle"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	chatStationOnlyGroupName          = "OpenAI-chat"
 	chatStationSecretHeader           = "X-LinkCode-Chat-Station-Secret"
+	chatStationUserIDHeader           = "X-LinkCode-Chat-Station-User-ID"
+	chatStationAPIKeyResponseHeader   = "X-LinkCode-Chat-Station-API-Key"
 	chatStationRestrictedErrorCode    = "CHAT_STATION_GROUP_RESTRICTED"
-	chatStationRestrictedErrorMessage = "OpenAI-chat group is reserved for the chat station. Please use it from the chat station entry."
+	chatStationRestrictedErrorMessage = "当前分组仅允许通过对话站调用"
 )
 
 // NewAPIKeyAuthMiddleware 创建 API Key 认证中间件
@@ -70,8 +74,16 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 
 		// 如果所有header都没有API key
 		if apiKeyString == "" {
-			AbortWithError(c, 401, "API_KEY_REQUIRED", "API key is required in Authorization header (Bearer scheme), x-api-key header, or x-goog-api-key header")
-			return
+			var bootstrapped bool
+			apiKeyString, bootstrapped = bootstrapChatStationAPIKey(c, apiKeyService, cfg)
+			if c.IsAborted() {
+				return
+			}
+			if !bootstrapped {
+				AbortWithError(c, 401, "API_KEY_REQUIRED", "API key is required in Authorization header (Bearer scheme), x-api-key header, or x-goog-api-key header")
+				return
+			}
+			c.Header(chatStationAPIKeyResponseHeader, apiKeyString)
 		}
 
 		// ── 2. 验证 Key 存在 ─────────────────────────────────────────
@@ -149,7 +161,20 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 		if abortIfAPIKeyGroupNotAllowed(c, apiKey) {
 			return
 		}
+		dailyFreeUsageDate := timezone.Now()
+		if err := apiKeyService.ValidateDailyFreeAllowanceAt(c.Request.Context(), apiKey, dailyFreeUsageDate); err != nil {
+			if errors.Is(err, service.ErrDailyFreeLimitExceeded) {
+				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
+				AbortWithError(c, http.StatusTooManyRequests, "DAILY_FREE_LIMIT_EXCEEDED", "当前每日免费额度已用完，请明天再使用")
+				return
+			}
+			AbortWithError(c, http.StatusInternalServerError, "DAILY_FREE_USAGE_CHECK_FAILED", "每日免费额度检查失败")
+			return
+		}
 		ctx := context.WithValue(c.Request.Context(), ctxkey.UserID, apiKey.User.ID)
+		if apiKey.Group != nil && apiKey.Group.IsFree {
+			ctx = context.WithValue(ctx, ctxkey.DailyFreeUsageDate, dailyFreeUsageDate)
+		}
 		c.Request = c.Request.WithContext(ctx)
 
 		// ── 4. SimpleMode → early return ─────────────────────────────
@@ -241,7 +266,7 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 				}
 			} else {
 				// 非订阅模式 或 订阅模式但 subscriptionService 未注入：回退到余额检查
-				if apiKeyBalanceBelowAuthThreshold(apiKey.User.Balance, cfg) {
+				if (apiKey.Group == nil || !apiKey.Group.IsFree) && apiKeyBalanceBelowAuthThreshold(apiKey.User.Balance, cfg) {
 					AbortWithError(c, 403, "INSUFFICIENT_BALANCE", "Insufficient account balance")
 					return
 				}
@@ -343,11 +368,18 @@ func abortIfAPIKeyGroupUnavailable(c *gin.Context, apiKey *service.APIKey) bool 
 		return false
 	}
 	service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
-	AbortWithError(c, 403, code, message)
+	status := http.StatusForbidden
+	if code == "INVALID_API_KEY" {
+		status = http.StatusUnauthorized
+	}
+	AbortWithError(c, status, code, message)
 	return true
 }
 
 func abortIfAPIKeyGroupNotAllowed(c *gin.Context, apiKey *service.APIKey) bool {
+	if apiKey != nil && apiKey.Group != nil && apiKey.Group.IsFree && apiKey.Group.ChatStationOnly {
+		return false
+	}
 	if validateAPIKeyGroupAllowed(apiKey) {
 		return false
 	}
@@ -366,15 +398,19 @@ func abortIfChatStationGroupSecretInvalid(c *gin.Context, apiKey *service.APIKey
 }
 
 func isChatStationGroupSecretInvalid(c *gin.Context, apiKey *service.APIKey, cfg *config.Config) bool {
-	if apiKey == nil || apiKey.Group == nil || strings.TrimSpace(apiKey.Group.Name) != chatStationOnlyGroupName {
+	if apiKey == nil || apiKey.Group == nil || !apiKey.Group.ChatStationOnly {
 		return false
 	}
+	return !isChatStationSecretValid(c, cfg)
+}
+
+func isChatStationSecretValid(c *gin.Context, cfg *config.Config) bool {
 	expected := ""
 	if cfg != nil {
 		expected = strings.TrimSpace(cfg.LobeHubSSO.SharedSecret)
 	}
 	actual := strings.TrimSpace(c.GetHeader(chatStationSecretHeader))
-	return expected == "" || actual == "" || subtle.ConstantTimeCompare([]byte(actual), []byte(expected)) != 1
+	return expected != "" && actual != "" && subtle.ConstantTimeCompare([]byte(actual), []byte(expected)) == 1
 }
 
 func validateAPIKeyGroupAllowed(apiKey *service.APIKey) bool {
@@ -394,10 +430,60 @@ func validateAPIKeyGroupAvailable(apiKey *service.APIKey) (string, string, bool)
 	}
 	group := apiKey.Group
 	if group == nil || strings.EqualFold(group.Status, "deleted") {
-		return "GROUP_DELETED", "API Key 所属分组已删除", false
+		return "INVALID_API_KEY", "API 密钥无效或所属分组不存在", false
 	}
 	if !group.IsActive() {
 		return "GROUP_DISABLED", "API Key 所属分组已停用", false
 	}
 	return "", "", true
+}
+
+func bootstrapChatStationAPIKey(c *gin.Context, apiKeyService *service.APIKeyService, cfg *config.Config) (string, bool) {
+	secret := strings.TrimSpace(c.GetHeader(chatStationSecretHeader))
+	rawUserID := strings.TrimSpace(c.GetHeader(chatStationUserIDHeader))
+	if secret == "" && rawUserID == "" {
+		return "", false
+	}
+	if !isChatStationSecretValid(c, cfg) {
+		AbortWithError(c, http.StatusForbidden, chatStationRestrictedErrorCode, chatStationRestrictedErrorMessage)
+		return "", false
+	}
+	userID, err := strconv.ParseInt(rawUserID, 10, 64)
+	if err != nil || userID <= 0 {
+		AbortWithError(c, http.StatusUnauthorized, "CHAT_STATION_USER_INVALID", "对话站用户身份无效，请重新登录")
+		return "", false
+	}
+	platform := chatStationPlatformFromRequest(c.Request)
+	if platform == "" {
+		AbortWithError(c, http.StatusUnauthorized, "CHAT_STATION_FREE_GROUP_NOT_FOUND", "当前请求不支持自动创建免费密钥，请前往设置密钥")
+		return "", false
+	}
+	key, err := apiKeyService.ResolveChatStationAPIKey(c.Request.Context(), userID, platform)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrChatStationFreeGroupNotFound):
+			AbortWithError(c, http.StatusUnauthorized, "CHAT_STATION_FREE_GROUP_NOT_FOUND", "当前没有可用的对话站免费分组，请前往设置密钥")
+		case errors.Is(err, service.ErrUserNotActive), errors.Is(err, service.ErrUserNotFound):
+			AbortWithError(c, http.StatusUnauthorized, "CHAT_STATION_USER_INVALID", "对话站用户身份无效，请重新登录")
+		default:
+			AbortWithError(c, http.StatusInternalServerError, "CHAT_STATION_KEY_PROVISION_FAILED", "对话站密钥创建失败")
+		}
+		return "", false
+	}
+	return key, true
+}
+
+func chatStationPlatformFromRequest(req *http.Request) string {
+	if req == nil || req.Method != http.MethodPost {
+		return ""
+	}
+	path := strings.TrimRight(strings.TrimSpace(req.URL.Path), "/")
+	switch {
+	case strings.HasSuffix(path, "/messages"):
+		return service.PlatformAnthropic
+	case strings.HasSuffix(path, "/chat/completions"), strings.Contains(path, "/responses"):
+		return service.PlatformOpenAI
+	default:
+		return ""
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"html"
 	"sort"
@@ -38,9 +39,13 @@ var (
 	ErrAPIKeyRateLimit5hExceeded = infraerrors.TooManyRequests("API_KEY_RATE_5H_EXCEEDED", "api key 5小时限额已用完")
 	ErrAPIKeyRateLimit1dExceeded = infraerrors.TooManyRequests("API_KEY_RATE_1D_EXCEEDED", "api key 日限额已用完")
 	ErrAPIKeyRateLimit7dExceeded = infraerrors.TooManyRequests("API_KEY_RATE_7D_EXCEEDED", "api key 7天限额已用完")
+
+	ErrChatStationFreeGroupNotFound = infraerrors.Unauthorized("CHAT_STATION_FREE_GROUP_NOT_FOUND", "当前没有可用的对话站免费分组，请前往设置密钥")
+	ErrDailyFreeLimitExceeded       = infraerrors.TooManyRequests("DAILY_FREE_LIMIT_EXCEEDED", "当前每日免费额度已用完，请明天再使用")
 )
 
 const (
+	ChatStationAPIKeyName        = "LobeHub Chat Station"
 	apiKeyMaxErrorsPerHour       = 20
 	apiKeyLastUsedMinTouch       = 30 * time.Second
 	apiKeySortCurrentConcurrency = "current_concurrency"
@@ -86,6 +91,11 @@ type APIKeyRepository interface {
 
 type apiKeyAllByUserIDLister interface {
 	ListAllByUserID(ctx context.Context, userID int64, filters APIKeyListFilters) ([]APIKey, error)
+}
+
+type chatStationAPIKeyRepository interface {
+	FindActiveChatStationKey(ctx context.Context, userID, groupID int64) (*APIKey, error)
+	GetDailyFreeUsage(ctx context.Context, userID, groupID int64, usageDate time.Time) (float64, error)
 }
 
 // APIKeyRateLimitData holds rate limit usage and window state for an API key.
@@ -330,6 +340,9 @@ func (s *APIKeyService) incrementAPIKeyErrorCount(ctx context.Context, userID in
 // 对于订阅类型分组：检查用户是否有有效订阅
 // 对于标准类型分组：使用原有的 AllowedGroups 和 IsExclusive 逻辑
 func (s *APIKeyService) canUserBindGroup(ctx context.Context, user *User, group *Group) bool {
+	if group == nil || group.IsHidden {
+		return false
+	}
 	// 订阅类型分组：需要有效订阅
 	if group.IsSubscriptionType() {
 		_, err := s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, user.ID, group.ID)
@@ -341,6 +354,10 @@ func (s *APIKeyService) canUserBindGroup(ctx context.Context, user *User, group 
 
 // Create 创建API Key
 func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIKeyRequest) (*APIKey, error) {
+	return s.create(ctx, userID, req, false)
+}
+
+func (s *APIKeyService) create(ctx context.Context, userID int64, req CreateAPIKeyRequest, allowHiddenGroup bool) (*APIKey, error) {
 	// 验证用户存在
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -368,8 +385,9 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 			return nil, fmt.Errorf("get group: %w", err)
 		}
 
-		// 检查用户是否可以绑定该分组
-		if !s.canUserBindGroup(ctx, user, group) {
+		// 普通用户不能绑定隐藏组；可信对话站自动建钥仅从专用入口绕过。
+		if (!allowHiddenGroup && group.IsHidden) ||
+			(!allowHiddenGroup && !s.canUserBindGroup(ctx, user, group)) {
 			return nil, ErrGroupNotAllowed
 		}
 	}
@@ -443,6 +461,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 
 // List 获取用户的API Key列表
 func (s *APIKeyService) List(ctx context.Context, userID int64, params pagination.PaginationParams, filters APIKeyListFilters) ([]APIKey, *pagination.PaginationResult, error) {
+	filters.UserVisibleOnly = true
 	if normalizedAPIKeySortBy(params.SortBy) == apiKeySortCurrentConcurrency {
 		return s.listByCurrentConcurrency(ctx, userID, params, filters)
 	}
@@ -642,6 +661,9 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 	if apiKey.UserID != userID {
 		return nil, ErrInsufficientPerms
 	}
+	if !apiKey.IsUserVisible() {
+		return nil, ErrAPIKeyNotFound
+	}
 
 	// 验证 IP 白名单格式
 	if len(req.IPWhitelist) > 0 {
@@ -674,7 +696,7 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 			return nil, fmt.Errorf("get group: %w", err)
 		}
 
-		if !s.canUserBindGroup(ctx, user, group) {
+		if group.IsHidden || !s.canUserBindGroup(ctx, user, group) {
 			return nil, ErrGroupNotAllowed
 		}
 
@@ -759,14 +781,17 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 
 // Delete 删除API Key
 func (s *APIKeyService) Delete(ctx context.Context, id int64, userID int64) error {
-	key, ownerID, err := s.apiKeyRepo.GetKeyAndOwnerID(ctx, id)
+	apiKey, err := s.apiKeyRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("get api key: %w", err)
 	}
 
 	// 验证当前用户是否为该 API Key 的所有者
-	if ownerID != userID {
+	if apiKey.UserID != userID {
 		return ErrInsufficientPerms
+	}
+	if !apiKey.IsUserVisible() {
+		return ErrAPIKeyNotFound
 	}
 
 	// 事务内:写审计 + 软删除(tombstone)。
@@ -778,7 +803,7 @@ func (s *APIKeyService) Delete(ctx context.Context, id int64, userID int64) erro
 	if s.cache != nil {
 		_ = s.cache.DeleteCreateAttemptCount(ctx, userID)
 	}
-	s.InvalidateAuthCacheByKey(ctx, key)
+	s.InvalidateAuthCacheByKey(ctx, apiKey.Key)
 	s.lastUsedTouchL1.Delete(id)
 
 	return nil
@@ -889,6 +914,9 @@ func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([
 	// 过滤出用户有权限的分组
 	availableGroups := make([]Group, 0)
 	for _, group := range allGroups {
+		if group.IsHidden {
+			continue
+		}
 		if s.canUserBindGroupInternal(user, &group, subscribedGroupIDs) {
 			availableGroups = append(availableGroups, group)
 		}
@@ -899,12 +927,116 @@ func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([
 
 // canUserBindGroupInternal 内部方法，检查用户是否可以绑定分组（使用预加载的订阅数据）
 func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subscribedGroupIDs map[int64]bool) bool {
+	if group == nil || group.IsHidden {
+		return false
+	}
 	// 订阅类型分组：需要有效订阅
 	if group.IsSubscriptionType() {
 		return subscribedGroupIDs[group.ID]
 	}
 	// 标准类型分组：使用原有逻辑
 	return user.CanBindGroup(group.ID, group.IsExclusive)
+}
+
+func (s *APIKeyService) ResolveChatStationAPIKey(ctx context.Context, userID int64, platform string) (string, error) {
+	platform = strings.TrimSpace(strings.ToLower(platform))
+	if platform != PlatformOpenAI && platform != PlatformAnthropic {
+		return "", ErrChatStationFreeGroupNotFound
+	}
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return "", fmt.Errorf("get chat station user: %w", err)
+	}
+	if user == nil || !user.IsActive() {
+		return "", ErrUserNotActive
+	}
+
+	groups, err := s.groupRepo.ListActiveByPlatform(ctx, platform)
+	if err != nil {
+		return "", fmt.Errorf("list chat station free groups: %w", err)
+	}
+	candidates := make([]Group, 0, len(groups))
+	for i := range groups {
+		group := groups[i]
+		if !group.IsActive() || group.IsSubscriptionType() || !group.IsHidden || !group.IsFree ||
+			!group.ChatStationOnly || group.DailyFreeLimitUSD == nil || *group.DailyFreeLimitUSD <= 0 {
+			continue
+		}
+		if !user.CanBindGroup(group.ID, group.IsExclusive) {
+			continue
+		}
+		candidates = append(candidates, group)
+	}
+	if len(candidates) == 0 {
+		return "", ErrChatStationFreeGroupNotFound
+	}
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if candidates[i].SortOrder == candidates[j].SortOrder {
+			return candidates[i].ID < candidates[j].ID
+		}
+		return candidates[i].SortOrder < candidates[j].SortOrder
+	})
+	group := candidates[0]
+
+	repo, ok := s.apiKeyRepo.(chatStationAPIKeyRepository)
+	if !ok {
+		return "", errors.New("api key repository does not support chat station bootstrap")
+	}
+	existing, err := repo.FindActiveChatStationKey(ctx, userID, group.ID)
+	if err != nil {
+		return "", fmt.Errorf("find chat station api key: %w", err)
+	}
+	if existing != nil {
+		return existing.Key, nil
+	}
+
+	groupID := group.ID
+	created, err := s.create(ctx, userID, CreateAPIKeyRequest{
+		Name:    ChatStationAPIKeyName,
+		GroupID: &groupID,
+	}, true)
+	if err == nil {
+		return created.Key, nil
+	}
+	if !errors.Is(err, ErrAPIKeyExists) {
+		return "", fmt.Errorf("create chat station api key: %w", err)
+	}
+	existing, findErr := repo.FindActiveChatStationKey(ctx, userID, group.ID)
+	if findErr != nil {
+		return "", fmt.Errorf("reload chat station api key: %w", findErr)
+	}
+	if existing == nil {
+		return "", err
+	}
+	return existing.Key, nil
+}
+
+func (s *APIKeyService) ValidateDailyFreeAllowance(ctx context.Context, apiKey *APIKey) error {
+	return s.ValidateDailyFreeAllowanceAt(ctx, apiKey, timezone.Now())
+}
+
+func (s *APIKeyService) ValidateDailyFreeAllowanceAt(ctx context.Context, apiKey *APIKey, usageDate time.Time) error {
+	if apiKey == nil || apiKey.User == nil || apiKey.Group == nil || !apiKey.Group.IsFree {
+		return nil
+	}
+	if apiKey.Group.IsSubscriptionType() || apiKey.Group.DailyFreeLimitUSD == nil || *apiKey.Group.DailyFreeLimitUSD <= 0 {
+		return errors.New("invalid daily free group configuration")
+	}
+	repo, ok := s.apiKeyRepo.(chatStationAPIKeyRepository)
+	if !ok {
+		return errors.New("api key repository does not support daily free usage")
+	}
+	if usageDate.IsZero() {
+		usageDate = timezone.Now()
+	}
+	used, err := repo.GetDailyFreeUsage(ctx, apiKey.User.ID, apiKey.Group.ID, usageDate)
+	if err != nil {
+		return fmt.Errorf("get daily free usage: %w", err)
+	}
+	if used+1e-10 >= *apiKey.Group.DailyFreeLimitUSD {
+		return ErrDailyFreeLimitExceeded
+	}
+	return nil
 }
 
 func (s *APIKeyService) SearchAPIKeys(ctx context.Context, userID int64, keyword string, limit int) ([]APIKey, error) {

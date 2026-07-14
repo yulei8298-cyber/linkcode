@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -130,6 +131,23 @@ func defaultAllowImageGenerationForPlatform(platform string) bool {
 	return platform == PlatformGrok
 }
 
+func normalizeDailyFreeConfig(subscriptionType string, isFree bool, limit *float64) (*float64, error) {
+	if !isFree {
+		return nil, nil
+	}
+	if subscriptionType != SubscriptionTypeStandard {
+		return nil, errors.New("free groups must use standard subscription_type")
+	}
+	if limit == nil || math.IsNaN(*limit) || math.IsInf(*limit, 0) || *limit <= 0 {
+		return nil, errors.New("daily_free_limit_usd must be > 0 for free groups")
+	}
+	if *limit >= 1e10 {
+		return nil, errors.New("daily_free_limit_usd must be less than 10000000000")
+	}
+	value := *limit
+	return &value, nil
+}
+
 func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupInput) (*Group, error) {
 	if input.RateMultiplier <= 0 {
 		return nil, errors.New("rate_multiplier must be > 0")
@@ -143,6 +161,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	subscriptionType := input.SubscriptionType
 	if subscriptionType == "" {
 		subscriptionType = SubscriptionTypeStandard
+	}
+	dailyFreeLimit, err := normalizeDailyFreeConfig(subscriptionType, input.IsFree, input.DailyFreeLimitUSD)
+	if err != nil {
+		return nil, err
 	}
 
 	// 限额字段：nil/负数 表示"无限制"，0 表示"不允许用量"，正数表示具体限额
@@ -274,6 +296,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		IsExclusive:                     input.IsExclusive,
 		Status:                          StatusActive,
 		SubscriptionType:                subscriptionType,
+		IsHidden:                        input.IsHidden,
+		IsFree:                          input.IsFree,
+		DailyFreeLimitUSD:               dailyFreeLimit,
+		ChatStationOnly:                 input.ChatStationOnly,
 		DailyLimitUSD:                   dailyLimit,
 		WeeklyLimitUSD:                  weeklyLimit,
 		MonthlyLimitUSD:                 monthlyLimit,
@@ -465,6 +491,22 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	// 订阅相关字段
 	if input.SubscriptionType != "" {
 		group.SubscriptionType = input.SubscriptionType
+	}
+	if input.IsHidden != nil {
+		group.IsHidden = *input.IsHidden
+	}
+	if input.IsFree != nil {
+		group.IsFree = *input.IsFree
+	}
+	if input.DailyFreeLimitUSD != nil {
+		group.DailyFreeLimitUSD = input.DailyFreeLimitUSD
+	}
+	if input.ChatStationOnly != nil {
+		group.ChatStationOnly = *input.ChatStationOnly
+	}
+	group.DailyFreeLimitUSD, err = normalizeDailyFreeConfig(group.SubscriptionType, group.IsFree, group.DailyFreeLimitUSD)
+	if err != nil {
+		return nil, err
 	}
 	// 限额字段：nil/负数 表示"无限制"，0 表示"不允许用量"，正数表示具体限额
 	// 前端始终发送这三个字段，无需 nil 守卫

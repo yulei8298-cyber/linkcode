@@ -484,7 +484,7 @@ func TestAPIKeyAuthRejectsUnavailableGroup(t *testing.T) {
 			wantMarked: true,
 		},
 		{
-			name: "deleted status group is forbidden",
+			name: "deleted status group invalidates key",
 			group: &service.Group{
 				ID:       groupID,
 				Name:     "deleted",
@@ -492,15 +492,15 @@ func TestAPIKeyAuthRejectsUnavailableGroup(t *testing.T) {
 				Platform: service.PlatformAnthropic,
 				Hydrated: true,
 			},
-			wantStatus: http.StatusForbidden,
-			wantCode:   "GROUP_DELETED",
+			wantStatus: http.StatusUnauthorized,
+			wantCode:   "INVALID_API_KEY",
 			wantMarked: true,
 		},
 		{
-			name:       "missing group edge is forbidden",
+			name:       "missing group edge invalidates key",
 			group:      nil,
-			wantStatus: http.StatusForbidden,
-			wantCode:   "GROUP_DELETED",
+			wantStatus: http.StatusUnauthorized,
+			wantCode:   "INVALID_API_KEY",
 			wantMarked: true,
 		},
 	}
@@ -947,7 +947,7 @@ func TestAPIKeyAuthIPRestrictionUsesForwardedClientIPInDenialWhenTrusted(t *test
 	requireAPIKeyAuthError(t, w, "ACCESS_DENIED", "Access denied. Your IP is 1.2.3.4")
 }
 
-func TestAPIKeyAuthOpenAIChatGroupRequiresChatStationSecret(t *testing.T) {
+func TestAPIKeyAuthChatStationOnlyGroupRequiresChatStationSecret(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	user := &service.User{
@@ -958,10 +958,11 @@ func TestAPIKeyAuthOpenAIChatGroupRequiresChatStationSecret(t *testing.T) {
 		Concurrency: 3,
 	}
 	group := &service.Group{
-		ID:       42,
-		Name:     "OpenAI-chat",
-		Status:   service.StatusActive,
-		Hydrated: true,
+		ID:              42,
+		Name:            "private-chat-group",
+		Status:          service.StatusActive,
+		ChatStationOnly: true,
+		Hydrated:        true,
 	}
 	apiKey := &service.APIKey{
 		ID:      100,
@@ -1239,6 +1240,82 @@ func TestAPIKeyAuthRejectsExhaustedBalance(t *testing.T) {
 	requireAPIKeyAuthError(t, w, "INSUFFICIENT_BALANCE", "Insufficient account balance")
 }
 
+func TestAPIKeyAuthFreeGroupAllowsZeroBalanceAndEnforcesDailyLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	limit := 1.0
+	group := &service.Group{
+		ID:                42,
+		Name:              "daily-free",
+		Platform:          service.PlatformOpenAI,
+		Status:            service.StatusActive,
+		Hydrated:          true,
+		SubscriptionType:  service.SubscriptionTypeStandard,
+		IsFree:            true,
+		DailyFreeLimitUSD: &limit,
+	}
+	user := &service.User{ID: 10, Role: service.RoleUser, Status: service.StatusActive, Balance: 0, Concurrency: 3}
+	apiKey := &service.APIKey{
+		ID: 104, UserID: user.ID, Key: "daily-free-key", Status: service.StatusActive,
+		User: user, Group: group, GroupID: &group.ID,
+	}
+	cfg := &config.Config{RunMode: config.RunModeStandard}
+
+	t.Run("allows_zero_balance_before_limit", func(t *testing.T) {
+		repo := &stubApiKeyRepo{
+			getByKey: func(context.Context, string) (*service.APIKey, error) {
+				clone := *apiKey
+				return &clone, nil
+			},
+			dailyFreeUsage: 0.5,
+		}
+		svc := service.NewAPIKeyService(repo, nil, nil, nil, nil, nil, cfg)
+		router := newAuthTestRouter(svc, nil, cfg)
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/t", nil)
+		req.Header.Set("x-api-key", apiKey.Key)
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("rejects_when_daily_limit_is_exhausted", func(t *testing.T) {
+		repo := &stubApiKeyRepo{
+			getByKey: func(context.Context, string) (*service.APIKey, error) {
+				clone := *apiKey
+				return &clone, nil
+			},
+			dailyFreeUsage: limit,
+		}
+		svc := service.NewAPIKeyService(repo, nil, nil, nil, nil, nil, cfg)
+		router := newAuthTestRouter(svc, nil, cfg)
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/t", nil)
+		req.Header.Set("x-api-key", apiKey.Key)
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusTooManyRequests, w.Code)
+		requireAPIKeyAuthError(t, w, "DAILY_FREE_LIMIT_EXCEEDED", "当前每日免费额度已用完，请明天再使用")
+	})
+}
+
+func TestAPIKeyAuthRejectsUntrustedChatStationBootstrapHeaders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	cfg := &config.Config{RunMode: config.RunModeStandard}
+	cfg.LobeHubSSO.SharedSecret = "0123456789abcdef0123456789abcdef"
+	svc := service.NewAPIKeyService(&stubApiKeyRepo{}, nil, nil, nil, nil, nil, cfg)
+	router := gin.New()
+	router.Use(gin.HandlerFunc(NewAPIKeyAuthMiddleware(svc, nil, cfg)))
+	router.POST("/v1/chat/completions", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+	req.Header.Set(chatStationSecretHeader, "forged-secret")
+	req.Header.Set(chatStationUserIDHeader, "10")
+	router.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusForbidden, w.Code)
+	requireAPIKeyAuthError(t, w, chatStationRestrictedErrorCode, chatStationRestrictedErrorMessage)
+}
+
 func newAuthTestRouter(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, cfg *config.Config) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.HandlerFunc(NewAPIKeyAuthMiddleware(apiKeyService, subscriptionService, cfg)))
@@ -1258,8 +1335,10 @@ func requireAPIKeyAuthError(t *testing.T, w *httptest.ResponseRecorder, code, me
 }
 
 type stubApiKeyRepo struct {
-	getByKey       func(ctx context.Context, key string) (*service.APIKey, error)
-	updateLastUsed func(ctx context.Context, id int64, usedAt time.Time) error
+	getByKey          func(ctx context.Context, key string) (*service.APIKey, error)
+	updateLastUsed    func(ctx context.Context, id int64, usedAt time.Time) error
+	dailyFreeUsage    float64
+	dailyFreeUsageErr error
 }
 
 func (r *stubApiKeyRepo) Create(ctx context.Context, key *service.APIKey) error {
@@ -1360,6 +1439,14 @@ func (r *stubApiKeyRepo) ResetRateLimitWindows(ctx context.Context, id int64) er
 }
 func (r *stubApiKeyRepo) GetRateLimitData(ctx context.Context, id int64) (*service.APIKeyRateLimitData, error) {
 	return nil, nil
+}
+
+func (r *stubApiKeyRepo) FindActiveChatStationKey(context.Context, int64, int64) (*service.APIKey, error) {
+	return nil, nil
+}
+
+func (r *stubApiKeyRepo) GetDailyFreeUsage(context.Context, int64, int64, time.Time) (float64, error) {
+	return r.dailyFreeUsage, r.dailyFreeUsageErr
 }
 
 type stubUserSubscriptionRepo struct {

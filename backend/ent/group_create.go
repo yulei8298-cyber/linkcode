@@ -217,6 +217,62 @@ func (_c *GroupCreate) SetNillableSubscriptionType(v *string) *GroupCreate {
 	return _c
 }
 
+// SetIsHidden sets the "is_hidden" field.
+func (_c *GroupCreate) SetIsHidden(v bool) *GroupCreate {
+	_c.mutation.SetIsHidden(v)
+	return _c
+}
+
+// SetNillableIsHidden sets the "is_hidden" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableIsHidden(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetIsHidden(*v)
+	}
+	return _c
+}
+
+// SetIsFree sets the "is_free" field.
+func (_c *GroupCreate) SetIsFree(v bool) *GroupCreate {
+	_c.mutation.SetIsFree(v)
+	return _c
+}
+
+// SetNillableIsFree sets the "is_free" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableIsFree(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetIsFree(*v)
+	}
+	return _c
+}
+
+// SetDailyFreeLimitUsd sets the "daily_free_limit_usd" field.
+func (_c *GroupCreate) SetDailyFreeLimitUsd(v float64) *GroupCreate {
+	_c.mutation.SetDailyFreeLimitUsd(v)
+	return _c
+}
+
+// SetNillableDailyFreeLimitUsd sets the "daily_free_limit_usd" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDailyFreeLimitUsd(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetDailyFreeLimitUsd(*v)
+	}
+	return _c
+}
+
+// SetChatStationOnly sets the "chat_station_only" field.
+func (_c *GroupCreate) SetChatStationOnly(v bool) *GroupCreate {
+	_c.mutation.SetChatStationOnly(v)
+	return _c
+}
+
+// SetNillableChatStationOnly sets the "chat_station_only" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableChatStationOnly(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetChatStationOnly(*v)
+	}
+	return _c
+}
+
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (_c *GroupCreate) SetDailyLimitUsd(v float64) *GroupCreate {
 	_c.mutation.SetDailyLimitUsd(v)
@@ -854,6 +910,18 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultSubscriptionType
 		_c.mutation.SetSubscriptionType(v)
 	}
+	if _, ok := _c.mutation.IsHidden(); !ok {
+		v := group.DefaultIsHidden
+		_c.mutation.SetIsHidden(v)
+	}
+	if _, ok := _c.mutation.IsFree(); !ok {
+		v := group.DefaultIsFree
+		_c.mutation.SetIsFree(v)
+	}
+	if _, ok := _c.mutation.ChatStationOnly(); !ok {
+		v := group.DefaultChatStationOnly
+		_c.mutation.SetChatStationOnly(v)
+	}
 	if _, ok := _c.mutation.DefaultValidityDays(); !ok {
 		v := group.DefaultDefaultValidityDays
 		_c.mutation.SetDefaultValidityDays(v)
@@ -1009,6 +1077,15 @@ func (_c *GroupCreate) check() error {
 			return &ValidationError{Name: "subscription_type", err: fmt.Errorf(`ent: validator failed for field "Group.subscription_type": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.IsHidden(); !ok {
+		return &ValidationError{Name: "is_hidden", err: errors.New(`ent: missing required field "Group.is_hidden"`)}
+	}
+	if _, ok := _c.mutation.IsFree(); !ok {
+		return &ValidationError{Name: "is_free", err: errors.New(`ent: missing required field "Group.is_free"`)}
+	}
+	if _, ok := _c.mutation.ChatStationOnly(); !ok {
+		return &ValidationError{Name: "chat_station_only", err: errors.New(`ent: missing required field "Group.chat_station_only"`)}
+	}
 	if _, ok := _c.mutation.DefaultValidityDays(); !ok {
 		return &ValidationError{Name: "default_validity_days", err: errors.New(`ent: missing required field "Group.default_validity_days"`)}
 	}
@@ -1159,6 +1236,22 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SubscriptionType(); ok {
 		_spec.SetField(group.FieldSubscriptionType, field.TypeString, value)
 		_node.SubscriptionType = value
+	}
+	if value, ok := _c.mutation.IsHidden(); ok {
+		_spec.SetField(group.FieldIsHidden, field.TypeBool, value)
+		_node.IsHidden = value
+	}
+	if value, ok := _c.mutation.IsFree(); ok {
+		_spec.SetField(group.FieldIsFree, field.TypeBool, value)
+		_node.IsFree = value
+	}
+	if value, ok := _c.mutation.DailyFreeLimitUsd(); ok {
+		_spec.SetField(group.FieldDailyFreeLimitUsd, field.TypeFloat64, value)
+		_node.DailyFreeLimitUsd = &value
+	}
+	if value, ok := _c.mutation.ChatStationOnly(); ok {
+		_spec.SetField(group.FieldChatStationOnly, field.TypeBool, value)
+		_node.ChatStationOnly = value
 	}
 	if value, ok := _c.mutation.DailyLimitUsd(); ok {
 		_spec.SetField(group.FieldDailyLimitUsd, field.TypeFloat64, value)
@@ -1629,6 +1722,66 @@ func (u *GroupUpsert) SetSubscriptionType(v string) *GroupUpsert {
 // UpdateSubscriptionType sets the "subscription_type" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateSubscriptionType() *GroupUpsert {
 	u.SetExcluded(group.FieldSubscriptionType)
+	return u
+}
+
+// SetIsHidden sets the "is_hidden" field.
+func (u *GroupUpsert) SetIsHidden(v bool) *GroupUpsert {
+	u.Set(group.FieldIsHidden, v)
+	return u
+}
+
+// UpdateIsHidden sets the "is_hidden" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateIsHidden() *GroupUpsert {
+	u.SetExcluded(group.FieldIsHidden)
+	return u
+}
+
+// SetIsFree sets the "is_free" field.
+func (u *GroupUpsert) SetIsFree(v bool) *GroupUpsert {
+	u.Set(group.FieldIsFree, v)
+	return u
+}
+
+// UpdateIsFree sets the "is_free" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateIsFree() *GroupUpsert {
+	u.SetExcluded(group.FieldIsFree)
+	return u
+}
+
+// SetDailyFreeLimitUsd sets the "daily_free_limit_usd" field.
+func (u *GroupUpsert) SetDailyFreeLimitUsd(v float64) *GroupUpsert {
+	u.Set(group.FieldDailyFreeLimitUsd, v)
+	return u
+}
+
+// UpdateDailyFreeLimitUsd sets the "daily_free_limit_usd" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDailyFreeLimitUsd() *GroupUpsert {
+	u.SetExcluded(group.FieldDailyFreeLimitUsd)
+	return u
+}
+
+// AddDailyFreeLimitUsd adds v to the "daily_free_limit_usd" field.
+func (u *GroupUpsert) AddDailyFreeLimitUsd(v float64) *GroupUpsert {
+	u.Add(group.FieldDailyFreeLimitUsd, v)
+	return u
+}
+
+// ClearDailyFreeLimitUsd clears the value of the "daily_free_limit_usd" field.
+func (u *GroupUpsert) ClearDailyFreeLimitUsd() *GroupUpsert {
+	u.SetNull(group.FieldDailyFreeLimitUsd)
+	return u
+}
+
+// SetChatStationOnly sets the "chat_station_only" field.
+func (u *GroupUpsert) SetChatStationOnly(v bool) *GroupUpsert {
+	u.Set(group.FieldChatStationOnly, v)
+	return u
+}
+
+// UpdateChatStationOnly sets the "chat_station_only" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateChatStationOnly() *GroupUpsert {
+	u.SetExcluded(group.FieldChatStationOnly)
 	return u
 }
 
@@ -2484,6 +2637,76 @@ func (u *GroupUpsertOne) SetSubscriptionType(v string) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateSubscriptionType() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateSubscriptionType()
+	})
+}
+
+// SetIsHidden sets the "is_hidden" field.
+func (u *GroupUpsertOne) SetIsHidden(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetIsHidden(v)
+	})
+}
+
+// UpdateIsHidden sets the "is_hidden" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateIsHidden() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateIsHidden()
+	})
+}
+
+// SetIsFree sets the "is_free" field.
+func (u *GroupUpsertOne) SetIsFree(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetIsFree(v)
+	})
+}
+
+// UpdateIsFree sets the "is_free" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateIsFree() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateIsFree()
+	})
+}
+
+// SetDailyFreeLimitUsd sets the "daily_free_limit_usd" field.
+func (u *GroupUpsertOne) SetDailyFreeLimitUsd(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDailyFreeLimitUsd(v)
+	})
+}
+
+// AddDailyFreeLimitUsd adds v to the "daily_free_limit_usd" field.
+func (u *GroupUpsertOne) AddDailyFreeLimitUsd(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddDailyFreeLimitUsd(v)
+	})
+}
+
+// UpdateDailyFreeLimitUsd sets the "daily_free_limit_usd" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDailyFreeLimitUsd() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDailyFreeLimitUsd()
+	})
+}
+
+// ClearDailyFreeLimitUsd clears the value of the "daily_free_limit_usd" field.
+func (u *GroupUpsertOne) ClearDailyFreeLimitUsd() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDailyFreeLimitUsd()
+	})
+}
+
+// SetChatStationOnly sets the "chat_station_only" field.
+func (u *GroupUpsertOne) SetChatStationOnly(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetChatStationOnly(v)
+	})
+}
+
+// UpdateChatStationOnly sets the "chat_station_only" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateChatStationOnly() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateChatStationOnly()
 	})
 }
 
@@ -3605,6 +3828,76 @@ func (u *GroupUpsertBulk) SetSubscriptionType(v string) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateSubscriptionType() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateSubscriptionType()
+	})
+}
+
+// SetIsHidden sets the "is_hidden" field.
+func (u *GroupUpsertBulk) SetIsHidden(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetIsHidden(v)
+	})
+}
+
+// UpdateIsHidden sets the "is_hidden" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateIsHidden() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateIsHidden()
+	})
+}
+
+// SetIsFree sets the "is_free" field.
+func (u *GroupUpsertBulk) SetIsFree(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetIsFree(v)
+	})
+}
+
+// UpdateIsFree sets the "is_free" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateIsFree() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateIsFree()
+	})
+}
+
+// SetDailyFreeLimitUsd sets the "daily_free_limit_usd" field.
+func (u *GroupUpsertBulk) SetDailyFreeLimitUsd(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDailyFreeLimitUsd(v)
+	})
+}
+
+// AddDailyFreeLimitUsd adds v to the "daily_free_limit_usd" field.
+func (u *GroupUpsertBulk) AddDailyFreeLimitUsd(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddDailyFreeLimitUsd(v)
+	})
+}
+
+// UpdateDailyFreeLimitUsd sets the "daily_free_limit_usd" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDailyFreeLimitUsd() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDailyFreeLimitUsd()
+	})
+}
+
+// ClearDailyFreeLimitUsd clears the value of the "daily_free_limit_usd" field.
+func (u *GroupUpsertBulk) ClearDailyFreeLimitUsd() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDailyFreeLimitUsd()
+	})
+}
+
+// SetChatStationOnly sets the "chat_station_only" field.
+func (u *GroupUpsertBulk) SetChatStationOnly(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetChatStationOnly(v)
+	})
+}
+
+// UpdateChatStationOnly sets the "chat_station_only" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateChatStationOnly() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateChatStationOnly()
 	})
 }
 

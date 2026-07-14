@@ -146,6 +146,10 @@ func GroupFromServiceAdmin(g *service.Group) *AdminGroup {
 	}
 	out := &AdminGroup{
 		Group:                       groupFromServiceBase(g),
+		IsHidden:                    g.IsHidden,
+		IsFree:                      g.IsFree,
+		DailyFreeLimitUSD:           g.DailyFreeLimitUSD,
+		ChatStationOnly:             g.ChatStationOnly,
 		ModelRouting:                g.ModelRouting,
 		ModelRoutingEnabled:         g.ModelRoutingEnabled,
 		MCPXMLInject:                g.MCPXMLInject,

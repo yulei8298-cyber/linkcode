@@ -3,7 +3,11 @@
 package service
 
 import (
+	"context"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 // TestBuildUsageBillingCommand_SubscriptionAppliesRateMultiplier locks in the fix
@@ -82,4 +86,78 @@ func TestBuildUsageBillingCommand_SubscriptionAppliesRateMultiplier(t *testing.T
 			}
 		})
 	}
+}
+
+func TestBuildUsageBillingCommand_FreeGroupTracksDailyUsageWithoutBalanceCost(t *testing.T) {
+	t.Parallel()
+
+	groupID := int64(7)
+	usageDate := time.Date(2026, time.July, 14, 23, 59, 0, 0, time.UTC)
+	p := &postUsageBillingParams{
+		Cost:          &CostBreakdown{TotalCost: 1.0, ActualCost: 1.25},
+		User:          &User{ID: 1},
+		APIKey:        &APIKey{ID: 2, GroupID: &groupID, Group: &Group{ID: groupID, IsFree: true}},
+		Account:       &Account{ID: 3},
+		IsFreeBill:    true,
+		FreeUsageDate: usageDate,
+	}
+
+	cmd := buildUsageBillingCommand("req-free", nil, p)
+	if cmd == nil {
+		t.Fatal("buildUsageBillingCommand returned nil")
+	}
+	if cmd.FreeGroupID == nil || *cmd.FreeGroupID != groupID {
+		t.Fatalf("FreeGroupID = %v, want %d", cmd.FreeGroupID, groupID)
+	}
+	if cmd.FreeUsageCost != 1.25 {
+		t.Errorf("FreeUsageCost = %v, want 1.25", cmd.FreeUsageCost)
+	}
+	if !cmd.FreeUsageDate.Equal(usageDate) {
+		t.Errorf("FreeUsageDate = %v, want %v", cmd.FreeUsageDate, usageDate)
+	}
+	if cmd.BalanceCost != 0 || cmd.SubscriptionCost != 0 {
+		t.Errorf("free billing must not charge balance or subscription: balance=%v subscription=%v", cmd.BalanceCost, cmd.SubscriptionCost)
+	}
+}
+
+func TestApplyUsageBilling_FreeGroupFailsClosedWithoutUnifiedRepository(t *testing.T) {
+	t.Parallel()
+
+	groupID := int64(7)
+	p := &postUsageBillingParams{
+		Cost:       &CostBreakdown{TotalCost: 1, ActualCost: 1},
+		User:       &User{ID: 1},
+		APIKey:     &APIKey{ID: 2, GroupID: &groupID, Group: &Group{ID: groupID, IsFree: true}},
+		Account:    &Account{ID: 3},
+		IsFreeBill: true,
+	}
+
+	applied, err := applyUsageBilling(context.Background(), "req-free", nil, p, &billingDeps{}, nil)
+	require.ErrorContains(t, err, "daily free usage billing repository is unavailable")
+	require.False(t, applied)
+}
+
+func TestApplySimpleModeDailyFreeUsage_OnlyPersistsFreeLedger(t *testing.T) {
+	groupID := int64(88)
+	billingRepo := &openAIRecordUsageBillingRepoStub{result: &UsageBillingApplyResult{Applied: true}}
+	params := &postUsageBillingParams{
+		Cost:          &CostBreakdown{ActualCost: 1.25, TotalCost: 1.0},
+		User:          &User{ID: 1},
+		APIKey:        &APIKey{ID: 2, Quota: 10, GroupID: &groupID, Group: &Group{ID: groupID, IsFree: true}},
+		Account:       &Account{ID: 3, Type: AccountTypeAPIKey},
+		IsFreeBill:    true,
+		APIKeyService: &openAIRecordUsageAPIKeyQuotaStub{},
+	}
+
+	err := applySimpleModeDailyFreeUsage(context.Background(), "simple-free-1", &UsageLog{Model: "gpt-5.1"}, params, billingRepo)
+	require.NoError(t, err)
+	require.Equal(t, 1, billingRepo.calls)
+	require.NotNil(t, billingRepo.lastCmd.FreeGroupID)
+	require.Equal(t, groupID, *billingRepo.lastCmd.FreeGroupID)
+	require.InDelta(t, 1.25, billingRepo.lastCmd.FreeUsageCost, 1e-12)
+	require.Zero(t, billingRepo.lastCmd.BalanceCost)
+	require.Zero(t, billingRepo.lastCmd.SubscriptionCost)
+	require.Zero(t, billingRepo.lastCmd.APIKeyQuotaCost)
+	require.Zero(t, billingRepo.lastCmd.APIKeyRateLimitCost)
+	require.Zero(t, billingRepo.lastCmd.AccountQuotaCost)
 }

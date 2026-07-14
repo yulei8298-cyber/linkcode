@@ -20810,6 +20810,11 @@ type GroupMutation struct {
 	status                                  *string
 	platform                                *string
 	subscription_type                       *string
+	is_hidden                               *bool
+	is_free                                 *bool
+	daily_free_limit_usd                    *float64
+	adddaily_free_limit_usd                 *float64
+	chat_station_only                       *bool
 	daily_limit_usd                         *float64
 	adddaily_limit_usd                      *float64
 	weekly_limit_usd                        *float64
@@ -21554,6 +21559,184 @@ func (m *GroupMutation) OldSubscriptionType(ctx context.Context) (v string, err 
 // ResetSubscriptionType resets all changes to the "subscription_type" field.
 func (m *GroupMutation) ResetSubscriptionType() {
 	m.subscription_type = nil
+}
+
+// SetIsHidden sets the "is_hidden" field.
+func (m *GroupMutation) SetIsHidden(b bool) {
+	m.is_hidden = &b
+}
+
+// IsHidden returns the value of the "is_hidden" field in the mutation.
+func (m *GroupMutation) IsHidden() (r bool, exists bool) {
+	v := m.is_hidden
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsHidden returns the old "is_hidden" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldIsHidden(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsHidden is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsHidden requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsHidden: %w", err)
+	}
+	return oldValue.IsHidden, nil
+}
+
+// ResetIsHidden resets all changes to the "is_hidden" field.
+func (m *GroupMutation) ResetIsHidden() {
+	m.is_hidden = nil
+}
+
+// SetIsFree sets the "is_free" field.
+func (m *GroupMutation) SetIsFree(b bool) {
+	m.is_free = &b
+}
+
+// IsFree returns the value of the "is_free" field in the mutation.
+func (m *GroupMutation) IsFree() (r bool, exists bool) {
+	v := m.is_free
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsFree returns the old "is_free" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldIsFree(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsFree is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsFree requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsFree: %w", err)
+	}
+	return oldValue.IsFree, nil
+}
+
+// ResetIsFree resets all changes to the "is_free" field.
+func (m *GroupMutation) ResetIsFree() {
+	m.is_free = nil
+}
+
+// SetDailyFreeLimitUsd sets the "daily_free_limit_usd" field.
+func (m *GroupMutation) SetDailyFreeLimitUsd(f float64) {
+	m.daily_free_limit_usd = &f
+	m.adddaily_free_limit_usd = nil
+}
+
+// DailyFreeLimitUsd returns the value of the "daily_free_limit_usd" field in the mutation.
+func (m *GroupMutation) DailyFreeLimitUsd() (r float64, exists bool) {
+	v := m.daily_free_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyFreeLimitUsd returns the old "daily_free_limit_usd" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldDailyFreeLimitUsd(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyFreeLimitUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyFreeLimitUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyFreeLimitUsd: %w", err)
+	}
+	return oldValue.DailyFreeLimitUsd, nil
+}
+
+// AddDailyFreeLimitUsd adds f to the "daily_free_limit_usd" field.
+func (m *GroupMutation) AddDailyFreeLimitUsd(f float64) {
+	if m.adddaily_free_limit_usd != nil {
+		*m.adddaily_free_limit_usd += f
+	} else {
+		m.adddaily_free_limit_usd = &f
+	}
+}
+
+// AddedDailyFreeLimitUsd returns the value that was added to the "daily_free_limit_usd" field in this mutation.
+func (m *GroupMutation) AddedDailyFreeLimitUsd() (r float64, exists bool) {
+	v := m.adddaily_free_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDailyFreeLimitUsd clears the value of the "daily_free_limit_usd" field.
+func (m *GroupMutation) ClearDailyFreeLimitUsd() {
+	m.daily_free_limit_usd = nil
+	m.adddaily_free_limit_usd = nil
+	m.clearedFields[group.FieldDailyFreeLimitUsd] = struct{}{}
+}
+
+// DailyFreeLimitUsdCleared returns if the "daily_free_limit_usd" field was cleared in this mutation.
+func (m *GroupMutation) DailyFreeLimitUsdCleared() bool {
+	_, ok := m.clearedFields[group.FieldDailyFreeLimitUsd]
+	return ok
+}
+
+// ResetDailyFreeLimitUsd resets all changes to the "daily_free_limit_usd" field.
+func (m *GroupMutation) ResetDailyFreeLimitUsd() {
+	m.daily_free_limit_usd = nil
+	m.adddaily_free_limit_usd = nil
+	delete(m.clearedFields, group.FieldDailyFreeLimitUsd)
+}
+
+// SetChatStationOnly sets the "chat_station_only" field.
+func (m *GroupMutation) SetChatStationOnly(b bool) {
+	m.chat_station_only = &b
+}
+
+// ChatStationOnly returns the value of the "chat_station_only" field in the mutation.
+func (m *GroupMutation) ChatStationOnly() (r bool, exists bool) {
+	v := m.chat_station_only
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChatStationOnly returns the old "chat_station_only" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldChatStationOnly(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChatStationOnly is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChatStationOnly requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChatStationOnly: %w", err)
+	}
+	return oldValue.ChatStationOnly, nil
+}
+
+// ResetChatStationOnly resets all changes to the "chat_station_only" field.
+func (m *GroupMutation) ResetChatStationOnly() {
+	m.chat_station_only = nil
 }
 
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
@@ -23714,7 +23897,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 48)
+	fields := make([]string, 0, 52)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -23756,6 +23939,18 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.subscription_type != nil {
 		fields = append(fields, group.FieldSubscriptionType)
+	}
+	if m.is_hidden != nil {
+		fields = append(fields, group.FieldIsHidden)
+	}
+	if m.is_free != nil {
+		fields = append(fields, group.FieldIsFree)
+	}
+	if m.daily_free_limit_usd != nil {
+		fields = append(fields, group.FieldDailyFreeLimitUsd)
+	}
+	if m.chat_station_only != nil {
+		fields = append(fields, group.FieldChatStationOnly)
 	}
 	if m.daily_limit_usd != nil {
 		fields = append(fields, group.FieldDailyLimitUsd)
@@ -23895,6 +24090,14 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Platform()
 	case group.FieldSubscriptionType:
 		return m.SubscriptionType()
+	case group.FieldIsHidden:
+		return m.IsHidden()
+	case group.FieldIsFree:
+		return m.IsFree()
+	case group.FieldDailyFreeLimitUsd:
+		return m.DailyFreeLimitUsd()
+	case group.FieldChatStationOnly:
+		return m.ChatStationOnly()
 	case group.FieldDailyLimitUsd:
 		return m.DailyLimitUsd()
 	case group.FieldWeeklyLimitUsd:
@@ -24000,6 +24203,14 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldPlatform(ctx)
 	case group.FieldSubscriptionType:
 		return m.OldSubscriptionType(ctx)
+	case group.FieldIsHidden:
+		return m.OldIsHidden(ctx)
+	case group.FieldIsFree:
+		return m.OldIsFree(ctx)
+	case group.FieldDailyFreeLimitUsd:
+		return m.OldDailyFreeLimitUsd(ctx)
+	case group.FieldChatStationOnly:
+		return m.OldChatStationOnly(ctx)
 	case group.FieldDailyLimitUsd:
 		return m.OldDailyLimitUsd(ctx)
 	case group.FieldWeeklyLimitUsd:
@@ -24174,6 +24385,34 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSubscriptionType(v)
+		return nil
+	case group.FieldIsHidden:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsHidden(v)
+		return nil
+	case group.FieldIsFree:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsFree(v)
+		return nil
+	case group.FieldDailyFreeLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyFreeLimitUsd(v)
+		return nil
+	case group.FieldChatStationOnly:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChatStationOnly(v)
 		return nil
 	case group.FieldDailyLimitUsd:
 		v, ok := value.(float64)
@@ -24427,6 +24666,9 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addpeak_rate_multiplier != nil {
 		fields = append(fields, group.FieldPeakRateMultiplier)
 	}
+	if m.adddaily_free_limit_usd != nil {
+		fields = append(fields, group.FieldDailyFreeLimitUsd)
+	}
 	if m.adddaily_limit_usd != nil {
 		fields = append(fields, group.FieldDailyLimitUsd)
 	}
@@ -24496,6 +24738,8 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRateMultiplier()
 	case group.FieldPeakRateMultiplier:
 		return m.AddedPeakRateMultiplier()
+	case group.FieldDailyFreeLimitUsd:
+		return m.AddedDailyFreeLimitUsd()
 	case group.FieldDailyLimitUsd:
 		return m.AddedDailyLimitUsd()
 	case group.FieldWeeklyLimitUsd:
@@ -24556,6 +24800,13 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPeakRateMultiplier(v)
+		return nil
+	case group.FieldDailyFreeLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyFreeLimitUsd(v)
 		return nil
 	case group.FieldDailyLimitUsd:
 		v, ok := value.(float64)
@@ -24704,6 +24955,9 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldDescription) {
 		fields = append(fields, group.FieldDescription)
 	}
+	if m.FieldCleared(group.FieldDailyFreeLimitUsd) {
+		fields = append(fields, group.FieldDailyFreeLimitUsd)
+	}
 	if m.FieldCleared(group.FieldDailyLimitUsd) {
 		fields = append(fields, group.FieldDailyLimitUsd)
 	}
@@ -24762,6 +25016,9 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldDescription:
 		m.ClearDescription()
+		return nil
+	case group.FieldDailyFreeLimitUsd:
+		m.ClearDailyFreeLimitUsd()
 		return nil
 	case group.FieldDailyLimitUsd:
 		m.ClearDailyLimitUsd()
@@ -24851,6 +25108,18 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldSubscriptionType:
 		m.ResetSubscriptionType()
+		return nil
+	case group.FieldIsHidden:
+		m.ResetIsHidden()
+		return nil
+	case group.FieldIsFree:
+		m.ResetIsFree()
+		return nil
+	case group.FieldDailyFreeLimitUsd:
+		m.ResetDailyFreeLimitUsd()
+		return nil
+	case group.FieldChatStationOnly:
+		m.ResetChatStationOnly()
 		return nil
 	case group.FieldDailyLimitUsd:
 		m.ResetDailyLimitUsd()

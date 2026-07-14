@@ -146,6 +146,9 @@ func filterAPIKeyStubKeys(userID int64, keys []APIKey, filters APIKeyListFilters
 		if key.UserID != userID {
 			continue
 		}
+		if filters.UserVisibleOnly && !key.IsUserVisible() {
+			continue
+		}
 		if search != "" &&
 			!strings.Contains(strings.ToLower(key.Name), search) &&
 			!strings.Contains(strings.ToLower(key.Key), search) {
@@ -353,6 +356,64 @@ func TestApiKeyService_Delete_NotFound(t *testing.T) {
 	require.Empty(t, cache.deleteAuthKeys)
 }
 
+func TestAPIKeyService_Update_HiddenKeyIsNotUserManageable(t *testing.T) {
+	repo := &apiKeyRepoStub{
+		apiKey: &APIKey{
+			ID:     42,
+			UserID: 7,
+			Key:    "hidden-key",
+			Group:  &Group{ID: 9, IsHidden: true},
+		},
+	}
+	svc := &APIKeyService{apiKeyRepo: repo}
+
+	_, err := svc.Update(context.Background(), 42, 7, UpdateAPIKeyRequest{})
+	require.ErrorIs(t, err, ErrAPIKeyNotFound)
+	require.Empty(t, repo.updatedKeys)
+}
+
+func TestAPIKeyService_Delete_HiddenKeyIsNotUserManageable(t *testing.T) {
+	repo := &apiKeyRepoStub{
+		apiKey: &APIKey{
+			ID:     42,
+			UserID: 7,
+			Key:    "hidden-key",
+			Group:  &Group{ID: 9, IsHidden: true},
+		},
+	}
+	svc := &APIKeyService{apiKeyRepo: repo}
+
+	err := svc.Delete(context.Background(), 42, 7)
+	require.ErrorIs(t, err, ErrAPIKeyNotFound)
+	require.Empty(t, repo.deletedIDs)
+}
+
+func TestAPIKeyService_DeletedGroupKeyIsNotUserManageable(t *testing.T) {
+	groupID := int64(9)
+
+	t.Run("update", func(t *testing.T) {
+		repo := &apiKeyRepoStub{apiKey: &APIKey{
+			ID: 42, UserID: 7, Key: "orphaned-group-key", GroupID: &groupID,
+		}}
+		svc := &APIKeyService{apiKeyRepo: repo}
+
+		_, err := svc.Update(context.Background(), 42, 7, UpdateAPIKeyRequest{})
+		require.ErrorIs(t, err, ErrAPIKeyNotFound)
+		require.Empty(t, repo.updatedKeys)
+	})
+
+	t.Run("delete", func(t *testing.T) {
+		repo := &apiKeyRepoStub{apiKey: &APIKey{
+			ID: 42, UserID: 7, Key: "orphaned-group-key", GroupID: &groupID,
+		}}
+		svc := &APIKeyService{apiKeyRepo: repo}
+
+		err := svc.Delete(context.Background(), 42, 7)
+		require.ErrorIs(t, err, ErrAPIKeyNotFound)
+		require.Empty(t, repo.deletedIDs)
+	})
+}
+
 func TestAPIKeyService_List_FillsCurrentConcurrency(t *testing.T) {
 	repo := &apiKeyRepoStub{
 		allowListByUserID: true,
@@ -371,19 +432,22 @@ func TestAPIKeyService_List_FillsCurrentConcurrency(t *testing.T) {
 	require.Len(t, keys, 2)
 	require.Equal(t, 2, keys[0].CurrentConcurrency)
 	require.Equal(t, 0, keys[1].CurrentConcurrency)
+	require.Len(t, repo.listByUserIDFilters, 1)
+	require.True(t, repo.listByUserIDFilters[0].UserVisibleOnly)
 }
 
 func TestAPIKeyService_List_SortByCurrentConcurrency(t *testing.T) {
 	groupID := int64(42)
+	visibleGroup := &Group{ID: groupID}
 	keys := []APIKey{
-		{ID: 1, UserID: 7, Key: "sk-target-1", Name: "target-one", GroupID: &groupID, Status: StatusActive},
-		{ID: 2, UserID: 7, Key: "sk-target-2", Name: "target-two", GroupID: &groupID, Status: StatusActive},
-		{ID: 3, UserID: 7, Key: "sk-target-3", Name: "target-three", GroupID: &groupID, Status: StatusActive},
-		{ID: 4, UserID: 7, Key: "sk-target-4", Name: "target-four", GroupID: &groupID, Status: StatusActive},
-		{ID: 9, UserID: 7, Key: "sk-target-9", Name: "target-inactive", GroupID: &groupID, Status: StatusDisabled},
-		{ID: 10, UserID: 7, Key: "sk-other-10", Name: "other", GroupID: &groupID, Status: StatusActive},
+		{ID: 1, UserID: 7, Key: "sk-target-1", Name: "target-one", GroupID: &groupID, Group: visibleGroup, Status: StatusActive},
+		{ID: 2, UserID: 7, Key: "sk-target-2", Name: "target-two", GroupID: &groupID, Group: visibleGroup, Status: StatusActive},
+		{ID: 3, UserID: 7, Key: "sk-target-3", Name: "target-three", GroupID: &groupID, Group: visibleGroup, Status: StatusActive},
+		{ID: 4, UserID: 7, Key: "sk-target-4", Name: "target-four", GroupID: &groupID, Group: visibleGroup, Status: StatusActive},
+		{ID: 9, UserID: 7, Key: "sk-target-9", Name: "target-inactive", GroupID: &groupID, Group: visibleGroup, Status: StatusDisabled},
+		{ID: 10, UserID: 7, Key: "sk-other-10", Name: "other", GroupID: &groupID, Group: visibleGroup, Status: StatusActive},
 		{ID: 11, UserID: 7, Key: "sk-target-11", Name: "target-no-group", Status: StatusActive},
-		{ID: 12, UserID: 8, Key: "sk-target-12", Name: "target-other-user", GroupID: &groupID, Status: StatusActive},
+		{ID: 12, UserID: 8, Key: "sk-target-12", Name: "target-other-user", GroupID: &groupID, Group: visibleGroup, Status: StatusActive},
 	}
 	filters := APIKeyListFilters{
 		Search:  "target",
@@ -425,6 +489,7 @@ func TestAPIKeyService_List_SortByCurrentConcurrency(t *testing.T) {
 	require.Len(t, repo.listAllByUserIDFilters, 1)
 	require.Equal(t, filters.Search, repo.listAllByUserIDFilters[0].Search)
 	require.Equal(t, filters.Status, repo.listAllByUserIDFilters[0].Status)
+	require.True(t, repo.listAllByUserIDFilters[0].UserVisibleOnly)
 	require.NotNil(t, repo.listAllByUserIDFilters[0].GroupID)
 	require.Equal(t, groupID, *repo.listAllByUserIDFilters[0].GroupID)
 }

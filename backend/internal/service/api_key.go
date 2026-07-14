@@ -64,6 +64,19 @@ type APIKey struct {
 	Window7dStart *time.Time // Start of current 7d window
 }
 
+// IsUserVisible reports whether a user-facing API key endpoint may expose the key.
+// A non-nil GroupID with no loaded group means the group was deleted or is otherwise
+// unavailable, so the key must remain hidden and fail authentication as invalid.
+func (k *APIKey) IsUserVisible() bool {
+	if k == nil {
+		return false
+	}
+	if k.Group != nil {
+		return !k.Group.IsHidden
+	}
+	return k.GroupID == nil
+}
+
 func (k *APIKey) IsActive() bool {
 	return k.Status == StatusActive
 }
@@ -139,7 +152,8 @@ func (k *APIKey) EffectiveUsage7d() float64 {
 
 // APIKeyListFilters holds optional filtering parameters for listing API keys.
 type APIKeyListFilters struct {
-	Search  string
-	Status  string
-	GroupID *int64 // nil=不筛选, 0=无分组, >0=指定分组
+	Search          string
+	Status          string
+	GroupID         *int64 // nil=不筛选, 0=无分组, >0=指定分组
+	UserVisibleOnly bool   // 仅用户侧列表使用；管理员列表必须保留隐藏密钥
 }

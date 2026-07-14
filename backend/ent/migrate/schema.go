@@ -847,6 +847,10 @@ var (
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
 		{Name: "platform", Type: field.TypeString, Size: 50, Default: "anthropic"},
 		{Name: "subscription_type", Type: field.TypeString, Size: 20, Default: "standard"},
+		{Name: "is_hidden", Type: field.TypeBool, Default: false},
+		{Name: "is_free", Type: field.TypeBool, Default: false},
+		{Name: "daily_free_limit_usd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "chat_station_only", Type: field.TypeBool, Default: false},
 		{Name: "daily_limit_usd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "weekly_limit_usd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "monthly_limit_usd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
@@ -904,6 +908,16 @@ var (
 				Columns: []*schema.Column{GroupsColumns[14]},
 			},
 			{
+				Name:    "group_is_free",
+				Unique:  false,
+				Columns: []*schema.Column{GroupsColumns[16]},
+			},
+			{
+				Name:    "group_chat_station_only",
+				Unique:  false,
+				Columns: []*schema.Column{GroupsColumns[18]},
+			},
+			{
 				Name:    "group_is_exclusive",
 				Unique:  false,
 				Columns: []*schema.Column{GroupsColumns[11]},
@@ -916,7 +930,7 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[41]},
+				Columns: []*schema.Column{GroupsColumns[45]},
 			},
 		},
 	}

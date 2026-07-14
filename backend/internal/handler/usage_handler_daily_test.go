@@ -99,6 +99,32 @@ func TestGetMyAPIKeyDailyUsageRejectsCrossUserAccess(t *testing.T) {
 	require.False(t, usageRepo.called)
 }
 
+func TestGetMyAPIKeyDailyUsageRejectsHiddenOrDeletedGroupKey(t *testing.T) {
+	groupID := int64(9)
+	tests := map[string]*service.APIKey{
+		"hidden group": {
+			ID: 7, UserID: 42, GroupID: &groupID,
+			Group: &service.Group{ID: groupID, IsHidden: true},
+		},
+		"deleted group": {ID: 7, UserID: 42, GroupID: &groupID},
+	}
+
+	for name, key := range tests {
+		t.Run(name, func(t *testing.T) {
+			usageRepo := &dailyUsageRepoStub{}
+			apiKeyRepo := &dailyUsageAPIKeyRepoStub{keys: map[int64]*service.APIKey{7: key}}
+			router := newDailyUsageTestRouter(usageRepo, apiKeyRepo, 42)
+
+			req := httptest.NewRequest(http.MethodGet, "/user/api-keys/7/usage/daily?days=30", nil)
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusForbidden, rec.Code)
+			require.False(t, usageRepo.called)
+		})
+	}
+}
+
 func TestGetMyAPIKeyDailyUsageRejectsInvalidDays(t *testing.T) {
 	for _, path := range []string{
 		"/user/api-keys/7/usage/daily?days=0",

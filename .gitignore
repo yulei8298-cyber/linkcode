@@ -137,6 +137,8 @@ docs/*
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
 !docs/LOBEHUB_SSO_INTEGRATION.md
 !docs/对话站单点登录集成开发指南.md
+!docs/规格-对话站每日免费分组.md
+!docs/对话站每日免费分组开发记录.md
 !docs/legal/
 !docs/legal/*.md
 .serena/

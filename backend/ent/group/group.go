@@ -44,6 +44,14 @@ const (
 	FieldPlatform = "platform"
 	// FieldSubscriptionType holds the string denoting the subscription_type field in the database.
 	FieldSubscriptionType = "subscription_type"
+	// FieldIsHidden holds the string denoting the is_hidden field in the database.
+	FieldIsHidden = "is_hidden"
+	// FieldIsFree holds the string denoting the is_free field in the database.
+	FieldIsFree = "is_free"
+	// FieldDailyFreeLimitUsd holds the string denoting the daily_free_limit_usd field in the database.
+	FieldDailyFreeLimitUsd = "daily_free_limit_usd"
+	// FieldChatStationOnly holds the string denoting the chat_station_only field in the database.
+	FieldChatStationOnly = "chat_station_only"
 	// FieldDailyLimitUsd holds the string denoting the daily_limit_usd field in the database.
 	FieldDailyLimitUsd = "daily_limit_usd"
 	// FieldWeeklyLimitUsd holds the string denoting the weekly_limit_usd field in the database.
@@ -201,6 +209,10 @@ var Columns = []string{
 	FieldStatus,
 	FieldPlatform,
 	FieldSubscriptionType,
+	FieldIsHidden,
+	FieldIsFree,
+	FieldDailyFreeLimitUsd,
+	FieldChatStationOnly,
 	FieldDailyLimitUsd,
 	FieldWeeklyLimitUsd,
 	FieldMonthlyLimitUsd,
@@ -300,6 +312,12 @@ var (
 	DefaultSubscriptionType string
 	// SubscriptionTypeValidator is a validator for the "subscription_type" field. It is called by the builders before save.
 	SubscriptionTypeValidator func(string) error
+	// DefaultIsHidden holds the default value on creation for the "is_hidden" field.
+	DefaultIsHidden bool
+	// DefaultIsFree holds the default value on creation for the "is_free" field.
+	DefaultIsFree bool
+	// DefaultChatStationOnly holds the default value on creation for the "chat_station_only" field.
+	DefaultChatStationOnly bool
 	// DefaultDefaultValidityDays holds the default value on creation for the "default_validity_days" field.
 	DefaultDefaultValidityDays int
 	// DefaultAllowImageGeneration holds the default value on creation for the "allow_image_generation" field.
@@ -422,6 +440,26 @@ func ByPlatform(opts ...sql.OrderTermOption) OrderOption {
 // BySubscriptionType orders the results by the subscription_type field.
 func BySubscriptionType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscriptionType, opts...).ToFunc()
+}
+
+// ByIsHidden orders the results by the is_hidden field.
+func ByIsHidden(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsHidden, opts...).ToFunc()
+}
+
+// ByIsFree orders the results by the is_free field.
+func ByIsFree(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsFree, opts...).ToFunc()
+}
+
+// ByDailyFreeLimitUsd orders the results by the daily_free_limit_usd field.
+func ByDailyFreeLimitUsd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyFreeLimitUsd, opts...).ToFunc()
+}
+
+// ByChatStationOnly orders the results by the chat_station_only field.
+func ByChatStationOnly(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChatStationOnly, opts...).ToFunc()
 }
 
 // ByDailyLimitUsd orders the results by the daily_limit_usd field.
