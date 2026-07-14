@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,6 +31,14 @@ func newAPIKeyRepoSQLite(t *testing.T) (*apiKeyRepository, *dbent.Client) {
 	drv := entsql.OpenDB(dialect.SQLite, db)
 	client := enttest.NewClient(t, enttest.WithOptions(dbent.Driver(drv)))
 	t.Cleanup(func() { _ = client.Close() })
+
+	// Group IP ACL columns are added by migration 154 instead of the Ent schema.
+	// Keep this shared test database aligned with the production schema because
+	// GetByKeyForAuth selects the ACL fields from joined groups.
+	_, err = db.Exec("ALTER TABLE groups ADD COLUMN ip_whitelist JSON")
+	require.NoError(t, err)
+	_, err = db.Exec("ALTER TABLE groups ADD COLUMN ip_blacklist JSON")
+	require.NoError(t, err)
 
 	return &apiKeyRepository{client: client, sql: db}, client
 }
@@ -123,6 +132,20 @@ func TestAPIKeyRepositoryListByUserIDAttachesLastUsedIP(t *testing.T) {
 	require.Equal(t, newestIP, *byID[withLogs.ID].LastUsedIP)
 	require.Nil(t, byID[emptyOnly.ID].LastUsedIP)
 	require.Nil(t, byID[noLogs.ID].LastUsedIP)
+}
+
+func TestLatestUsageLogIPsQueryPostgresUsesPerKeyLateralLookup(t *testing.T) {
+	query, args := latestUsageLogIPsQuery([]int64{11, 22}, dialect.Postgres)
+	normalizedQuery := strings.Join(strings.Fields(query), " ")
+
+	require.Contains(t, normalizedQuery, "FROM unnest($1::bigint[]) AS requested(api_key_id)")
+	require.Contains(t, normalizedQuery, "CROSS JOIN LATERAL")
+	require.Contains(t, normalizedQuery, "WHERE ul.api_key_id = requested.api_key_id")
+	require.Contains(t, normalizedQuery, "AND ul.ip_address IS NOT NULL")
+	require.Contains(t, normalizedQuery, "AND ul.ip_address <> ''")
+	require.Contains(t, normalizedQuery, "ORDER BY ul.created_at DESC, ul.id DESC LIMIT 1")
+	require.NotContains(t, normalizedQuery, "ROW_NUMBER")
+	require.Len(t, args, 1)
 }
 
 func TestAPIKeyRepository_CreateWithLastUsedAt(t *testing.T) {
