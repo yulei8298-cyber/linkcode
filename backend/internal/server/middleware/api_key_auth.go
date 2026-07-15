@@ -1,10 +1,12 @@
 package middleware
 
 import (
+	"bytes"
 	"context"
 	"crypto/subtle"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,6 +18,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -24,6 +27,7 @@ const (
 	chatStationAPIKeyResponseHeader   = "X-LinkCode-Chat-Station-API-Key"
 	chatStationRestrictedErrorCode    = "CHAT_STATION_GROUP_RESTRICTED"
 	chatStationRestrictedErrorMessage = "当前分组仅允许通过对话站调用"
+	chatStationModelProbeBytes        = 64 * 1024
 )
 
 // NewAPIKeyAuthMiddleware 创建 API Key 认证中间件
@@ -478,17 +482,45 @@ func chatStationPlatformFromRequest(req *http.Request) string {
 		return ""
 	}
 	path := strings.TrimRight(strings.TrimSpace(req.URL.Path), "/")
+	var platform string
 	switch {
 	case strings.HasSuffix(path, "/messages"):
-		return service.PlatformAnthropic
+		platform = service.PlatformAnthropic
 	case strings.HasSuffix(path, "/chat/completions"),
 		strings.Contains(path, "/responses"),
 		strings.HasSuffix(path, "/images/generations"),
 		strings.HasSuffix(path, "/videos/generations"),
 		strings.HasSuffix(path, "/videos/edits"),
 		strings.HasSuffix(path, "/videos/extensions"):
-		return service.PlatformOpenAI
+		platform = service.PlatformOpenAI
 	default:
 		return ""
 	}
+
+	if platform == service.PlatformOpenAI && chatStationRequestUsesGrokModel(req) {
+		return service.PlatformGrok
+	}
+	return platform
+}
+
+// chatStationRequestUsesGrokModel samples the request prefix and restores it
+// before the handler runs. The model field is intentionally read before an API
+// key exists, so the first Grok request can receive a Grok free-group key.
+func chatStationRequestUsesGrokModel(req *http.Request) bool {
+	if req == nil || req.Body == nil || req.Body == http.NoBody {
+		return false
+	}
+
+	remaining := req.Body
+	probe, err := io.ReadAll(io.LimitReader(remaining, chatStationModelProbeBytes))
+	req.Body = io.NopCloser(io.MultiReader(bytes.NewReader(probe), remaining))
+	if err != nil || len(probe) == 0 {
+		return false
+	}
+
+	model := strings.ToLower(strings.TrimSpace(gjson.GetBytes(probe, "model").String()))
+	if slash := strings.LastIndex(model, "/"); slash >= 0 {
+		model = strings.TrimSpace(model[slash+1:])
+	}
+	return model == "grok" || strings.HasPrefix(model, "grok-")
 }

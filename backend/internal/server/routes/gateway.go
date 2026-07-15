@@ -231,7 +231,6 @@ func RegisterGatewayRoutes(
 	r.GET("/responses", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
 		h.OpenAIGateway.ResponsesWebSocket(c)
 	})
-
 	// Legacy nested aliases protect users whose saved endpoint already ends
 	// with /v1 while their client also appends /v1.
 	legacyNested := r.Group("/v1/v1")
@@ -254,7 +253,6 @@ func RegisterGatewayRoutes(
 		legacyNested.POST("/videos/generations", videoGenerationHandler)
 		legacyNested.GET("/videos/:request_id", videoStatusHandler)
 	}
-
 	codexDirect := r.Group("/backend-api/codex")
 	codexDirect.Use(bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic)
 	{

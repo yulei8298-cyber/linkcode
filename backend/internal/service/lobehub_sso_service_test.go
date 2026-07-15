@@ -240,6 +240,29 @@ func TestAPIKeyServiceResolveChatStationAPIKeyCreatesAndReusesSortedCandidate(t 
 	require.Len(t, apiKeyRepo.created, 1)
 }
 
+func TestAPIKeyServiceResolveChatStationAPIKeyCreatesGrokKey(t *testing.T) {
+	limit := 2.5
+	groupID := int64(90)
+	groupRepo := &lobeHubSSOGroupRepoStub{groups: []Group{{
+		ID: groupID, Name: "free-grok", Platform: PlatformGrok,
+		Status: StatusActive, SubscriptionType: SubscriptionTypeStandard,
+		IsHidden: true, IsFree: true, DailyFreeLimitUSD: &limit, ChatStationOnly: true,
+	}}}
+	userRepo := &lobeHubSSOUserRepoStub{user: &User{ID: 1001, Status: StatusActive}}
+	apiKeyRepo := &lobeHubSSOAPIKeyRepoStub{}
+	cfg := &config.Config{}
+	cfg.Default.APIKeyPrefix = "sk-test-"
+
+	svc := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, nil, nil, nil, cfg)
+	key, err := svc.ResolveChatStationAPIKey(context.Background(), userRepo.user.ID, PlatformGrok)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, key)
+	require.Len(t, apiKeyRepo.created, 1)
+	require.NotNil(t, apiKeyRepo.created[0].GroupID)
+	require.Equal(t, groupID, *apiKeyRepo.created[0].GroupID)
+}
+
 func TestAPIKeyServiceResolveChatStationAPIKeySkipsVisibleCandidate(t *testing.T) {
 	limit := 2.5
 	groupRepo := &lobeHubSSOGroupRepoStub{

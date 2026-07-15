@@ -741,14 +741,16 @@ func (s *BillingCacheService) CheckBillingEligibility(ctx context.Context, user 
 		return ErrBillingServiceUnavailable
 	}
 
-	// 判断计费模式
+	// 判断计费模式。免费分组仍受每日免费额度、平台配额、Key 限流和 RPM 限制，
+	// 仅不以用户余额作为调用前置条件。
 	isSubscriptionMode := group != nil && group.IsSubscriptionType() && subscription != nil
+	isFreeGroup := group != nil && group.IsFree
 
 	if isSubscriptionMode {
 		if err := s.checkSubscriptionEligibility(ctx, user.ID, group, subscription); err != nil {
 			return err
 		}
-	} else {
+	} else if !isFreeGroup {
 		if err := s.checkBalanceEligibility(ctx, user.ID); err != nil {
 			return err
 		}

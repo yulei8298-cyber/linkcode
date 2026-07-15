@@ -6,8 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,11 +48,14 @@ func TestChatStationPlatformFromRequest(t *testing.T) {
 		name   string
 		method string
 		path   string
+		body   string
 		want   string
 	}{
 		{name: "Anthropic messages", method: http.MethodPost, path: "/v1/messages", want: service.PlatformAnthropic},
 		{name: "OpenAI chat", method: http.MethodPost, path: "/v1/chat/completions", want: service.PlatformOpenAI},
+		{name: "Grok chat", method: http.MethodPost, path: "/v1/chat/completions", body: `{"model":"grok-4.5"}`, want: service.PlatformGrok},
 		{name: "OpenAI image", method: http.MethodPost, path: "/v1/images/generations", want: service.PlatformOpenAI},
+		{name: "Grok video", method: http.MethodPost, path: "/v1/videos/generations", body: `{"model":"grok-imagine-video"}`, want: service.PlatformGrok},
 		{name: "OpenAI video generation", method: http.MethodPost, path: "/v1/videos/generations", want: service.PlatformOpenAI},
 		{name: "OpenAI video edit", method: http.MethodPost, path: "/v1/videos/edits", want: service.PlatformOpenAI},
 		{name: "OpenAI video extension", method: http.MethodPost, path: "/v1/videos/extensions", want: service.PlatformOpenAI},
@@ -60,8 +65,13 @@ func TestChatStationPlatformFromRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, tt.path, nil)
+			req := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
 			require.Equal(t, tt.want, chatStationPlatformFromRequest(req))
+			if tt.body != "" {
+				restored, err := io.ReadAll(req.Body)
+				require.NoError(t, err)
+				require.Equal(t, tt.body, string(restored))
+			}
 		})
 	}
 }

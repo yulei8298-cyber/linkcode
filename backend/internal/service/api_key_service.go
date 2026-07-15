@@ -940,7 +940,7 @@ func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subsc
 
 func (s *APIKeyService) ResolveChatStationAPIKey(ctx context.Context, userID int64, platform string) (string, error) {
 	platform = strings.TrimSpace(strings.ToLower(platform))
-	if platform != PlatformOpenAI && platform != PlatformAnthropic {
+	if platform != PlatformOpenAI && platform != PlatformAnthropic && platform != PlatformGrok {
 		return "", ErrChatStationFreeGroupNotFound
 	}
 	user, err := s.userRepo.GetByID(ctx, userID)
