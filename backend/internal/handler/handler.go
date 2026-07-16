@@ -38,6 +38,7 @@ type AdminHandlers struct {
 	Payment                *admin.PaymentHandler
 	Affiliate              *admin.AffiliateHandler
 	Compliance             *admin.ComplianceHandler
+	AuditLog               *admin.AuditLogHandler
 }
 
 // Handlers contains all HTTP handlers
@@ -60,6 +61,7 @@ type Handlers struct {
 	AvailableChannel *AvailableChannelHandler
 	PublicPricing    *PublicPricingHandler
 	LobeHubSSO       *LobeHubSSOHandler
+	AsyncImage       *AsyncImageHandler
 	BatchImage       *BatchImageHandler
 }
 

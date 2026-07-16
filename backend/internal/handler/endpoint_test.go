@@ -46,6 +46,7 @@ func TestNormalizeInboundEndpoint(t *testing.T) {
 		{"/v1/images/edits", EndpointImagesEdits},
 		{"/images/edits", EndpointImagesEdits},
 		{"/v1/v1/images/edits", EndpointImagesEdits},
+		{"/v1/images/tasks/imgtask_123", EndpointImageTasks},
 		{"/v1/videos/generations", EndpointVideosGenerations},
 		{"/v1/videos/req_123", EndpointVideos},
 		{"/v1beta/models", EndpointGeminiModels},
@@ -67,6 +68,7 @@ func TestNormalizeInboundEndpoint(t *testing.T) {
 		{"/responses/compact", EndpointResponsesCompact},
 		{"/responses/compact/detail", EndpointResponsesCompact},
 		{"/alpha/search", EndpointAlphaSearch},
+		{"/images/tasks/imgtask_123", EndpointImageTasks},
 
 		// Bare Codex direct alias route — root vs. compact.
 		{"/backend-api/codex/responses", EndpointResponses},
