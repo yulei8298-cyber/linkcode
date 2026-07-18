@@ -45,6 +45,11 @@ func (RedeemCode) Fields() []ent.Field {
 		field.Float("value").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
 			Default(0),
+		// Nil retains legacy behavior: the redeem flow falls back to value.
+		field.Float("affiliate_rebate_base_amount").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
 		field.String("status").
 			MaxLen(20).
 			Default(domain.StatusUnused),

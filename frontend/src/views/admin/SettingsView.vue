@@ -7721,6 +7721,7 @@ const adminApiKeyMasked = ref("");
 const adminApiKeyOperating = ref(false);
 const newAdminApiKey = ref("");
 const subscriptionGroups = ref<AdminGroup[]>([]);
+const knownSubscriptionGroupIDs = ref<Set<number> | null>(null);
 
 // Overload Cooldown (529) 状态
 const overloadCooldownLoading = ref(true);
@@ -9408,14 +9409,30 @@ async function loadSettings() {
 
 async function loadSubscriptionGroups() {
   try {
-    const groups = await adminAPI.groups.getAll();
+    const groups = await adminAPI.groups.getAllIncludingInactive();
+    const subscriptionGroupIDs = new Set(
+      groups
+        .filter((group) => group.subscription_type === "subscription")
+        .map((group) => group.id),
+    );
+    knownSubscriptionGroupIDs.value = subscriptionGroupIDs;
     subscriptionGroups.value = groups.filter(
       (group) =>
         group.subscription_type === "subscription" && group.status === "active",
     );
   } catch (_error: unknown) {
     subscriptionGroups.value = [];
+    knownSubscriptionGroupIDs.value = null;
   }
+}
+
+function removeDeletedDefaultSubscriptions(
+  subscriptions: DefaultSubscriptionSetting[],
+): DefaultSubscriptionSetting[] {
+  const normalized = normalizeDefaultSubscriptionSettings(subscriptions);
+  const knownGroupIDs = knownSubscriptionGroupIDs.value;
+  if (!knownGroupIDs) return normalized;
+  return normalized.filter((item) => knownGroupIDs.has(item.group_id));
 }
 
 function findNextAvailableSubscriptionGroup(
@@ -9557,9 +9574,10 @@ async function saveSettings() {
       form.login_agreement_mode === "checkbox" ? "checkbox" : "modal";
     form.login_agreement_documents = normalizedLoginAgreementDocuments;
 
-    const normalizedDefaultSubscriptions = normalizeDefaultSubscriptionSettings(
+    const normalizedDefaultSubscriptions = removeDeletedDefaultSubscriptions(
       form.default_subscriptions,
     );
+    form.default_subscriptions = normalizedDefaultSubscriptions;
     const duplicateDefaultSubscription = findDuplicateDefaultSubscription(
       normalizedDefaultSubscriptions,
     );
@@ -9574,7 +9592,7 @@ async function saveSettings() {
 
     for (const authSource of authSourceDefaultsMeta.value) {
       authSourceDefaults[authSource.source].subscriptions =
-        normalizeDefaultSubscriptionSettings(
+        removeDeletedDefaultSubscriptions(
           authSourceDefaults[authSource.source].subscriptions,
         );
       const duplicate = findDuplicateDefaultSubscription(

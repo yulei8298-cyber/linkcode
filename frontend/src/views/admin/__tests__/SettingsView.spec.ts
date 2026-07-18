@@ -68,7 +68,7 @@ vi.mock("@/api", () => ({
       getBetaPolicySettings,
     },
     groups: {
-      getAll: getGroups,
+      getAllIncludingInactive: getGroups,
     },
     proxies: {
       list: listProxies,
@@ -675,6 +675,32 @@ describe("admin SettingsView payment visible method controls", () => {
     expect(updateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         affiliate_admin_recharge_enabled: true,
+      }),
+    );
+  });
+
+  it("removes deleted subscription groups from default grants before saving", async () => {
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      default_subscriptions: [{ group_id: 5, validity_days: 30 }],
+      auth_source_default_email_subscriptions: [
+        { group_id: 5, validity_days: 30 },
+      ],
+    });
+    getGroups.mockResolvedValueOnce([
+      { id: 6, subscription_type: "standard", status: "active" },
+    ]);
+
+    const wrapper = mountView();
+
+    await flushPromises();
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        default_subscriptions: [],
+        auth_source_default_email_subscriptions: [],
       }),
     );
   });

@@ -7,16 +7,19 @@ import (
 )
 
 type RedeemCode struct {
-	ID        int64
-	Code      string
-	Type      string
-	Value     float64
-	Status    string
-	UsedBy    *int64
-	UsedAt    *time.Time
-	Notes     string
-	CreatedAt time.Time
-	ExpiresAt *time.Time
+	ID    int64
+	Code  string
+	Type  string
+	Value float64
+	// AffiliateRebateBaseAmount is the amount used for inviter rebates. Nil is
+	// reserved for legacy rows and falls back to Value when redeemed.
+	AffiliateRebateBaseAmount *float64
+	Status                    string
+	UsedBy                    *int64
+	UsedAt                    *time.Time
+	Notes                     string
+	CreatedAt                 time.Time
+	ExpiresAt                 *time.Time
 
 	GroupID      *int64
 	ValidityDays int

@@ -1541,6 +1541,7 @@ export interface RedeemCode {
   code: string
   type: RedeemCodeType
   value: number
+	affiliate_rebate_base_amount?: number | null
   status: 'active' | 'used' | 'expired' | 'unused' | 'disabled'
   used_by: number | null
   used_at: string | null
@@ -1558,6 +1559,7 @@ export interface GenerateRedeemCodesRequest {
   count: number
   type: RedeemCodeType
   value: number
+	affiliate_rebate_base_amount?: number
   group_id?: number | null // 订阅类型专用
   validity_days?: number // 订阅类型专用
   expires_at?: string | null

@@ -19,6 +19,15 @@ describe('AppSidebar custom SVG styles', () => {
   })
 })
 
+describe('AppSidebar custom menu navigation', () => {
+  it('opens external custom menus in a new tab instead of routing to the iframe page', () => {
+    expect(componentSource).toContain('function buildCustomMenuNavItem')
+    expect(componentSource).toContain('externalUrl: isMarkdownPage')
+    expect(componentSource).toContain('target="_blank"')
+    expect(componentSource).toContain('rel="noopener noreferrer"')
+  })
+})
+
 describe('AppSidebar scroll position persistence', () => {
   it('binds a template ref to the sidebar nav element', () => {
     expect(componentSource).toContain('ref="sidebarNavRef"')

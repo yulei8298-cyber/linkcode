@@ -70,6 +70,11 @@ func Value(v float64) predicate.RedeemCode {
 	return predicate.RedeemCode(sql.FieldEQ(FieldValue, v))
 }
 
+// AffiliateRebateBaseAmount applies equality check predicate on the "affiliate_rebate_base_amount" field. It's identical to AffiliateRebateBaseAmountEQ.
+func AffiliateRebateBaseAmount(v float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldEQ(FieldAffiliateRebateBaseAmount, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.RedeemCode {
 	return predicate.RedeemCode(sql.FieldEQ(FieldStatus, v))
@@ -278,6 +283,56 @@ func ValueLT(v float64) predicate.RedeemCode {
 // ValueLTE applies the LTE predicate on the "value" field.
 func ValueLTE(v float64) predicate.RedeemCode {
 	return predicate.RedeemCode(sql.FieldLTE(FieldValue, v))
+}
+
+// AffiliateRebateBaseAmountEQ applies the EQ predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountEQ(v float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldEQ(FieldAffiliateRebateBaseAmount, v))
+}
+
+// AffiliateRebateBaseAmountNEQ applies the NEQ predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountNEQ(v float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldNEQ(FieldAffiliateRebateBaseAmount, v))
+}
+
+// AffiliateRebateBaseAmountIn applies the In predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountIn(vs ...float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldIn(FieldAffiliateRebateBaseAmount, vs...))
+}
+
+// AffiliateRebateBaseAmountNotIn applies the NotIn predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountNotIn(vs ...float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldNotIn(FieldAffiliateRebateBaseAmount, vs...))
+}
+
+// AffiliateRebateBaseAmountGT applies the GT predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountGT(v float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldGT(FieldAffiliateRebateBaseAmount, v))
+}
+
+// AffiliateRebateBaseAmountGTE applies the GTE predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountGTE(v float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldGTE(FieldAffiliateRebateBaseAmount, v))
+}
+
+// AffiliateRebateBaseAmountLT applies the LT predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountLT(v float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldLT(FieldAffiliateRebateBaseAmount, v))
+}
+
+// AffiliateRebateBaseAmountLTE applies the LTE predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountLTE(v float64) predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldLTE(FieldAffiliateRebateBaseAmount, v))
+}
+
+// AffiliateRebateBaseAmountIsNil applies the IsNil predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountIsNil() predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldIsNull(FieldAffiliateRebateBaseAmount))
+}
+
+// AffiliateRebateBaseAmountNotNil applies the NotNil predicate on the "affiliate_rebate_base_amount" field.
+func AffiliateRebateBaseAmountNotNil() predicate.RedeemCode {
+	return predicate.RedeemCode(sql.FieldNotNull(FieldAffiliateRebateBaseAmount))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

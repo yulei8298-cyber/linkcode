@@ -16,6 +16,7 @@ import (
 )
 
 type settingUpdateRepoStub struct {
+	values  map[string]string
 	updates map[string]string
 }
 
@@ -32,7 +33,14 @@ func (s *settingUpdateRepoStub) Set(ctx context.Context, key, value string) erro
 }
 
 func (s *settingUpdateRepoStub) GetMultiple(ctx context.Context, keys []string) (map[string]string, error) {
-	panic("unexpected GetMultiple call")
+	if s.values == nil {
+		panic("unexpected GetMultiple call")
+	}
+	values := make(map[string]string, len(keys))
+	for _, key := range keys {
+		values[key] = s.values[key]
+	}
+	return values, nil
 }
 
 func (s *settingUpdateRepoStub) SetMultiple(ctx context.Context, settings map[string]string) error {
@@ -196,6 +204,21 @@ func TestSettingService_UpdateSettings_DefaultSubscriptions_ValidGroup(t *testin
 	require.Equal(t, []DefaultSubscriptionSetting{
 		{GroupID: 11, ValidityDays: 30},
 	}, got)
+}
+
+func TestSettingService_RemoveGroupFromDefaultSubscriptions(t *testing.T) {
+	repo := &settingUpdateRepoStub{values: map[string]string{
+		SettingKeyDefaultSubscriptions:                 `[{"group_id":11,"validity_days":30},{"group_id":22,"validity_days":7}]`,
+		SettingKeyAuthSourceDefaultEmailSubscriptions:  `[{"group_id":11,"validity_days":30}]`,
+		SettingKeyAuthSourceDefaultGoogleSubscriptions: `[{"group_id":22,"validity_days":30}]`,
+	}}
+	svc := NewSettingService(repo, &config.Config{})
+
+	require.NoError(t, svc.RemoveGroupFromDefaultSubscriptions(context.Background(), 11))
+	require.JSONEq(t, `[{"group_id":22,"validity_days":7}]`, repo.updates[SettingKeyDefaultSubscriptions])
+	require.JSONEq(t, `[]`, repo.updates[SettingKeyAuthSourceDefaultEmailSubscriptions])
+	_, unchanged := repo.updates[SettingKeyAuthSourceDefaultGoogleSubscriptions]
+	require.False(t, unchanged)
 }
 
 func TestSettingService_UpdateSettings_DefaultSubscriptions_RejectsNonSubscriptionGroup(t *testing.T) {

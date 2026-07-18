@@ -56,11 +56,8 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			abortWithGoogleError(c, 401, "API key is disabled")
 			return
 		}
-		// 与主中间件保持一致：先应用分组 ACL，再应用 Key ACL。
-		clientIP := ip.GetTrustedClientIP(c)
-		if cfg.TrustForwardedIPForAPIKeyACL() {
-			clientIP = ip.GetClientIP(c)
-		}
+		// 与主中间件保持一致：先应用分组 ACL，再应用 Key ACL，且使用统一的安全客户端 IP。
+		clientIP := ip.GetSecurityClientIP(c, cfg.TrustForwardedIPForAPIKeyACL())
 		if apiKey.Group != nil && (len(apiKey.Group.IPWhitelist) > 0 || len(apiKey.Group.IPBlacklist) > 0) {
 			allowed, _ := ip.CheckIPRestrictionWithCompiledRules(clientIP, apiKey.Group.CompiledIPWhitelist, apiKey.Group.CompiledIPBlacklist)
 			if !allowed {

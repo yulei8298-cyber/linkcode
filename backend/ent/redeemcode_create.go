@@ -58,6 +58,20 @@ func (_c *RedeemCodeCreate) SetNillableValue(v *float64) *RedeemCodeCreate {
 	return _c
 }
 
+// SetAffiliateRebateBaseAmount sets the "affiliate_rebate_base_amount" field.
+func (_c *RedeemCodeCreate) SetAffiliateRebateBaseAmount(v float64) *RedeemCodeCreate {
+	_c.mutation.SetAffiliateRebateBaseAmount(v)
+	return _c
+}
+
+// SetNillableAffiliateRebateBaseAmount sets the "affiliate_rebate_base_amount" field if the given value is not nil.
+func (_c *RedeemCodeCreate) SetNillableAffiliateRebateBaseAmount(v *float64) *RedeemCodeCreate {
+	if v != nil {
+		_c.SetAffiliateRebateBaseAmount(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *RedeemCodeCreate) SetStatus(v string) *RedeemCodeCreate {
 	_c.mutation.SetStatus(v)
@@ -325,6 +339,10 @@ func (_c *RedeemCodeCreate) createSpec() (*RedeemCode, *sqlgraph.CreateSpec) {
 		_spec.SetField(redeemcode.FieldValue, field.TypeFloat64, value)
 		_node.Value = value
 	}
+	if value, ok := _c.mutation.AffiliateRebateBaseAmount(); ok {
+		_spec.SetField(redeemcode.FieldAffiliateRebateBaseAmount, field.TypeFloat64, value)
+		_node.AffiliateRebateBaseAmount = &value
+	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(redeemcode.FieldStatus, field.TypeString, value)
 		_node.Status = value
@@ -474,6 +492,30 @@ func (u *RedeemCodeUpsert) UpdateValue() *RedeemCodeUpsert {
 // AddValue adds v to the "value" field.
 func (u *RedeemCodeUpsert) AddValue(v float64) *RedeemCodeUpsert {
 	u.Add(redeemcode.FieldValue, v)
+	return u
+}
+
+// SetAffiliateRebateBaseAmount sets the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsert) SetAffiliateRebateBaseAmount(v float64) *RedeemCodeUpsert {
+	u.Set(redeemcode.FieldAffiliateRebateBaseAmount, v)
+	return u
+}
+
+// UpdateAffiliateRebateBaseAmount sets the "affiliate_rebate_base_amount" field to the value that was provided on create.
+func (u *RedeemCodeUpsert) UpdateAffiliateRebateBaseAmount() *RedeemCodeUpsert {
+	u.SetExcluded(redeemcode.FieldAffiliateRebateBaseAmount)
+	return u
+}
+
+// AddAffiliateRebateBaseAmount adds v to the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsert) AddAffiliateRebateBaseAmount(v float64) *RedeemCodeUpsert {
+	u.Add(redeemcode.FieldAffiliateRebateBaseAmount, v)
+	return u
+}
+
+// ClearAffiliateRebateBaseAmount clears the value of the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsert) ClearAffiliateRebateBaseAmount() *RedeemCodeUpsert {
+	u.SetNull(redeemcode.FieldAffiliateRebateBaseAmount)
 	return u
 }
 
@@ -688,6 +730,34 @@ func (u *RedeemCodeUpsertOne) AddValue(v float64) *RedeemCodeUpsertOne {
 func (u *RedeemCodeUpsertOne) UpdateValue() *RedeemCodeUpsertOne {
 	return u.Update(func(s *RedeemCodeUpsert) {
 		s.UpdateValue()
+	})
+}
+
+// SetAffiliateRebateBaseAmount sets the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsertOne) SetAffiliateRebateBaseAmount(v float64) *RedeemCodeUpsertOne {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.SetAffiliateRebateBaseAmount(v)
+	})
+}
+
+// AddAffiliateRebateBaseAmount adds v to the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsertOne) AddAffiliateRebateBaseAmount(v float64) *RedeemCodeUpsertOne {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.AddAffiliateRebateBaseAmount(v)
+	})
+}
+
+// UpdateAffiliateRebateBaseAmount sets the "affiliate_rebate_base_amount" field to the value that was provided on create.
+func (u *RedeemCodeUpsertOne) UpdateAffiliateRebateBaseAmount() *RedeemCodeUpsertOne {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.UpdateAffiliateRebateBaseAmount()
+	})
+}
+
+// ClearAffiliateRebateBaseAmount clears the value of the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsertOne) ClearAffiliateRebateBaseAmount() *RedeemCodeUpsertOne {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.ClearAffiliateRebateBaseAmount()
 	})
 }
 
@@ -1088,6 +1158,34 @@ func (u *RedeemCodeUpsertBulk) AddValue(v float64) *RedeemCodeUpsertBulk {
 func (u *RedeemCodeUpsertBulk) UpdateValue() *RedeemCodeUpsertBulk {
 	return u.Update(func(s *RedeemCodeUpsert) {
 		s.UpdateValue()
+	})
+}
+
+// SetAffiliateRebateBaseAmount sets the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsertBulk) SetAffiliateRebateBaseAmount(v float64) *RedeemCodeUpsertBulk {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.SetAffiliateRebateBaseAmount(v)
+	})
+}
+
+// AddAffiliateRebateBaseAmount adds v to the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsertBulk) AddAffiliateRebateBaseAmount(v float64) *RedeemCodeUpsertBulk {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.AddAffiliateRebateBaseAmount(v)
+	})
+}
+
+// UpdateAffiliateRebateBaseAmount sets the "affiliate_rebate_base_amount" field to the value that was provided on create.
+func (u *RedeemCodeUpsertBulk) UpdateAffiliateRebateBaseAmount() *RedeemCodeUpsertBulk {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.UpdateAffiliateRebateBaseAmount()
+	})
+}
+
+// ClearAffiliateRebateBaseAmount clears the value of the "affiliate_rebate_base_amount" field.
+func (u *RedeemCodeUpsertBulk) ClearAffiliateRebateBaseAmount() *RedeemCodeUpsertBulk {
+	return u.Update(func(s *RedeemCodeUpsert) {
+		s.ClearAffiliateRebateBaseAmount()
 	})
 }
 

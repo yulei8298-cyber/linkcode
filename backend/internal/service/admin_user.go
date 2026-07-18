@@ -1254,11 +1254,15 @@ func (s *adminServiceImpl) GenerateRedeemCodes(ctx context.Context, input *Gener
 			return nil, err
 		}
 		code := RedeemCode{
-			Code:      codeValue,
-			Type:      input.Type,
-			Value:     input.Value,
-			Status:    StatusUnused,
-			ExpiresAt: input.ExpiresAt,
+			Code:                      codeValue,
+			Type:                      input.Type,
+			Value:                     input.Value,
+			AffiliateRebateBaseAmount: input.AffiliateRebateBaseAmount,
+			Status:                    StatusUnused,
+			ExpiresAt:                 input.ExpiresAt,
+		}
+		if err := normalizeAffiliateRebateBaseAmount(&code); err != nil {
+			return nil, err
 		}
 		// 订阅类型专用字段
 		if input.Type == RedeemTypeSubscription {

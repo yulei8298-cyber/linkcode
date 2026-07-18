@@ -20,6 +20,8 @@ const (
 	FieldType = "type"
 	// FieldValue holds the string denoting the value field in the database.
 	FieldValue = "value"
+	// FieldAffiliateRebateBaseAmount holds the string denoting the affiliate_rebate_base_amount field in the database.
+	FieldAffiliateRebateBaseAmount = "affiliate_rebate_base_amount"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldUsedBy holds the string denoting the used_by field in the database.
@@ -64,6 +66,7 @@ var Columns = []string{
 	FieldCode,
 	FieldType,
 	FieldValue,
+	FieldAffiliateRebateBaseAmount,
 	FieldStatus,
 	FieldUsedBy,
 	FieldUsedAt,
@@ -124,6 +127,11 @@ func ByType(opts ...sql.OrderTermOption) OrderOption {
 // ByValue orders the results by the value field.
 func ByValue(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldValue, opts...).ToFunc()
+}
+
+// ByAffiliateRebateBaseAmount orders the results by the affiliate_rebate_base_amount field.
+func ByAffiliateRebateBaseAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAffiliateRebateBaseAmount, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

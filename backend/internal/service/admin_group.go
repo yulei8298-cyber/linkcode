@@ -776,6 +776,11 @@ func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64) error {
 		return err
 	}
 	// 注意：user_group_rate_multipliers 表通过外键 ON DELETE CASCADE 自动清理
+	if s.settingService != nil {
+		if err := s.settingService.RemoveGroupFromDefaultSubscriptions(ctx, id); err != nil {
+			logger.LegacyPrintf("service.admin", "clear deleted group from default subscriptions failed: group_id=%d err=%v", id, err)
+		}
+	}
 
 	// 事务成功后，异步失效受影响用户的订阅缓存
 	if len(affectedUserIDs) > 0 && s.billingCacheService != nil {

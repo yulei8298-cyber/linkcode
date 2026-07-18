@@ -117,12 +117,9 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 			return
 		}
 
-		// 检查 IP 限制（白名单/黑名单）
-		// 注意：错误信息故意模糊，避免暴露具体的 IP 限制机制
-		clientIP := ip.GetTrustedClientIP(c)
-		if cfg.TrustForwardedIPForAPIKeyACL() {
-			clientIP = ip.GetClientIP(c)
-		}
+		// 检查 IP 限制（白名单/黑名单）。分组 ACL 在前，密钥 ACL 在后。
+		// 与审计日志和会话绑定共用同一套可信客户端 IP 解析逻辑。
+		clientIP := ip.GetSecurityClientIP(c, cfg.TrustForwardedIPForAPIKeyACL())
 		if apiKey.Group != nil && (len(apiKey.Group.IPWhitelist) > 0 || len(apiKey.Group.IPBlacklist) > 0) {
 			allowed, _ := ip.CheckIPRestrictionWithCompiledRules(clientIP, apiKey.Group.CompiledIPWhitelist, apiKey.Group.CompiledIPBlacklist)
 			if !allowed {

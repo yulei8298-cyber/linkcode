@@ -623,6 +623,19 @@ func TestAdminService_DeleteGroup_InvalidatesAuthCacheForBoundKeys(t *testing.T)
 	require.Equal(t, []string{"k1", "k2"}, invalidator.keys)
 }
 
+func TestAdminService_DeleteGroup_RemovesDefaultSubscriptionReferences(t *testing.T) {
+	settingRepo := &settingUpdateRepoStub{values: map[string]string{
+		SettingKeyDefaultSubscriptions: `[{"group_id":5,"validity_days":30}]`,
+	}}
+	svc := &adminServiceImpl{
+		groupRepo:      &groupRepoStub{},
+		settingService: NewSettingService(settingRepo, nil),
+	}
+
+	require.NoError(t, svc.DeleteGroup(context.Background(), 5))
+	require.JSONEq(t, `[]`, settingRepo.updates[SettingKeyDefaultSubscriptions])
+}
+
 func TestAdminService_DeleteGroup_NotFound(t *testing.T) {
 	repo := &groupRepoStub{deleteErr: ErrGroupNotFound}
 	svc := &adminServiceImpl{groupRepo: repo}

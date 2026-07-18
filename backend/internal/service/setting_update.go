@@ -50,6 +50,62 @@ func (s *SettingService) UpdateSettingsWithAuthSourceDefaults(ctx context.Contex
 	return err
 }
 
+var defaultSubscriptionSettingKeys = []string{
+	SettingKeyDefaultSubscriptions,
+	SettingKeyAuthSourceDefaultEmailSubscriptions,
+	SettingKeyAuthSourceDefaultLinuxDoSubscriptions,
+	SettingKeyAuthSourceDefaultOIDCSubscriptions,
+	SettingKeyAuthSourceDefaultWeChatSubscriptions,
+	SettingKeyAuthSourceDefaultGitHubSubscriptions,
+	SettingKeyAuthSourceDefaultGoogleSubscriptions,
+	SettingKeyAuthSourceDefaultDingTalkSubscriptions,
+}
+
+// RemoveGroupFromDefaultSubscriptions removes a deleted group from every
+// default subscription grant setting. Deleting a group must not leave stale
+// references that make unrelated system settings updates fail validation.
+func (s *SettingService) RemoveGroupFromDefaultSubscriptions(ctx context.Context, groupID int64) error {
+	if groupID <= 0 {
+		return nil
+	}
+
+	values, err := s.settingRepo.GetMultiple(ctx, defaultSubscriptionSettingKeys)
+	if err != nil {
+		return fmt.Errorf("get default subscription settings: %w", err)
+	}
+
+	updates := make(map[string]string)
+	for _, key := range defaultSubscriptionSettingKeys {
+		subscriptions := parseDefaultSubscriptions(values[key])
+		filtered := make([]DefaultSubscriptionSetting, 0, len(subscriptions))
+		for _, subscription := range subscriptions {
+			if subscription.GroupID != groupID {
+				filtered = append(filtered, subscription)
+			}
+		}
+		if len(filtered) == len(subscriptions) {
+			continue
+		}
+
+		value, err := json.Marshal(filtered)
+		if err != nil {
+			return fmt.Errorf("marshal %s: %w", key, err)
+		}
+		updates[key] = string(value)
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+	if err := s.settingRepo.SetMultiple(ctx, updates); err != nil {
+		return fmt.Errorf("clear default subscription settings: %w", err)
+	}
+	if s.onUpdate != nil {
+		s.onUpdate()
+	}
+	return nil
+}
+
 func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, settings *SystemSettings) (map[string]string, error) {
 	if err := s.validateDefaultSubscriptionGroups(ctx, settings.DefaultSubscriptions); err != nil {
 		return nil, err

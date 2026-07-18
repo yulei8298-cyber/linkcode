@@ -403,7 +403,8 @@ type RedeemCode struct {
 type AdminRedeemCode struct {
 	RedeemCode
 
-	Notes string `json:"notes"`
+	Notes                     string   `json:"notes"`
+	AffiliateRebateBaseAmount *float64 `json:"affiliate_rebate_base_amount"`
 }
 
 type NullableTimeField struct {

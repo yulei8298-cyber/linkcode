@@ -62,6 +62,7 @@ export async function getById(id: number): Promise<RedeemCode> {
  * @param groupId - Group ID (required for subscription type)
  * @param validityDays - Validity days (for subscription type)
  * @param expiresInDays - Days before the code itself expires
+ * @param affiliateRebateBaseAmount - Actual paid amount used for inviter rebates
  * @returns Array of generated redeem codes
  */
 export async function generate(
@@ -70,7 +71,8 @@ export async function generate(
   value: number,
   groupId?: number | null,
   validityDays?: number,
-  expiresInDays?: number | null
+  expiresInDays?: number | null,
+  affiliateRebateBaseAmount?: number
 ): Promise<RedeemCode[]> {
   const payload: GenerateRedeemCodesRequest = {
     count,
@@ -87,6 +89,9 @@ export async function generate(
   }
   if (expiresInDays && expiresInDays > 0) {
     payload.expires_in_days = expiresInDays
+  }
+  if (affiliateRebateBaseAmount !== undefined) {
+    payload.affiliate_rebate_base_amount = affiliateRebateBaseAmount
   }
 
   const { data } = await apiClient.post<RedeemCode[]>('/admin/redeem-codes/generate', payload)

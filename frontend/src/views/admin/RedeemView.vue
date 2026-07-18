@@ -141,6 +141,16 @@
             </span>
           </template>
 
+          <template #cell-affiliate_rebate_base_amount="{ value, row }">
+            <span
+              v-if="row.type === 'balance' && row.value > 0"
+              class="text-sm text-gray-700 dark:text-gray-300"
+            >
+              ${{ Number(value ?? row.value).toFixed(2) }}
+            </span>
+            <span v-else class="text-gray-400 dark:text-dark-500">-</span>
+          </template>
+
           <template #cell-status="{ value }">
             <span
               :class="[
@@ -303,6 +313,18 @@
                 :min="generateForm.type === 'balance' ? '0.01' : '1'"
                 required
                 class="input"
+              />
+            </div>
+            <div v-if="generateForm.type === 'balance'">
+              <label class="input-label">{{ t('admin.redeem.affiliateRebateBaseAmount') }}</label>
+              <input
+                v-model.number="generateForm.affiliate_rebate_base_amount"
+                type="number"
+                step="0.01"
+                min="0"
+                :max="generateForm.value"
+                class="input"
+                :placeholder="t('admin.redeem.affiliateRebateBaseAmountPlaceholder')"
               />
             </div>
             <!-- 邀请码类型：显示提示信息 -->
@@ -724,6 +746,7 @@ const columns = computed<Column[]>(() => [
   { key: 'code', label: t('admin.redeem.columns.code') },
   { key: 'type', label: t('admin.redeem.columns.type'), sortable: true },
   { key: 'value', label: t('admin.redeem.columns.value'), sortable: true },
+  { key: 'affiliate_rebate_base_amount', label: t('admin.redeem.columns.affiliateRebateBaseAmount') },
   { key: 'status', label: t('admin.redeem.columns.status'), sortable: true },
   { key: 'used_by', label: t('admin.redeem.columns.usedBy') },
   { key: 'used_at', label: t('admin.redeem.columns.usedAt'), sortable: true },
@@ -830,6 +853,7 @@ const redeemCodeExpiryOptions = computed<{ value: RedeemCodeExpiryOption; label:
 const generateForm = reactive({
   type: 'balance' as RedeemCodeType,
   value: 10,
+  affiliate_rebate_base_amount: null as number | null,
   count: 1,
   group_id: null as number | null,
   validity_days: 30,
@@ -845,6 +869,9 @@ watch(
       generateForm.value = 0
     } else if (generateForm.value === 0) {
       generateForm.value = 10
+    }
+    if (newType !== 'balance') {
+      generateForm.affiliate_rebate_base_amount = null
     }
   }
 )
@@ -1030,6 +1057,18 @@ const handleGenerateCodes = async () => {
     return
   }
 
+  const affiliateRebateBaseAmount = generateForm.affiliate_rebate_base_amount
+  if (
+    generateForm.type === 'balance' &&
+    affiliateRebateBaseAmount !== null &&
+    (!Number.isFinite(affiliateRebateBaseAmount) ||
+      affiliateRebateBaseAmount < 0 ||
+      affiliateRebateBaseAmount > generateForm.value)
+  ) {
+    appStore.showError(t('admin.redeem.affiliateRebateBaseAmountInvalid'))
+    return
+  }
+
   generating.value = true
   try {
     const result = await adminAPI.redeem.generate(
@@ -1038,13 +1077,15 @@ const handleGenerateCodes = async () => {
       generateForm.value,
       generateForm.type === 'subscription' ? generateForm.group_id : undefined,
       generateForm.type === 'subscription' ? generateForm.validity_days : undefined,
-      expiresInDays
+      expiresInDays,
+      generateForm.type === 'balance' ? affiliateRebateBaseAmount ?? undefined : undefined
     )
     showGenerateDialog.value = false
     generatedCodes.value = result
     showResultDialog.value = true
     // 重置表单
     generateForm.group_id = null
+    generateForm.affiliate_rebate_base_amount = null
     generateForm.validity_days = 30
     generateForm.expiry_option = 'never'
     generateForm.custom_expiry_days = 7

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -39,6 +40,53 @@ func ContextSkipRedeemAffiliate(ctx context.Context) context.Context {
 	return context.WithValue(ctx, ctxKeySkipRedeemAffiliate{}, true)
 }
 
+// normalizeAffiliateRebateBaseAmount validates the optional rebate basis when
+// a code is created. Positive balance codes default to their credited value,
+// so callers that omit the new field preserve existing behavior.
+func normalizeAffiliateRebateBaseAmount(code *RedeemCode) error {
+	if code == nil {
+		return infraerrors.BadRequest("REDEEM_CODE_AFFILIATE_REBATE_BASE_INVALID", "redeem code is required")
+	}
+	if code.AffiliateRebateBaseAmount == nil {
+		if code.Type == RedeemTypeBalance && code.Value > 0 {
+			base := code.Value
+			code.AffiliateRebateBaseAmount = &base
+		}
+		return nil
+	}
+
+	base := *code.AffiliateRebateBaseAmount
+	if code.Type != RedeemTypeBalance ||
+		code.Value <= 0 ||
+		math.IsNaN(code.Value) ||
+		math.IsInf(code.Value, 0) ||
+		math.IsNaN(base) ||
+		math.IsInf(base, 0) ||
+		base < 0 ||
+		base > code.Value {
+		return infraerrors.BadRequest(
+			"REDEEM_CODE_AFFILIATE_REBATE_BASE_INVALID",
+			"affiliate_rebate_base_amount must be between 0 and value for positive balance redeem codes",
+		)
+	}
+
+	baseCopy := base
+	code.AffiliateRebateBaseAmount = &baseCopy
+	return nil
+}
+
+// redeemAffiliateRebateBaseAmount preserves the historical value-based
+// calculation for database rows created before the dedicated field existed.
+func redeemAffiliateRebateBaseAmount(code *RedeemCode) float64 {
+	if code == nil {
+		return 0
+	}
+	if code.AffiliateRebateBaseAmount != nil {
+		return *code.AffiliateRebateBaseAmount
+	}
+	return code.Value
+}
+
 // RedeemCache defines cache operations for redeem service
 type RedeemCache interface {
 	GetRedeemAttemptCount(ctx context.Context, userID int64) (int, error)
@@ -70,9 +118,10 @@ type RedeemCodeRepository interface {
 
 // GenerateCodesRequest 生成兑换码请求
 type GenerateCodesRequest struct {
-	Count int     `json:"count"`
-	Value float64 `json:"value"`
-	Type  string  `json:"type"`
+	Count                     int      `json:"count"`
+	Value                     float64  `json:"value"`
+	Type                      string   `json:"type"`
+	AffiliateRebateBaseAmount *float64 `json:"affiliate_rebate_base_amount,omitempty"`
 }
 
 // RedeemCodeResponse 兑换码响应
@@ -225,11 +274,15 @@ func (s *RedeemService) GenerateCodes(ctx context.Context, req GenerateCodesRequ
 		}
 
 		codes = append(codes, RedeemCode{
-			Code:   code,
-			Type:   codeType,
-			Value:  value,
-			Status: StatusUnused,
+			Code:                      code,
+			Type:                      codeType,
+			Value:                     value,
+			AffiliateRebateBaseAmount: req.AffiliateRebateBaseAmount,
+			Status:                    StatusUnused,
 		})
+		if err := normalizeAffiliateRebateBaseAmount(&codes[len(codes)-1]); err != nil {
+			return nil, err
+		}
 	}
 
 	// 批量插入
@@ -259,6 +312,9 @@ func (s *RedeemService) CreateCode(ctx context.Context, code *RedeemCode) error 
 	}
 	if code.Status == "" {
 		code.Status = StatusUnused
+	}
+	if err := normalizeAffiliateRebateBaseAmount(code); err != nil {
+		return err
 	}
 	if code.IsExpired() {
 		return ErrRedeemCodeExpired
@@ -518,7 +574,9 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 
 	// 余额类正数兑换码触发邀请返利（best-effort，失败不影响兑换结果）
 	if redeemCode.Type == RedeemTypeBalance && redeemCode.Value > 0 {
-		s.tryAccrueAffiliateRebateForRedeem(ctx, userID, redeemCode.Value)
+		if rebateBase := redeemAffiliateRebateBaseAmount(redeemCode); rebateBase > 0 {
+			s.tryAccrueAffiliateRebateForRedeem(ctx, userID, rebateBase)
+		}
 	}
 
 	// 重新获取更新后的兑换码
