@@ -18,7 +18,9 @@ ARG GOSUMDB=sum.golang.org
 FROM ${NODE_IMAGE} AS frontend-builder
 
 WORKDIR /app/frontend
-ENV NODE_OPTIONS=--max-old-space-size=1536
+# The prompt-audit admin module makes vue-tsc's project build exceed the old
+# 1.5GB heap cap. This applies only while building the image, not at runtime.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 
 # Install pnpm
 # 锁定 pnpm 9（与 frontend/pnpm-lock.yaml 的 lockfileVersion 9.0 匹配）。
