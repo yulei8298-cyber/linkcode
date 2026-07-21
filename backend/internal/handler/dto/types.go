@@ -99,8 +99,6 @@ type Group struct {
 	DailyLimitUSD    *float64 `json:"daily_limit_usd"`
 	WeeklyLimitUSD   *float64 `json:"weekly_limit_usd"`
 	MonthlyLimitUSD  *float64 `json:"monthly_limit_usd"`
-	IPWhitelist      []string `json:"ip_whitelist"`
-	IPBlacklist      []string `json:"ip_blacklist"`
 
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration         bool    `json:"allow_image_generation"`
@@ -153,6 +151,8 @@ type AdminGroup struct {
 	IsFree            bool     `json:"is_free"`
 	DailyFreeLimitUSD *float64 `json:"daily_free_limit_usd"`
 	ChatStationOnly   bool     `json:"chat_station_only"`
+	IPWhitelist       []string `json:"ip_whitelist"`
+	IPBlacklist       []string `json:"ip_blacklist"`
 
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64 `json:"model_routing"`
