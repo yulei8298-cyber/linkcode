@@ -7,7 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpstreamV0166MigrationsFollowPublishedLocalHistory(t *testing.T) {
+// The v0.1.168 passkey migration must follow every migration already published locally.
+func TestUpstreamV0168MigrationsFollowPublishedLocalHistory(t *testing.T) {
 	entries, err := FS.ReadDir(".")
 	require.NoError(t, err)
 
@@ -26,6 +27,7 @@ func TestUpstreamV0166MigrationsFollowPublishedLocalHistory(t *testing.T) {
 		"194_add_group_allow_live.sql",
 		"195_add_users_email_alias_dedup_index_notx.sql",
 		"196_extend_group_auth_cache_invalidation.sql",
+		"197_passkey_credentials.sql",
 	}
 	for i, name := range ordered {
 		require.Contains(t, indexes, name)
@@ -43,10 +45,22 @@ func TestUpstreamV0166MigrationsFollowPublishedLocalHistory(t *testing.T) {
 		"188_allow_live_usage_request_type.sql",
 		"189_add_group_allow_live.sql",
 		"190_add_users_email_alias_dedup_index_notx.sql",
+		"191_passkey_credentials.sql",
 	} {
 		_, err = FS.ReadFile(collided)
 		require.Error(t, err, "colliding upstream migration must be renumbered: %s", collided)
 	}
+}
+
+func TestUpstreamV0168PasskeyMigrationUsesNextLocalSequence(t *testing.T) {
+	content, err := FS.ReadFile("197_passkey_credentials.sql")
+	require.NoError(t, err)
+
+	sql := strings.Join(strings.Fields(string(content)), " ")
+	require.Contains(t, sql, "CREATE TABLE IF NOT EXISTS passkey_user_handles")
+	require.Contains(t, sql, "CREATE TABLE IF NOT EXISTS passkey_credentials")
+	require.Contains(t, sql, "passkey_credentials_user_id_idx")
+	require.Contains(t, sql, "passkey_credentials_last_used_at_idx")
 }
 
 func TestUpstreamV0166AuthCacheMigrationPreservesLocalAndUpstreamFields(t *testing.T) {

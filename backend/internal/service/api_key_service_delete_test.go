@@ -82,7 +82,7 @@ func (s *apiKeyRepoStub) GetByKeyForAuth(ctx context.Context, key string) (*APIK
 	panic("unexpected GetByKeyForAuth call")
 }
 
-func (s *apiKeyRepoStub) Update(ctx context.Context, key *APIKey) error {
+func (s *apiKeyRepoStub) Update(ctx context.Context, key *APIKey, _ APIKeyUpdateFields) error {
 	if key != nil {
 		s.updatedKeys = append(s.updatedKeys, *key)
 	}
@@ -388,7 +388,7 @@ func TestAPIKeyService_Delete_HiddenKeyIsNotUserManageable(t *testing.T) {
 	require.Empty(t, repo.deletedIDs)
 }
 
-func TestAPIKeyService_DeletedGroupKeyIsNotUserManageable(t *testing.T) {
+func TestAPIKeyService_DeletedGroupKeyCanOnlyBeDeleted(t *testing.T) {
 	groupID := int64(9)
 
 	t.Run("update", func(t *testing.T) {
@@ -406,11 +406,14 @@ func TestAPIKeyService_DeletedGroupKeyIsNotUserManageable(t *testing.T) {
 		repo := &apiKeyRepoStub{apiKey: &APIKey{
 			ID: 42, UserID: 7, Key: "orphaned-group-key", GroupID: &groupID,
 		}}
-		svc := &APIKeyService{apiKeyRepo: repo}
+		cache := &apiKeyCacheStub{}
+		svc := &APIKeyService{apiKeyRepo: repo, cache: cache}
 
 		err := svc.Delete(context.Background(), 42, 7)
-		require.ErrorIs(t, err, ErrAPIKeyNotFound)
-		require.Empty(t, repo.deletedIDs)
+		require.NoError(t, err)
+		require.Equal(t, []int64{42}, repo.deletedIDs)
+		require.Equal(t, []int64{7}, cache.invalidated)
+		require.Equal(t, []string{svc.authCacheKey("orphaned-group-key")}, cache.deleteAuthKeys)
 	})
 }
 

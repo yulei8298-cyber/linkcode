@@ -132,7 +132,7 @@ func (s *lobeHubSSOAPIKeyRepoStub) GetByKey(context.Context, string) (*APIKey, e
 func (s *lobeHubSSOAPIKeyRepoStub) GetByKeyForAuth(context.Context, string) (*APIKey, error) {
 	panic("unexpected GetByKeyForAuth call")
 }
-func (s *lobeHubSSOAPIKeyRepoStub) Update(context.Context, *APIKey) error {
+func (s *lobeHubSSOAPIKeyRepoStub) Update(context.Context, *APIKey, APIKeyUpdateFields) error {
 	panic("unexpected Update call")
 }
 func (s *lobeHubSSOAPIKeyRepoStub) Delete(context.Context, int64) error {
