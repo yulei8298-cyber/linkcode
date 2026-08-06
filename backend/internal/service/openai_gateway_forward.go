@@ -87,6 +87,18 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	requestView := newOpenAIRequestView(body)
 	reqModel, reqStream, promptCacheKey := requestView.Model, requestView.Stream, requestView.PromptCacheKey
 	originalModel := reqModel
+	if account.Platform == PlatformOpenAI {
+		effectiveReasoningModel := account.GetMappedModel(originalModel)
+		normalizedBody, changed, normalizeErr := normalizeOpenAIResponsesMaxReasoningEffortForModel(body, effectiveReasoningModel)
+		if normalizeErr != nil {
+			return nil, normalizeErr
+		}
+		if changed {
+			body = normalizedBody
+			originalBody = normalizedBody
+			requestView = newOpenAIRequestView(normalizedBody)
+		}
+	}
 
 	if account.Platform == PlatformGrok {
 		return s.forwardGrokResponses(ctx, c, account, body, originalModel, reqStream, startTime)

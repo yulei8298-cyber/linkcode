@@ -46,6 +46,74 @@ func TestNormalizeOpenAICodexCompactReasoningEffortDowngradesMax(t *testing.T) {
 	require.Equal(t, "auto", gjson.GetBytes(normalized, "reasoning.summary").String())
 }
 
+func TestNormalizeOpenAIResponsesMaxReasoningEffortForModel(t *testing.T) {
+	tests := []struct {
+		name    string
+		body    string
+		model   string
+		want    string
+		changed bool
+	}{
+		{name: "GPT-5.5 max maps to xhigh", body: `{"reasoning":{"effort":"max"}}`, model: "gpt-5.5", want: "xhigh", changed: true},
+		{name: "GPT-5.6 max is preserved", body: `{"reasoning":{"effort":"max"}}`, model: "gpt-5.6-sol", want: "max"},
+		{name: "flat field is normalized", body: `{"reasoning_effort":"MAX"}`, model: "gpt-5.4", want: "xhigh", changed: true},
+		{name: "other efforts are untouched", body: `{"reasoning":{"effort":"high"}}`, model: "gpt-5.5", want: "high"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, changed, err := normalizeOpenAIResponsesMaxReasoningEffortForModel([]byte(tt.body), tt.model)
+			require.NoError(t, err)
+			require.Equal(t, tt.changed, changed)
+			path := "reasoning.effort"
+			if gjson.GetBytes(got, "reasoning_effort").Exists() {
+				path = "reasoning_effort"
+			}
+			require.Equal(t, tt.want, gjson.GetBytes(got, path).String())
+		})
+	}
+}
+
+func TestOpenAIGatewayServiceForwardOAuthGPT55DowngradesMaxEffort(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	upstream := &httpUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"usage":{"input_tokens":1,"output_tokens":2}}`)),
+		},
+	}
+	cfg := &config.Config{}
+	cfg.Security.URLAllowlist.Enabled = false
+	svc := &OpenAIGatewayService{cfg: cfg, httpUpstream: upstream}
+	account := &Account{
+		ID:          12,
+		Name:        "openai-oauth-gpt55",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"access_token":       "oauth-token",
+			"chatgpt_account_id": "chatgpt-acc",
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/openai/v1/responses", nil)
+	SetOpenAIClientTransport(c, OpenAIClientTransportHTTP)
+
+	body := []byte(`{"model":"gpt-5.5","instructions":"test","input":"hello","reasoning":{"effort":"max"}}`)
+	result, err := svc.Forward(context.Background(), c, account, body)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "xhigh", gjson.GetBytes(upstream.lastBody, "reasoning.effort").String())
+	require.NotNil(t, result.ReasoningEffort)
+	require.Equal(t, "xhigh", *result.ReasoningEffort)
+}
+
 func TestNormalizeOpenAICodexCompactReasoningEffortForAccountScopesCompatibility(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	body := []byte(`{"model":"gpt-5.6-sol","input":"compact me","reasoning":{"effort":"max"}}`)

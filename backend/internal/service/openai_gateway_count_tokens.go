@@ -329,6 +329,12 @@ func isOpenAIOAuthInputTokensUnsupported(statusCode int, body []byte) bool {
 	default:
 		return false
 	}
+	// This helper is only called for POST /v1/responses/input_tokens. Some
+	// ChatGPT OAuth backends return a bare {"detail":"Not Found"}, so a 404
+	// here already proves that the optional counting endpoint is unavailable.
+	if statusCode == http.StatusNotFound {
+		return true
+	}
 
 	bodyLower := strings.ToLower(string(body))
 	msg := strings.ToLower(strings.TrimSpace(extractUpstreamErrorMessage(body)))
@@ -338,10 +344,6 @@ func isOpenAIOAuthInputTokensUnsupported(statusCode int, body []byte) bool {
 		strings.Contains(bodyLower, "api.responses.write") ||
 		strings.Contains(bodyLower, "missing scopes") ||
 		strings.Contains(bodyLower, "insufficient_scope") {
-		return true
-	}
-
-	if statusCode == http.StatusNotFound && isOpenAIInputTokensUnsupported(statusCode, body) {
 		return true
 	}
 

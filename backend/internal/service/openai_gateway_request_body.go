@@ -347,6 +347,29 @@ func normalizeOpenAICodexCompactReasoningEffort(body []byte, effectiveModel stri
 	return normalized, true, nil
 }
 
+func normalizeOpenAIResponsesMaxReasoningEffortForModel(body []byte, effectiveModel string) ([]byte, bool, error) {
+	result := body
+	changed := false
+	for _, path := range []string{"reasoning.effort", "reasoning_effort"} {
+		effort := strings.TrimSpace(gjson.GetBytes(result, path).String())
+		if !strings.EqualFold(effort, "max") {
+			continue
+		}
+
+		normalized := normalizeOpenAIReasoningEffortForModel(effort, effectiveModel)
+		if normalized == "" || strings.EqualFold(normalized, effort) {
+			continue
+		}
+		next, err := sjson.SetBytes(result, path, normalized)
+		if err != nil {
+			return body, false, fmt.Errorf("normalize OpenAI responses reasoning effort: %w", err)
+		}
+		result = next
+		changed = true
+	}
+	return result, changed, nil
+}
+
 func resolveOpenAICompactSessionID(c *gin.Context) string {
 	if c != nil {
 		if sessionID := strings.TrimSpace(c.GetHeader("session_id")); sessionID != "" {

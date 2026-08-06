@@ -128,6 +128,11 @@ func TestOpenAIGatewayService_ForwardCountTokensAsAnthropic_OAuthFallsBackWhenPl
 			statusCode: http.StatusNotFound,
 			body:       `{"error":{"type":"invalid_request_error","message":"The /v1/responses/input_tokens endpoint was not found"}}`,
 		},
+		{
+			name:       "404_bare_not_found",
+			statusCode: http.StatusNotFound,
+			body:       `{"detail":"Not Found"}`,
+		},
 	}
 
 	for _, tt := range cases {
