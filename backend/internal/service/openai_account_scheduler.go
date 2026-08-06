@@ -84,6 +84,7 @@ type OpenAIAccountScheduleRequest struct {
 	RequiredImageCapability OpenAIImagesCapability
 	RequireCompact          bool
 	ExcludedIDs             map[int64]struct{}
+	ModelRouting            openAIModelRoutingPolicy
 }
 
 type OpenAIAccountScheduleDecision struct {
@@ -393,6 +394,14 @@ func (s *defaultOpenAIAccountScheduler) Select(
 			return nil, decision, err
 		}
 		if selection != nil && selection.Account != nil {
+			if !req.ModelRouting.allows(selection.Account.ID) {
+				if selection.ReleaseFunc != nil {
+					selection.ReleaseFunc()
+				}
+				selection = nil
+			}
+		}
+		if selection != nil && selection.Account != nil {
 			if !s.isAccountTransportCompatible(selection.Account, req.RequiredTransport) {
 				if selection.ReleaseFunc != nil {
 					selection.ReleaseFunc()
@@ -488,6 +497,9 @@ func (s *defaultOpenAIAccountScheduler) selectBySessionHash(
 		return nil, false, nil
 	}
 	if !s.isAccountRequestCompatible(ctx, account, req) {
+		return nil, false, nil
+	}
+	if !req.ModelRouting.allows(account.ID) {
 		return nil, false, nil
 	}
 	if !s.isAccountTransportCompatible(account, req.RequiredTransport) {
@@ -1210,6 +1222,9 @@ func (s *defaultOpenAIAccountScheduler) tryFallbackToWeightedSticky(
 		if accountID <= 0 {
 			continue
 		}
+		if !req.ModelRouting.allows(accountID) {
+			continue
+		}
 		if req.ExcludedIDs != nil {
 			if _, excluded := req.ExcludedIDs[accountID]; excluded {
 				continue
@@ -1675,6 +1690,9 @@ func (s *defaultOpenAIAccountScheduler) isAccountRequestCompatible(ctx context.C
 func (s *defaultOpenAIAccountScheduler) isAccountRequestCompatibleReason(ctx context.Context, account *Account, req OpenAIAccountScheduleRequest) (bool, string) {
 	if account == nil {
 		return false, "account_nil"
+	}
+	if !req.ModelRouting.allows(account.ID) {
+		return false, req.ModelRouting.rejectionReason()
 	}
 	if s != nil && s.service != nil && s.service.isOpenAIAccountRequestRuntimeBlocked(account, req.RequestedModel) {
 		return false, "runtime_blocked"
@@ -2187,6 +2205,7 @@ func (s *OpenAIGatewayService) selectAccountWithSchedulerOnce(
 		RequiredImageCapability: requiredImageCapability,
 		RequireCompact:          requireCompact,
 		ExcludedIDs:             excludedIDs,
+		ModelRouting:            s.openAIModelRoutingForRequest(ctx, groupID, platform, requestedModel),
 	})
 }
 

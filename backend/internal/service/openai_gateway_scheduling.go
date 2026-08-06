@@ -632,6 +632,7 @@ func resolveOpenAIAccountUpstreamModelForRequest(account *Account, requestedMode
 
 func (s *OpenAIGatewayService) selectAccountForModelWithExclusions(ctx context.Context, groupID *int64, platform string, sessionHash string, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, stickyAccountID int64, requiredCapability OpenAIEndpointCapability, preferLowUpstreamRate bool) (*Account, error) {
 	platform = normalizeOpenAICompatiblePlatform(platform)
+	modelRouting := s.openAIModelRoutingForRequest(ctx, groupID, platform, requestedModel)
 	if s.checkChannelPricingRestriction(ctx, groupID, requestedModel) {
 		slog.Warn("channel pricing restriction blocked request",
 			"group_id", derefGroupID(groupID),
@@ -641,7 +642,7 @@ func (s *OpenAIGatewayService) selectAccountForModelWithExclusions(ctx context.C
 
 	// 1. 尝试粘性会话命中
 	// Try sticky session hit
-	if account := s.tryStickySessionHit(ctx, groupID, platform, sessionHash, requestedModel, excludedIDs, requireCompact, stickyAccountID, requiredCapability); account != nil {
+	if account := s.tryStickySessionHit(ctx, groupID, platform, sessionHash, requestedModel, excludedIDs, requireCompact, stickyAccountID, requiredCapability, modelRouting); account != nil {
 		return account, nil
 	}
 
@@ -654,7 +655,7 @@ func (s *OpenAIGatewayService) selectAccountForModelWithExclusions(ctx context.C
 
 	// 3. 按优先级 + LRU 选择最佳账号
 	// Select by priority + LRU
-	selected, compactBlocked := s.selectBestAccount(ctx, groupID, platform, accounts, requestedModel, excludedIDs, requireCompact, requiredCapability, preferLowUpstreamRate)
+	selected, compactBlocked := s.selectBestAccount(ctx, groupID, platform, accounts, requestedModel, excludedIDs, requireCompact, requiredCapability, preferLowUpstreamRate, modelRouting)
 
 	if selected == nil {
 		return nil, noAvailableOpenAISelectionError(requestedModel, compactBlocked, "")
@@ -679,7 +680,7 @@ func (s *OpenAIGatewayService) selectAccountForModelWithExclusions(ctx context.C
 //
 // tryStickySessionHit attempts to get account from sticky session.
 // Returns account if hit and usable; clears session and returns nil if account is unavailable.
-func (s *OpenAIGatewayService) tryStickySessionHit(ctx context.Context, groupID *int64, platform string, sessionHash, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, stickyAccountID int64, requiredCapability OpenAIEndpointCapability) *Account {
+func (s *OpenAIGatewayService) tryStickySessionHit(ctx context.Context, groupID *int64, platform string, sessionHash, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, stickyAccountID int64, requiredCapability OpenAIEndpointCapability, modelRouting openAIModelRoutingPolicy) *Account {
 	if sessionHash == "" {
 		return nil
 	}
@@ -695,6 +696,9 @@ func (s *OpenAIGatewayService) tryStickySessionHit(ctx context.Context, groupID 
 	}
 
 	if _, excluded := excludedIDs[accountID]; excluded {
+		return nil
+	}
+	if !modelRouting.allows(accountID) {
 		return nil
 	}
 
@@ -747,7 +751,7 @@ func (s *OpenAIGatewayService) tryStickySessionHit(ctx context.Context, groupID 
 // Returns nil if no available account. The second return reports whether at
 // least one candidate was filtered out solely because it lacks compact support
 // (only meaningful when requireCompact=true).
-func (s *OpenAIGatewayService) selectBestAccount(ctx context.Context, groupID *int64, platform string, accounts []Account, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, requiredCapability OpenAIEndpointCapability, preferLowUpstreamRate bool) (*Account, bool) {
+func (s *OpenAIGatewayService) selectBestAccount(ctx context.Context, groupID *int64, platform string, accounts []Account, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, requiredCapability OpenAIEndpointCapability, preferLowUpstreamRate bool, modelRouting openAIModelRoutingPolicy) (*Account, bool) {
 	platform = normalizeOpenAICompatiblePlatform(platform)
 	compactBlocked := false
 	needsUpstreamCheck := s.needsUpstreamChannelRestrictionCheck(ctx, groupID)
@@ -760,6 +764,9 @@ func (s *OpenAIGatewayService) selectBestAccount(ctx context.Context, groupID *i
 		// 跳过被排除的账号
 		// Skip excluded accounts
 		if _, excluded := excludedIDs[acc.ID]; excluded {
+			continue
+		}
+		if !modelRouting.allows(acc.ID) {
 			continue
 		}
 
@@ -847,6 +854,7 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 
 func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Context, groupID *int64, platform string, sessionHash string, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, requiredCapability OpenAIEndpointCapability, useUpstreamTokenCost bool) (*AccountSelectionResult, error) {
 	platform = normalizeOpenAICompatiblePlatform(platform)
+	modelRouting := s.openAIModelRoutingForRequest(ctx, groupID, platform, requestedModel)
 	if s.checkChannelPricingRestriction(ctx, groupID, requestedModel) {
 		slog.Warn("channel pricing restriction blocked request",
 			"group_id", derefGroupID(groupID),
@@ -910,7 +918,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 	// ============ Layer 1: Sticky session ============
 	if sessionHash != "" {
 		accountID := stickyAccountID
-		if accountID > 0 && !isExcluded(accountID) {
+		if accountID > 0 && !isExcluded(accountID) && modelRouting.allows(accountID) {
 			account, err := s.getSchedulableAccount(ctx, accountID)
 			if err == nil {
 				clearSticky := shouldClearStickySession(account, requestedModel)
@@ -975,6 +983,9 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 	for i := range accounts {
 		acc := &accounts[i]
 		if isExcluded(acc.ID) {
+			continue
+		}
+		if !modelRouting.allows(acc.ID) {
 			continue
 		}
 		// Scheduler snapshots can be temporarily stale (bucket rebuild is throttled);

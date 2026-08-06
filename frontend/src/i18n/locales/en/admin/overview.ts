@@ -1134,7 +1134,7 @@ export default {
       },
       modelRouting: {
         title: 'Model Routing',
-        tooltip: 'Configure specific model requests to be routed to designated accounts. Supports wildcard matching, e.g., claude-opus-* matches all opus models.',
+        tooltip: 'Route specific model requests to designated accounts. Wildcards are supported. Anthropic groups use priority routing; OpenAI routing accounts are reserved for matching models only.',
         enabled: 'Enabled',
         disabled: 'Disabled',
         disabledHint: 'Routing rules will only take effect when enabled',
@@ -1142,7 +1142,7 @@ export default {
         modelPattern: 'Model Pattern',
         modelPatternPlaceholder: 'claude-opus-*',
         modelPatternHint: 'Supports * wildcard, e.g., claude-opus-* matches all opus models',
-        accounts: 'Priority Accounts',
+        accounts: 'Routing Accounts',
         selectAccounts: 'Select accounts',
         noAccounts: 'No accounts in this group',
         loadingAccounts: 'Loading accounts...',
@@ -1150,7 +1150,7 @@ export default {
         noRules: 'No routing rules',
         noRulesHint: 'Add routing rules to route specific model requests to designated accounts',
         searchAccountPlaceholder: 'Search accounts...',
-        accountsHint: 'Select accounts to prioritize for this model pattern'
+        accountsHint: 'For OpenAI groups, selected accounts only serve this model pattern. Anthropic groups prioritize the selected accounts.'
       },
       mcpXml: {
         title: 'MCP XML Protocol Injection',
