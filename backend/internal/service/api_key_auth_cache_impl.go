@@ -15,8 +15,8 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-// v18 includes both the local free/chat-station authorization fields and the
-// upstream OpenAI Live group gate.
+// v18 includes the local free/chat-station authorization fields, the OpenAI Live
+// group gate, and the upstream group profit-control fields.
 const apiKeyAuthSnapshotVersion = 18
 
 type apiKeyAuthCacheConfig struct {
@@ -428,6 +428,9 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			PeakStart:                       apiKey.Group.PeakStart,
 			PeakEnd:                         apiKey.Group.PeakEnd,
 			PeakRateMultiplier:              apiKey.Group.PeakRateMultiplier,
+			ProfitControlEnabled:            apiKey.Group.ProfitControlEnabled,
+			ProfitMinMargin:                 apiKey.Group.ProfitMinMargin,
+			ProfitSafetyBuffer:              apiKey.Group.ProfitSafetyBuffer,
 		}
 	}
 	return snapshot
@@ -520,6 +523,9 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			PeakStart:                       snapshot.Group.PeakStart,
 			PeakEnd:                         snapshot.Group.PeakEnd,
 			PeakRateMultiplier:              snapshot.Group.PeakRateMultiplier,
+			ProfitControlEnabled:            snapshot.Group.ProfitControlEnabled,
+			ProfitMinMargin:                 snapshot.Group.ProfitMinMargin,
+			ProfitSafetyBuffer:              snapshot.Group.ProfitSafetyBuffer,
 		}
 		apiKey.Group.CompiledIPWhitelist = ip.CompileIPRules(apiKey.Group.IPWhitelist)
 		apiKey.Group.CompiledIPBlacklist = ip.CompileIPRules(apiKey.Group.IPBlacklist)

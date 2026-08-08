@@ -329,9 +329,10 @@ func isOpenAIOAuthInputTokensUnsupported(statusCode int, body []byte) bool {
 	default:
 		return false
 	}
-	// This helper is only called for POST /v1/responses/input_tokens. Some
-	// ChatGPT OAuth backends return a bare {"detail":"Not Found"}, so a 404
-	// here already proves that the optional counting endpoint is unavailable.
+	// This helper only handles POST /v1/responses/input_tokens. A 404 means
+	// this optional counting endpoint is unavailable for the OAuth account,
+	// including proxies that return a bare {"detail":"Not Found"}. Fall back
+	// locally so the account is not treated as unhealthy for a convenience call.
 	if statusCode == http.StatusNotFound {
 		return true
 	}
@@ -347,10 +348,24 @@ func isOpenAIOAuthInputTokensUnsupported(statusCode int, body []byte) bool {
 		return true
 	}
 
+	// OAuth's platform endpoint can be blocked by an upstream proxy before it
+	// reaches the API and return an HTML 403 page without a structured error.
+	// Treat that endpoint-level response like the other unsupported cases so
+	// count_tokens remains a local, non-health-affecting convenience request.
+	if statusCode == http.StatusForbidden && isHTMLResponse(body) {
+		return true
+	}
+
 	return strings.Contains(msg, "input_tokens") &&
 		(strings.Contains(msg, "not found") ||
 			strings.Contains(msg, "not supported") ||
 			strings.Contains(msg, "unsupported"))
+}
+
+func isHTMLResponse(body []byte) bool {
+	trimmed := strings.TrimSpace(strings.ToLower(string(body)))
+	return strings.HasPrefix(trimmed, "<!doctype html") ||
+		strings.HasPrefix(trimmed, "<html")
 }
 
 func estimateOpenAIInputTokens(req openAIInputTokensCountRequest) (int, error) {
