@@ -1133,7 +1133,7 @@ export default {
       modelRouting: {
         title: '模型路由配置',
         tooltip:
-          '配置特定模型请求路由到指定账号。支持通配符匹配。Anthropic 分组沿用优先路由；OpenAI 分组中，路由账号只会处理匹配模型，其他模型不会进入这些账号。',
+          '配置特定模型请求优先路由到指定账号。支持通配符匹配。Anthropic 分组沿用优先路由；OpenAI 分组中，匹配模型优先使用所选账号，账号不可用时回退到普通账号，其他模型不会进入这些路由账号。',
         enabled: '已启用',
         disabled: '已禁用',
         disabledHint: '启用后，配置的路由规则才会生效',
@@ -1157,7 +1157,7 @@ export default {
         noRules: '暂无路由规则',
         noRulesHint: '添加路由规则以将特定模型请求优先路由到指定账号',
         searchAccountPlaceholder: '搜索账号...',
-        accountsHint: 'OpenAI 分组中，所选账号仅处理此模型模式；Anthropic 分组中优先使用所选账号。'
+        accountsHint: 'OpenAI 分组中，匹配模型优先使用所选账号，不可用时回退到普通账号；Anthropic 分组中优先使用所选账号。'
       },
       mcpXml: {
         title: 'MCP XML 协议注入',

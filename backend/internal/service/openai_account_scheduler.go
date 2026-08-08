@@ -394,7 +394,8 @@ func (s *defaultOpenAIAccountScheduler) Select(
 			return nil, decision, err
 		}
 		if selection != nil && selection.Account != nil {
-			if !req.ModelRouting.allows(selection.Account.ID) {
+			if !req.ModelRouting.allows(selection.Account.ID) ||
+				(req.ModelRouting.hasMatchedAccounts() && !req.ModelRouting.isPreferred(selection.Account.ID)) {
 				if selection.ReleaseFunc != nil {
 					selection.ReleaseFunc()
 				}
@@ -500,6 +501,9 @@ func (s *defaultOpenAIAccountScheduler) selectBySessionHash(
 		return nil, false, nil
 	}
 	if !req.ModelRouting.allows(account.ID) {
+		return nil, false, nil
+	}
+	if req.ModelRouting.hasMatchedAccounts() && !req.ModelRouting.isPreferred(account.ID) {
 		return nil, false, nil
 	}
 	if !s.isAccountTransportCompatible(account, req.RequiredTransport) {
@@ -1000,7 +1004,7 @@ func (s *defaultOpenAIAccountScheduler) buildOpenAISelectionOrder(
 	req OpenAIAccountScheduleRequest,
 	plan openAIAccountLoadPlan,
 ) []openAIAccountCandidateScore {
-	buildSelectionOrder := func(pool []openAIAccountCandidateScore) []openAIAccountCandidateScore {
+	buildSelectionOrderPool := func(pool []openAIAccountCandidateScore) []openAIAccountCandidateScore {
 		if len(pool) == 0 || plan.topK <= 0 {
 			return nil
 		}
@@ -1048,6 +1052,24 @@ func (s *defaultOpenAIAccountScheduler) buildOpenAISelectionOrder(
 			return isOpenAIAccountCandidateBetter(overflow[i], overflow[j])
 		})
 		return append(primary, overflow...)
+	}
+	buildSelectionOrder := func(pool []openAIAccountCandidateScore) []openAIAccountCandidateScore {
+		if !req.ModelRouting.hasMatchedAccounts() {
+			return buildSelectionOrderPool(pool)
+		}
+		preferred := make([]openAIAccountCandidateScore, 0, len(pool))
+		fallback := make([]openAIAccountCandidateScore, 0, len(pool))
+		for _, candidate := range pool {
+			if candidate.account != nil && req.ModelRouting.isPreferred(candidate.account.ID) {
+				preferred = append(preferred, candidate)
+			} else {
+				fallback = append(fallback, candidate)
+			}
+		}
+		selectionOrder := make([]openAIAccountCandidateScore, 0, len(pool))
+		selectionOrder = append(selectionOrder, buildSelectionOrderPool(preferred)...)
+		selectionOrder = append(selectionOrder, buildSelectionOrderPool(fallback)...)
+		return selectionOrder
 	}
 
 	if req.RequireCompact {

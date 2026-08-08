@@ -701,6 +701,12 @@ func (s *OpenAIGatewayService) tryStickySessionHit(ctx context.Context, groupID 
 	if !modelRouting.allows(accountID) {
 		return nil
 	}
+	// Do not let a sticky session bypass a healthy routed account. If the
+	// preferred account cannot be selected later, normal selection still
+	// includes this account as the fallback pool.
+	if modelRouting.hasMatchedAccounts() && !modelRouting.isPreferred(accountID) {
+		return nil
+	}
 
 	account, err := s.getSchedulableAccount(ctx, accountID)
 	if err != nil {
@@ -805,6 +811,9 @@ func (s *OpenAIGatewayService) selectBestAccount(ctx context.Context, groupID *i
 		a, b := eligible[i], eligible[j]
 		if requireCompact && compactTiers[a.ID] != compactTiers[b.ID] {
 			return compactTiers[a.ID] > compactTiers[b.ID]
+		}
+		if preferredA, preferredB := modelRouting.isPreferred(a.ID), modelRouting.isPreferred(b.ID); preferredA != preferredB {
+			return preferredA
 		}
 		if rateCmp := rateOrder.compare(a, b); rateCmp != 0 {
 			return rateCmp < 0

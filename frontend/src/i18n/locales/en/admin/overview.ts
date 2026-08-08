@@ -1134,7 +1134,7 @@ export default {
       },
       modelRouting: {
         title: 'Model Routing',
-        tooltip: 'Route specific model requests to designated accounts. Wildcards are supported. Anthropic groups use priority routing; OpenAI routing accounts are reserved for matching models only.',
+        tooltip: 'Prefer designated accounts for matching model requests. Wildcards are supported. Anthropic groups use priority routing; OpenAI groups fall back to ordinary accounts when routed accounts are unavailable, while other models cannot use reserved routing accounts.',
         enabled: 'Enabled',
         disabled: 'Disabled',
         disabledHint: 'Routing rules will only take effect when enabled',
@@ -1150,7 +1150,7 @@ export default {
         noRules: 'No routing rules',
         noRulesHint: 'Add routing rules to route specific model requests to designated accounts',
         searchAccountPlaceholder: 'Search accounts...',
-        accountsHint: 'For OpenAI groups, selected accounts only serve this model pattern. Anthropic groups prioritize the selected accounts.'
+        accountsHint: 'For OpenAI groups, matching models prefer selected accounts and fall back to ordinary accounts when unavailable; other models cannot use reserved routing accounts. Anthropic groups prioritize selected accounts.'
       },
       mcpXml: {
         title: 'MCP XML Protocol Injection',

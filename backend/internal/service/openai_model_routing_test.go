@@ -24,7 +24,7 @@ func TestOpenAIModelRoutingReservesAccountsWithinGroup(t *testing.T) {
 	matched := svc.openAIModelRoutingForRequest(ctx, &groupID, PlatformOpenAI, "gpt-5.6-sol")
 	require.True(t, matched.allows(101))
 	require.False(t, matched.allows(102))
-	require.False(t, matched.allows(103))
+	require.True(t, matched.allows(103), "unreserved accounts remain available as fallback")
 	require.Equal(t, "model_routing_target_only", matched.rejectionReason())
 
 	unmatched := svc.openAIModelRoutingForRequest(ctx, &groupID, PlatformOpenAI, "gpt-5.6-terra")
@@ -52,11 +52,46 @@ func TestOpenAIAccountSchedulerModelRoutingFilter(t *testing.T) {
 	scheduler := &defaultOpenAIAccountScheduler{}
 	req := OpenAIAccountScheduleRequest{
 		ModelRouting: openAIModelRoutingPolicy{
-			matchedAccounts: map[int64]struct{}{101: {}},
+			matchedAccounts:  map[int64]struct{}{101: {}},
+			reservedAccounts: map[int64]struct{}{101: {}, 102: {}},
 		},
 	}
 
 	compatible, reason := scheduler.isAccountRequestCompatibleReason(context.Background(), &Account{ID: 102}, req)
 	require.False(t, compatible)
 	require.Equal(t, "model_routing_target_only", reason)
+}
+
+func TestOpenAIModelRoutingPrefersTargetAndAllowsFallback(t *testing.T) {
+	policy := openAIModelRoutingPolicy{
+		matchedAccounts:  map[int64]struct{}{101: {}},
+		reservedAccounts: map[int64]struct{}{101: {}, 102: {}},
+	}
+
+	require.True(t, policy.isPreferred(101))
+	require.True(t, policy.allows(101))
+	require.False(t, policy.allows(102), "another model's routed account stays reserved")
+	require.True(t, policy.allows(103), "ordinary accounts are the fallback pool")
+}
+
+func TestOpenAISelectionOrderPrefersRoutedAccount(t *testing.T) {
+	scheduler := &defaultOpenAIAccountScheduler{}
+	req := OpenAIAccountScheduleRequest{
+		ModelRouting: openAIModelRoutingPolicy{
+			matchedAccounts:  map[int64]struct{}{101: {}},
+			reservedAccounts: map[int64]struct{}{101: {}, 102: {}},
+		},
+	}
+	plan := openAIAccountLoadPlan{
+		topK: 1,
+		candidates: []openAIAccountCandidateScore{
+			{account: &Account{ID: 102}, loadInfo: &AccountLoadInfo{AccountID: 102}},
+			{account: &Account{ID: 101}, loadInfo: &AccountLoadInfo{AccountID: 101}},
+		},
+	}
+
+	order := scheduler.buildOpenAISelectionOrder(req, plan)
+	require.Len(t, order, 2)
+	require.Equal(t, int64(101), order[0].account.ID)
+	require.Equal(t, int64(102), order[1].account.ID)
 }

@@ -7,17 +7,26 @@ import (
 )
 
 // openAIModelRoutingPolicy reserves routing accounts within one OpenAI group.
-// A matched model may only select its configured accounts; a non-matching
-// model must not select an account reserved by any routing rule.
+// A matched model prefers its configured accounts and may fall back to other
+// non-reserved accounts; a non-matching model must not select an account
+// reserved by any routing rule.
 type openAIModelRoutingPolicy struct {
 	matchedAccounts  map[int64]struct{}
 	reservedAccounts map[int64]struct{}
 }
 
+func (p openAIModelRoutingPolicy) hasMatchedAccounts() bool {
+	return len(p.matchedAccounts) > 0
+}
+
+func (p openAIModelRoutingPolicy) isPreferred(accountID int64) bool {
+	_, ok := p.matchedAccounts[accountID]
+	return ok
+}
+
 func (p openAIModelRoutingPolicy) allows(accountID int64) bool {
-	if len(p.matchedAccounts) > 0 {
-		_, ok := p.matchedAccounts[accountID]
-		return ok
+	if p.isPreferred(accountID) {
+		return true
 	}
 	_, reserved := p.reservedAccounts[accountID]
 	return !reserved
