@@ -101,6 +101,25 @@ func TestSettingService_GetPublicSettings_ExposesCompactHomeEnabled(t *testing.T
 	require.False(t, missingSettings.CompactHomeEnabled)
 }
 
+func TestSettingService_GetPublicSettings_ExposesPortalCommunityAndAffiliateConfig(t *testing.T) {
+	repo := &settingPublicRepoStub{
+		values: map[string]string{
+			SettingKeyContactInfo:         "897164384",
+			SettingKeyQQGroup:             " 1025176993 ",
+			SettingKeyTelegramGroupURL:    " https://t.me/linkcode_test ",
+			SettingKeyAffiliateRebateRate: "12.5",
+		},
+	}
+	svc := NewSettingService(repo, &config.Config{})
+
+	settings, err := svc.GetPublicSettings(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, "897164384", settings.ContactInfo)
+	require.Equal(t, "1025176993", settings.QQGroup)
+	require.Equal(t, "https://t.me/linkcode_test", settings.TelegramGroupURL)
+	require.Equal(t, 12.5, settings.AffiliateRebateRate)
+}
+
 func TestSettingService_GetPublicSettings_ExposesForceEmailOnThirdPartySignup(t *testing.T) {
 	repo := &settingPublicRepoStub{
 		values: map[string]string{

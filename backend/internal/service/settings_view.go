@@ -153,11 +153,13 @@ type SystemSettings struct {
 	SiteSubtitle                string
 	APIBaseURL                  string
 	ContactInfo                 string
+	QQGroup                     string
 	DocURL                      string
 	HomeContent                 string
 	PricingDisplayConfig        string
 	TutorialContentMD           string
 	ChatStationURL              string
+	TelegramGroupURL            string
 	CompactHomeEnabled          bool
 	HideCcsImportButton         bool
 	PurchaseSubscriptionEnabled bool
@@ -333,11 +335,14 @@ type PublicSettings struct {
 	SiteSubtitle                     string
 	APIBaseURL                       string
 	ContactInfo                      string
+	QQGroup                          string
 	DocURL                           string
 	HomeContent                      string
 	PricingDisplayConfig             string
 	TutorialContentMD                string
 	ChatStationURL                   string
+	TelegramGroupURL                 string
+	AffiliateRebateRate              float64
 	CompactHomeEnabled               bool
 	HideCcsImportButton              bool
 

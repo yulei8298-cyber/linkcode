@@ -14,6 +14,14 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 )
 
+func parsePublicAffiliateRebateRate(raw string) float64 {
+	value, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+	if err != nil {
+		return AffiliateRebateRateDefault
+	}
+	return clampAffiliateRebateRate(value)
+}
+
 func normalizeLoginAgreementMode(raw string) string {
 	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case "checkbox":
@@ -184,11 +192,14 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeySiteSubtitle,
 		SettingKeyAPIBaseURL,
 		SettingKeyContactInfo,
+		SettingKeyQQGroup,
 		SettingKeyDocURL,
 		SettingKeyHomeContent,
 		SettingKeyPricingDisplayConfig,
 		SettingKeyTutorialContentMD,
 		SettingKeyChatStationURL,
+		SettingKeyTelegramGroupURL,
+		SettingKeyAffiliateRebateRate,
 		SettingKeyCompactHomeEnabled,
 		SettingKeyHideCcsImportButton,
 		SettingKeyPurchaseSubscriptionEnabled,
@@ -318,16 +329,19 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		AliyunCaptchaSceneID:             settings[SettingKeyAliyunCaptchaSceneID],
 		AliyunCaptchaPrefix:              settings[SettingKeyAliyunCaptchaPrefix],
 		AliyunCaptchaRegion:              normalizeAliyunCaptchaRegion(settings[SettingKeyAliyunCaptchaRegion]),
-		SiteName:                         s.getStringOrDefault(settings, SettingKeySiteName, "linkcode"),
+		SiteName:                         s.getStringOrDefault(settings, SettingKeySiteName, "LinkCode"),
 		SiteLogo:                         settings[SettingKeySiteLogo],
 		SiteSubtitle:                     s.getStringOrDefault(settings, SettingKeySiteSubtitle, "聚合多家上游渠道的 AI API 网关"),
 		APIBaseURL:                       settings[SettingKeyAPIBaseURL],
 		ContactInfo:                      settings[SettingKeyContactInfo],
+		QQGroup:                          strings.TrimSpace(settings[SettingKeyQQGroup]),
 		DocURL:                           settings[SettingKeyDocURL],
 		HomeContent:                      settings[SettingKeyHomeContent],
 		PricingDisplayConfig:             settings[SettingKeyPricingDisplayConfig],
 		TutorialContentMD:                settings[SettingKeyTutorialContentMD],
 		ChatStationURL:                   settings[SettingKeyChatStationURL],
+		TelegramGroupURL:                 strings.TrimSpace(settings[SettingKeyTelegramGroupURL]),
+		AffiliateRebateRate:              parsePublicAffiliateRebateRate(settings[SettingKeyAffiliateRebateRate]),
 		CompactHomeEnabled:               settings[SettingKeyCompactHomeEnabled] == "true",
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
 		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
@@ -522,11 +536,14 @@ type PublicSettingsInjectionPayload struct {
 	SiteSubtitle                     string                   `json:"site_subtitle"`
 	APIBaseURL                       string                   `json:"api_base_url"`
 	ContactInfo                      string                   `json:"contact_info"`
+	QQGroup                          string                   `json:"qq_group"`
 	DocURL                           string                   `json:"doc_url"`
 	HomeContent                      string                   `json:"home_content"`
 	PricingDisplayConfig             string                   `json:"pricing_display_config"`
 	TutorialContentMD                string                   `json:"tutorial_content_md"`
 	ChatStationURL                   string                   `json:"chat_station_url"`
+	TelegramGroupURL                 string                   `json:"telegram_group_url"`
+	AffiliateRebateRate              float64                  `json:"affiliate_rebate_rate"`
 	CompactHomeEnabled               bool                     `json:"compact_home_enabled"`
 	HideCcsImportButton              bool                     `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled      bool                     `json:"purchase_subscription_enabled"`
@@ -605,11 +622,14 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		SiteSubtitle:                     settings.SiteSubtitle,
 		APIBaseURL:                       settings.APIBaseURL,
 		ContactInfo:                      settings.ContactInfo,
+		QQGroup:                          settings.QQGroup,
 		DocURL:                           settings.DocURL,
 		HomeContent:                      settings.HomeContent,
 		PricingDisplayConfig:             settings.PricingDisplayConfig,
 		TutorialContentMD:                settings.TutorialContentMD,
 		ChatStationURL:                   settings.ChatStationURL,
+		TelegramGroupURL:                 settings.TelegramGroupURL,
+		AffiliateRebateRate:              settings.AffiliateRebateRate,
 		CompactHomeEnabled:               settings.CompactHomeEnabled,
 		HideCcsImportButton:              settings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:      settings.PurchaseSubscriptionEnabled,

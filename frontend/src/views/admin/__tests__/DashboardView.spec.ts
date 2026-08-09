@@ -33,6 +33,13 @@ vi.mock('vue-router', () => ({
   })
 }))
 
+vi.mock('vue-chartjs', () => ({
+  Line: {
+    props: ['options'],
+    template: '<div class="recent-usage-options">{{ JSON.stringify(options) }}</div>'
+  }
+}))
+
 vi.mock('vue-i18n', async () => {
   const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
   return {
@@ -89,6 +96,7 @@ const createDashboardStats = (): DashboardStats => ({
 describe('admin DashboardView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    document.documentElement.classList.remove('dark')
 
     getSnapshotV2.mockReset()
     getUserUsageTrend.mockReset()
@@ -125,8 +133,7 @@ describe('admin DashboardView', () => {
           DateRangePicker: true,
           Select: true,
           ModelDistributionChart: true,
-          TokenUsageTrend: true,
-          Line: true
+          TokenUsageTrend: true
         }
       }
     })
@@ -142,5 +149,52 @@ describe('admin DashboardView', () => {
       end_date: formatLocalDate(now),
       granularity: 'hour'
     }))
+  })
+
+  it('updates recent-usage chart text colors after switching to light mode', async () => {
+    document.documentElement.classList.add('dark')
+    getUserUsageTrend.mockResolvedValue({
+      trend: [
+        {
+          user_id: 1,
+          username: 'tester',
+          email: 'tester@example.com',
+          date: '2026-08-09 00:00',
+          tokens: 100
+        }
+      ],
+      start_date: '',
+      end_date: '',
+      granularity: 'hour'
+    })
+
+    const wrapper = mount(DashboardView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          LoadingSpinner: true,
+          Icon: true,
+          DateRangePicker: true,
+          Select: true,
+          ModelDistributionChart: true,
+          TokenUsageTrend: true,
+          Line: true
+        }
+      }
+    })
+
+    await flushPromises()
+    expect(
+      JSON.parse(wrapper.find('.recent-usage-options').text()).plugins.legend.labels.color
+    ).toBe('#e5e7eb')
+
+    document.documentElement.classList.remove('dark')
+    await flushPromises()
+
+    const lightOptions = JSON.parse(wrapper.find('.recent-usage-options').text())
+    expect(lightOptions.plugins.legend.labels.color).toBe('#374151')
+    expect(lightOptions.scales.x.ticks.color).toBe('#374151')
+
+    wrapper.unmount()
   })
 })

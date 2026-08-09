@@ -329,6 +329,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.ContactInfo != after.ContactInfo {
 		changed = append(changed, "contact_info")
 	}
+	if before.QQGroup != after.QQGroup {
+		changed = append(changed, "qq_group")
+	}
 	if before.DocURL != after.DocURL {
 		changed = append(changed, "doc_url")
 	}
@@ -343,6 +346,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.ChatStationURL != after.ChatStationURL {
 		changed = append(changed, "chat_station_url")
+	}
+	if before.TelegramGroupURL != after.TelegramGroupURL {
+		changed = append(changed, "telegram_group_url")
 	}
 	if before.CompactHomeEnabled != after.CompactHomeEnabled {
 		changed = append(changed, "compact_home_enabled")

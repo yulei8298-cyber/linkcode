@@ -157,11 +157,13 @@ type UpdateSettingsRequest struct {
 	SiteSubtitle                string                `json:"site_subtitle"`
 	APIBaseURL                  string                `json:"api_base_url"`
 	ContactInfo                 string                `json:"contact_info"`
+	QQGroup                     string                `json:"qq_group"`
 	DocURL                      string                `json:"doc_url"`
 	HomeContent                 string                `json:"home_content"`
 	PricingDisplayConfig        string                `json:"pricing_display_config"`
 	TutorialContentMD           string                `json:"tutorial_content_md"`
 	ChatStationURL              string                `json:"chat_station_url"`
+	TelegramGroupURL            string                `json:"telegram_group_url"`
 	CompactHomeEnabled          bool                  `json:"compact_home_enabled"`
 	HideCcsImportButton         bool                  `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled *bool                 `json:"purchase_subscription_enabled"`
@@ -1599,11 +1601,13 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		SiteSubtitle:                           req.SiteSubtitle,
 		APIBaseURL:                             req.APIBaseURL,
 		ContactInfo:                            req.ContactInfo,
+		QQGroup:                                req.QQGroup,
 		DocURL:                                 req.DocURL,
 		HomeContent:                            req.HomeContent,
 		PricingDisplayConfig:                   req.PricingDisplayConfig,
 		TutorialContentMD:                      req.TutorialContentMD,
 		ChatStationURL:                         req.ChatStationURL,
+		TelegramGroupURL:                       req.TelegramGroupURL,
 		CompactHomeEnabled:                     req.CompactHomeEnabled,
 		HideCcsImportButton:                    req.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:            purchaseEnabled,
@@ -2181,11 +2185,13 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		SiteSubtitle:                                           updatedSettings.SiteSubtitle,
 		APIBaseURL:                                             updatedSettings.APIBaseURL,
 		ContactInfo:                                            updatedSettings.ContactInfo,
+		QQGroup:                                                updatedSettings.QQGroup,
 		DocURL:                                                 updatedSettings.DocURL,
 		HomeContent:                                            updatedSettings.HomeContent,
 		PricingDisplayConfig:                                   updatedSettings.PricingDisplayConfig,
 		TutorialContentMD:                                      updatedSettings.TutorialContentMD,
 		ChatStationURL:                                         updatedSettings.ChatStationURL,
+		TelegramGroupURL:                                       updatedSettings.TelegramGroupURL,
 		CompactHomeEnabled:                                     updatedSettings.CompactHomeEnabled,
 		HideCcsImportButton:                                    updatedSettings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:                            updatedSettings.PurchaseSubscriptionEnabled,

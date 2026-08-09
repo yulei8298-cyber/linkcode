@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
 
 import TokenUsageTrend from '../TokenUsageTrend.vue'
 
@@ -21,11 +21,54 @@ vi.mock('vue-i18n', async () => {
 vi.mock('vue-chartjs', () => ({
   Line: {
     props: ['data', 'options'],
-    template: '<div class="chart-data">{{ JSON.stringify(data) }}</div>',
+    template: `
+      <div>
+        <div class="chart-data">{{ JSON.stringify(data) }}</div>
+        <div class="chart-options">{{ JSON.stringify(options) }}</div>
+      </div>
+    `,
   },
 }))
 
 describe('TokenUsageTrend', () => {
+  afterEach(() => {
+    document.documentElement.classList.remove('dark')
+  })
+
+  const trendData = [
+    {
+      date: '2026-05-08',
+      requests: 1,
+      input_tokens: 500,
+      output_tokens: 100,
+      cache_creation_tokens: 0,
+      cache_read_tokens: 1500,
+      cost: 0.01,
+      actual_cost: 0.005,
+    },
+  ]
+
+  it('updates chart text colors when switching from dark to light mode', async () => {
+    document.documentElement.classList.add('dark')
+    const wrapper = mount(TokenUsageTrend, {
+      props: { trendData },
+      global: { stubs: { LoadingSpinner: true } },
+    })
+
+    expect(JSON.parse(wrapper.find('.chart-options').text()).plugins.legend.labels.color).toBe(
+      '#e5e7eb'
+    )
+
+    document.documentElement.classList.remove('dark')
+    await flushPromises()
+
+    const lightOptions = JSON.parse(wrapper.find('.chart-options').text())
+    expect(lightOptions.plugins.legend.labels.color).toBe('#374151')
+    expect(lightOptions.scales.x.ticks.color).toBe('#374151')
+
+    wrapper.unmount()
+  })
+
   it('calculates cache hit rate against all prompt tokens', () => {
     const wrapper = mount(TokenUsageTrend, {
       props: {

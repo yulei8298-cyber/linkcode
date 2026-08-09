@@ -396,11 +396,13 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeySiteSubtitle] = settings.SiteSubtitle
 	updates[SettingKeyAPIBaseURL] = settings.APIBaseURL
 	updates[SettingKeyContactInfo] = settings.ContactInfo
+	updates[SettingKeyQQGroup] = strings.TrimSpace(settings.QQGroup)
 	updates[SettingKeyDocURL] = settings.DocURL
 	updates[SettingKeyHomeContent] = settings.HomeContent
 	updates[SettingKeyPricingDisplayConfig] = settings.PricingDisplayConfig
 	updates[SettingKeyTutorialContentMD] = settings.TutorialContentMD
 	updates[SettingKeyChatStationURL] = settings.ChatStationURL
+	updates[SettingKeyTelegramGroupURL] = strings.TrimSpace(settings.TelegramGroupURL)
 	updates[SettingKeyCompactHomeEnabled] = strconv.FormatBool(settings.CompactHomeEnabled)
 	updates[SettingKeyHideCcsImportButton] = strconv.FormatBool(settings.HideCcsImportButton)
 	updates[SettingKeyPurchaseSubscriptionEnabled] = strconv.FormatBool(settings.PurchaseSubscriptionEnabled)

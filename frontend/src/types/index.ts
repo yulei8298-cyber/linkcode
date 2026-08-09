@@ -232,11 +232,14 @@ export interface PublicSettings {
   site_subtitle: string
   api_base_url: string
   contact_info: string
+  qq_group?: string
   doc_url: string
   home_content: string
   pricing_display_config: string
   tutorial_content_md: string
   chat_station_url: string
+  telegram_group_url: string
+  affiliate_rebate_rate: number
   compact_home_enabled: boolean
   hide_ccs_import_button: boolean
   payment_enabled: boolean

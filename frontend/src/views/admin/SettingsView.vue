@@ -6404,6 +6404,38 @@
                 </p>
               </div>
 
+              <!-- QQ Group (public portal) -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t("admin.settings.site.qqGroup") }}
+                </label>
+                <input
+                  v-model="form.qq_group"
+                  type="text"
+                  class="input"
+                  :placeholder="t('admin.settings.site.qqGroupPlaceholder')"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t("admin.settings.site.qqGroupHint") }}
+                </p>
+              </div>
+
+              <!-- Telegram Group URL (public portal) -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t("admin.settings.site.telegramGroupUrl") }}
+                </label>
+                <input
+                  v-model="form.telegram_group_url"
+                  type="url"
+                  class="input"
+                  :placeholder="t('admin.settings.site.telegramGroupUrlPlaceholder')"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t("admin.settings.site.telegramGroupUrlHint") }}
+                </p>
+              </div>
+
               <!-- Tutorial Content (Markdown, public portal) -->
               <div>
                 <label
@@ -9303,11 +9335,13 @@ const form = reactive<SettingsForm>({
   site_subtitle: "Subscription to API Conversion Platform",
   api_base_url: "",
   contact_info: "",
+  qq_group: "",
   doc_url: "",
   home_content: "",
   pricing_display_config: stringifyDefaultPricingDisplayConfig(),
   tutorial_content_md: "",
   chat_station_url: "",
+  telegram_group_url: "",
   compact_home_enabled: false,
   backend_mode_enabled: false,
   hide_ccs_import_button: false,
@@ -10942,11 +10976,13 @@ async function saveSettings() {
       site_subtitle: form.site_subtitle,
       api_base_url: form.api_base_url,
       contact_info: form.contact_info,
+      qq_group: form.qq_group,
       doc_url: form.doc_url,
       home_content: form.home_content,
       pricing_display_config: pricingDisplayConfig,
       tutorial_content_md: form.tutorial_content_md,
       chat_station_url: form.chat_station_url,
+      telegram_group_url: form.telegram_group_url,
       compact_home_enabled: form.compact_home_enabled,
       backend_mode_enabled: form.backend_mode_enabled,
       hide_ccs_import_button: form.hide_ccs_import_button,

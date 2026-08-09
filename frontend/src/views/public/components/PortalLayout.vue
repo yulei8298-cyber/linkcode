@@ -1,154 +1,89 @@
 <template>
-  <div
-    class="relative flex min-h-screen flex-col bg-white text-gray-900 dark:bg-dark-950 dark:text-white"
-  >
-    <!-- Dotted grid background + soft color blooms -->
-    <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div
-        class="absolute inset-0 bg-[radial-gradient(circle,rgba(0,0,0,0.045)_1px,transparent_1px)] bg-[size:22px_22px] dark:bg-[radial-gradient(circle,rgba(255,255,255,0.05)_1px,transparent_1px)]"
-      ></div>
-      <!-- 顶部柔和渐变光斑：青绿 / 蓝 / 紫，整体很淡 -->
-      <div
-        class="absolute left-1/2 top-0 h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-gradient-to-br from-primary-300/25 via-sky-300/20 to-purple-300/20 blur-3xl dark:from-primary-500/15 dark:via-sky-500/10 dark:to-purple-500/10"
-      ></div>
-      <div
-        class="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-primary-400/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-sky-400/10 blur-3xl"
-      ></div>
+  <div class="lc-shell">
+    <div class="lc-topbar">
+      <div class="lc-wrap lc-topbar-inner">
+        <RouterLink to="/portal/status" class="lc-live">
+          <span class="lc-live-dot"></span>
+          系统状态实时监控
+        </RouterLink>
+        <div class="lc-toplinks">
+          <a v-if="qqGroup" class="lc-toplink" href="#">
+            <Icon name="users" size="sm" />
+            {{ qqGroupLabel }}
+          </a>
+          <a
+            v-if="telegramGroupUrl"
+            class="lc-toplink"
+            :href="telegramGroupUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="externalLink" size="sm" />
+            Telegram 群
+          </a>
+        </div>
+      </div>
     </div>
 
-    <!-- Header -->
-    <header
-      class="sticky top-0 z-30 border-b border-gray-200/70 bg-white/80 backdrop-blur-md dark:border-dark-800/70 dark:bg-dark-950/80"
-    >
-      <nav class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <!-- Logo -->
-        <RouterLink to="/home" class="flex min-w-0 items-center gap-2.5">
-          <span
-            class="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-dark-800 dark:ring-dark-700"
-          >
-            <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
+    <header class="lc-header">
+      <nav class="lc-wrap lc-nav">
+        <RouterLink to="/home" class="lc-brand">
+          <span class="lc-brand-mark">
+            <img v-if="siteLogo" :src="siteLogo" alt="" />
+            <span v-else>&lt;&gt;</span>
           </span>
-          <span class="hidden truncate text-base font-semibold sm:inline">{{ siteName }}</span>
+          <span class="truncate">{{ siteName }}</span>
         </RouterLink>
 
-        <!-- Center nav (desktop) -->
-        <div class="hidden items-center gap-1 md:flex">
-          <RouterLink
-            v-if="showStatus"
-            to="/portal/status"
-            class="nav-link"
-            active-class="nav-link-active"
-          >
-            {{ t('portal.nav.status') }}
-          </RouterLink>
-          <RouterLink
-            v-if="showPricing"
-            to="/portal/pricing"
-            class="nav-link"
-            active-class="nav-link-active"
-          >
-            {{ t('portal.nav.pricing') }}
-          </RouterLink>
-          <RouterLink
-            v-if="showTutorial"
-            to="/portal/tutorial"
-            class="nav-link"
-            active-class="nav-link-active"
-          >
-            {{ t('portal.nav.tutorial') }}
-          </RouterLink>
+        <div class="lc-navlinks" :class="{ open: mobileOpen }">
+          <RouterLink to="/home" class="lc-navlink" @click="closeMenu">首页</RouterLink>
+          <RouterLink to="/portal/status" class="lc-navlink" @click="closeMenu">可用性检测</RouterLink>
+          <RouterLink to="/portal/pricing" class="lc-navlink" @click="closeMenu">定价方案</RouterLink>
           <a
-            v-if="showChat"
+            v-if="chatStationUrl"
             :href="chatStationUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="nav-link"
+            class="lc-navlink"
             @click="handleChatStationClick"
-          >
-            {{ t('portal.nav.chat') }}
-          </a>
-          <span
-            v-if="showChat"
-            class="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200"
-          >
-            <Icon name="users" size="sm" :stroke-width="2" />
-            QQ 群 1025176993
-          </span>
+          >对话站</a>
         </div>
 
-        <!-- Right actions -->
-        <div class="flex items-center gap-2">
-          <LocaleSwitcher />
-          <button
-            @click="toggleTheme"
-            class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
-            :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
-          >
-            <Icon v-if="isDark" name="sun" size="md" />
-            <Icon v-else name="moon" size="md" />
-          </button>
+        <div class="lc-nav-actions">
           <RouterLink
             v-if="isAuthenticated"
             :to="dashboardPath"
-            class="inline-flex items-center rounded-full bg-gray-900 px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+            class="lc-button lc-button-primary lc-button-small"
+          >进入控制台</RouterLink>
+          <template v-else>
+            <RouterLink to="/login" class="lc-navlink lc-login-link">登录</RouterLink>
+            <RouterLink to="/register" class="lc-button lc-button-primary lc-button-small">注册</RouterLink>
+          </template>
+          <button
+            type="button"
+            class="lc-menu-button"
+            :aria-expanded="mobileOpen"
+            aria-label="打开导航"
+            @click="mobileOpen = !mobileOpen"
           >
-            {{ t('home.dashboard') }}
-          </RouterLink>
-          <RouterLink
-            v-else
-            to="/login"
-            class="inline-flex items-center rounded-full bg-primary-600 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm shadow-primary-600/20 transition-colors hover:bg-primary-700"
-          >
-            {{ t('home.login') }}
-          </RouterLink>
+            <Icon :name="mobileOpen ? 'x' : 'menu'" size="md" />
+          </button>
         </div>
       </nav>
-
-      <!-- Mobile nav row -->
-      <div
-        v-if="hasAnyNav"
-        class="flex items-center gap-1 overflow-x-auto border-t border-gray-100 px-4 py-2 md:hidden dark:border-dark-800"
-      >
-        <RouterLink v-if="showStatus" to="/portal/status" class="nav-link-mobile" active-class="nav-link-active">{{ t('portal.nav.status') }}</RouterLink>
-        <RouterLink v-if="showPricing" to="/portal/pricing" class="nav-link-mobile" active-class="nav-link-active">{{ t('portal.nav.pricing') }}</RouterLink>
-        <RouterLink v-if="showTutorial" to="/portal/tutorial" class="nav-link-mobile" active-class="nav-link-active">{{ t('portal.nav.tutorial') }}</RouterLink>
-        <a v-if="showChat" :href="chatStationUrl" target="_blank" rel="noopener noreferrer" class="nav-link-mobile" @click="handleChatStationClick">{{ t('portal.nav.chat') }}</a>
-        <span
-          v-if="showChat"
-          class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200"
-        >
-          <Icon name="users" size="sm" :stroke-width="2" />
-          QQ 群 1025176993
-        </span>
-      </div>
     </header>
 
-    <!-- Main content -->
-    <main class="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+    <main class="lc-main">
       <slot />
     </main>
 
-    <!-- Footer -->
-    <footer class="relative z-10 border-t border-gray-200/70 px-4 py-8 dark:border-dark-800/70">
-      <div
-        class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left"
-      >
-        <p class="text-sm text-gray-500 dark:text-dark-400">
-          &copy; {{ currentYear }} {{ siteName }}
-        </p>
-        <div class="flex items-center gap-4">
-          <a
-            v-if="docUrl"
-            :href="docUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
-          >
-            {{ t('home.docs') }}
-          </a>
+    <footer class="lc-footer">
+      <div class="lc-wrap lc-footer-inner">
+        <div>&copy; {{ currentYear }} {{ siteName }} · 稳定、透明、好用的 AI API 网关</div>
+        <div class="lc-footer-links">
+          <RouterLink to="/portal/pricing">定价方案</RouterLink>
+          <RouterLink to="/portal/status">可用性检测</RouterLink>
+          <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">使用文档</a>
+          <a v-if="telegramGroupUrl" :href="telegramGroupUrl" target="_blank" rel="noopener noreferrer">Telegram</a>
         </div>
       </div>
     </footer>
@@ -156,79 +91,61 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore, useAppStore } from '@/stores'
 import { lobeHubSSOAPI } from '@/api'
-import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
+import { normalizeSiteName } from '@/utils/branding'
 
-const { t } = useI18n()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const mobileOpen = ref(false)
 
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'linkcode')
-const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
-const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
-const chatStationUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.chat_station_url || ''))
-
-// 状态/定价/教程入口始终显示（页面本身在无数据时有空状态提示）；
-// 对话站仅在后台配置了 URL 后才显示。
-const showStatus = computed(() => true)
-const showPricing = computed(() => true)
-const showTutorial = computed(() => true)
-const showChat = computed(() => Boolean(chatStationUrl.value.trim()))
-const hasAnyNav = computed(() => showStatus.value || showPricing.value || showTutorial.value || showChat.value)
-
+const settings = computed(() => appStore.cachedPublicSettings)
+const siteName = computed(() => normalizeSiteName(settings.value?.site_name || appStore.siteName))
+const siteLogo = computed(() => sanitizeUrl(settings.value?.site_logo || appStore.siteLogo || '', {
+  allowRelative: true,
+  allowDataUrl: true,
+}))
+const docUrl = computed(() => sanitizeUrl(settings.value?.doc_url || appStore.docUrl || ''))
+const chatStationUrl = computed(() => sanitizeUrl(settings.value?.chat_station_url || ''))
+const telegramGroupUrl = computed(() => sanitizeUrl(settings.value?.telegram_group_url || ''))
+const qqGroup = computed(() => settings.value?.qq_group?.trim() || '')
+const qqGroupLabel = computed(() => {
+  const value = qqGroup.value.replace(/^QQ\s*(?:群)?\s*[:：]?\s*/i, '')
+  return `QQ群 ${value}`
+})
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const dashboardPath = computed(() => (authStore.isAdmin ? '/admin/dashboard' : '/dashboard'))
+const currentYear = new Date().getFullYear()
 
-const currentYear = computed(() => new Date().getFullYear())
-
-const isDark = ref(document.documentElement.classList.contains('dark'))
-function toggleTheme() {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+function closeMenu() {
+  mobileOpen.value = false
 }
+
 async function handleChatStationClick(event: MouseEvent) {
-  const url = chatStationUrl.value.trim()
-  if (!url || !isAuthenticated.value) {
-    return
-  }
+  closeMenu()
+  const url = chatStationUrl.value
+  if (!url || !isAuthenticated.value) return
 
   event.preventDefault()
   const chatWindow = window.open(url, '_blank')
-  if (chatWindow) {
-    chatWindow.opener = null
-  }
-
+  if (chatWindow) chatWindow.opener = null
   try {
     const result = await lobeHubSSOAPI.authorize('/')
-    if (chatWindow) {
-      chatWindow.location.replace(result.redirect_url || url)
-    } else {
-      window.open(result.redirect_url || url, '_blank', 'noopener,noreferrer')
-    }
+    const redirect = result.redirect_url || url
+    if (chatWindow) chatWindow.location.replace(redirect)
+    else window.open(redirect, '_blank', 'noopener,noreferrer')
   } catch (error) {
     console.error('Failed to start LobeHub SSO:', error)
-    if (!chatWindow) {
-      window.open(url, '_blank', 'noopener,noreferrer')
-    }
+    if (!chatWindow) window.open(url, '_blank', 'noopener,noreferrer')
   }
 }
-</script>
 
-<style scoped>
-.nav-link {
-  @apply rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white;
-}
-.nav-link-mobile {
-  @apply flex-shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white;
-}
-.nav-link-active {
-  @apply bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-300;
-}
-</style>
+onMounted(() => {
+  void appStore.fetchPublicSettings()
+  void authStore.checkAuth()
+})
+</script>

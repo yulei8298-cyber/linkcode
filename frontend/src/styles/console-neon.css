@@ -1,0 +1,223 @@
+.lc-console {
+  --cn-bg: #f6f3ef;
+  --cn-bg-2: #fffdfb;
+  --cn-panel: #ffffff;
+  --cn-panel-2: #fbf8f4;
+  --cn-line: #e7dfd4;
+  --cn-line-soft: #f0e9df;
+  --cn-accent: #e2610d;
+  --cn-accent-hi: #b94d07;
+  --cn-accent-soft: rgba(226, 97, 13, .1);
+  --cn-text: #1b1713;
+  --cn-text-2: #52483f;
+  --cn-muted: #8d8175;
+  --cn-top: rgba(255, 253, 251, .88);
+  min-height: 100vh;
+  color: var(--cn-text);
+  background-color: var(--cn-bg) !important;
+}
+
+.dark .lc-console {
+  --cn-bg: #08080a;
+  --cn-bg-2: #0e0e11;
+  --cn-panel: #121216;
+  --cn-panel-2: #17171c;
+  --cn-line: #24242c;
+  --cn-line-soft: #1c1c23;
+  --cn-accent: #ff8c42;
+  --cn-accent-hi: #ffb27a;
+  --cn-accent-soft: rgba(255, 140, 66, .13);
+  --cn-text: #f2eee9;
+  --cn-text-2: #b9b1a9;
+  --cn-muted: #7d7469;
+  --cn-top: rgba(14, 14, 17, .88);
+}
+
+.lc-console .bg-mesh-gradient {
+  background-image:
+    linear-gradient(rgba(226, 97, 13, .025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(226, 97, 13, .025) 1px, transparent 1px) !important;
+  background-size: 48px 48px !important;
+}
+
+.dark .lc-console .bg-mesh-gradient {
+  background-image:
+    linear-gradient(rgba(255, 140, 66, .03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 140, 66, .03) 1px, transparent 1px) !important;
+}
+
+.lc-console .sidebar {
+  color: var(--cn-text-2);
+  background: var(--cn-bg-2) !important;
+  border-color: var(--cn-line) !important;
+}
+
+.lc-console .sidebar-header,
+.lc-console .sidebar > div:last-of-type {
+  border-color: var(--cn-line-soft) !important;
+}
+
+.lc-console .sidebar-logo {
+  box-shadow: 0 0 18px rgba(226, 97, 13, .2);
+}
+
+.dark .lc-console .sidebar-logo {
+  box-shadow: 0 0 20px rgba(255, 140, 66, .28);
+}
+
+.lc-console .sidebar-brand-title { color: var(--cn-text) !important; }
+.lc-console .sidebar-brand-title:hover { color: var(--cn-accent-hi) !important; }
+.lc-console .sidebar-section-title { color: var(--cn-muted) !important; letter-spacing: 0; }
+.lc-console .sidebar-link { color: var(--cn-text-2) !important; }
+.lc-console .sidebar-link:hover { color: var(--cn-text) !important; background: var(--cn-panel-2) !important; }
+.lc-console .sidebar-link-active,
+.lc-console .sidebar-link-active:hover {
+  color: var(--cn-accent-hi) !important;
+  background: var(--cn-accent-soft) !important;
+  box-shadow: inset 3px 0 0 var(--cn-accent);
+}
+
+.lc-console header.glass {
+  color: var(--cn-text);
+  background: var(--cn-top) !important;
+  border-color: var(--cn-line) !important;
+}
+
+.lc-console main { color: var(--cn-text); }
+.lc-console .page-title { color: var(--cn-text) !important; }
+.lc-console .page-description { color: var(--cn-muted) !important; }
+
+.lc-console .card,
+.lc-console .glass-card,
+.lc-console .card-glass,
+.lc-console .stat-card {
+  color: var(--cn-text);
+  background: var(--cn-panel) !important;
+  border-color: var(--cn-line) !important;
+  box-shadow: 0 2px 10px rgba(80, 55, 30, .06);
+}
+
+.dark .lc-console .card,
+.dark .lc-console .glass-card,
+.dark .lc-console .card-glass,
+.dark .lc-console .stat-card {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .34);
+}
+
+.lc-console .card-header,
+.lc-console .card-footer { border-color: var(--cn-line-soft) !important; }
+.lc-console .card-hover:hover { border-color: rgba(226, 97, 13, .38) !important; }
+.dark .lc-console .card-hover:hover { border-color: rgba(255, 140, 66, .32) !important; }
+
+.lc-console .btn-primary {
+  color: #17100a !important;
+  background: linear-gradient(135deg, var(--cn-accent-hi), var(--cn-accent)) !important;
+  border-color: var(--cn-accent) !important;
+  box-shadow: 0 4px 16px rgba(226, 97, 13, .2) !important;
+}
+
+.dark .lc-console .btn-primary { box-shadow: 0 4px 18px rgba(255, 140, 66, .25) !important; }
+.lc-console .btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+.lc-console .btn-secondary {
+  color: var(--cn-text-2) !important;
+  background: var(--cn-panel-2) !important;
+  border-color: var(--cn-line) !important;
+  box-shadow: none !important;
+}
+.lc-console .btn-secondary:hover:not(:disabled) { color: var(--cn-accent-hi) !important; border-color: var(--cn-accent) !important; }
+.lc-console .btn-ghost { color: var(--cn-text-2) !important; }
+.lc-console .btn-ghost:hover { color: var(--cn-accent-hi) !important; background: var(--cn-accent-soft) !important; }
+
+.lc-console .input,
+.lc-console select,
+.lc-console textarea {
+  color: var(--cn-text);
+  background-color: var(--cn-panel-2) !important;
+  border-color: var(--cn-line) !important;
+}
+.lc-console .input::placeholder,
+.lc-console textarea::placeholder { color: var(--cn-muted); }
+.lc-console .input:focus,
+.lc-console select:focus,
+.lc-console textarea:focus {
+  border-color: var(--cn-accent) !important;
+  --tw-ring-color: var(--cn-accent-soft) !important;
+}
+.lc-console .input-label,
+.lc-console .input-hint { color: var(--cn-text-2) !important; }
+.lc-console input[type='checkbox'],
+.lc-console input[type='radio'] { accent-color: var(--cn-accent); }
+
+.lc-console .table-container,
+.lc-console .table-wrapper { border-color: var(--cn-line) !important; }
+.lc-console .table th {
+  color: var(--cn-muted) !important;
+  background: var(--cn-panel-2) !important;
+  border-color: var(--cn-line) !important;
+}
+.lc-console .table td { color: var(--cn-text-2) !important; border-color: var(--cn-line-soft) !important; }
+.lc-console .table tbody tr:hover { background: var(--cn-accent-soft) !important; }
+
+.lc-console .badge-primary,
+.lc-console [class~='bg-primary-50'],
+.lc-console [class~='bg-primary-100'] {
+  color: var(--cn-accent-hi) !important;
+  background-color: var(--cn-accent-soft) !important;
+}
+.dark .lc-console [class~='dark:bg-primary-900/20'],
+.dark .lc-console [class~='dark:bg-primary-900/30'],
+.dark .lc-console [class~='dark:bg-primary-500/10'] {
+  background-color: var(--cn-accent-soft) !important;
+}
+
+.lc-console [class~='text-primary-400'],
+.lc-console [class~='text-primary-500'],
+.lc-console [class~='text-primary-600'],
+.lc-console [class~='text-primary-700'] { color: var(--cn-accent-hi) !important; }
+.dark .lc-console [class~='dark:text-primary-300'],
+.dark .lc-console [class~='dark:text-primary-400'] { color: var(--cn-accent-hi) !important; }
+.lc-console [class~='border-primary-500'] { border-color: var(--cn-accent) !important; }
+.lc-console [class~='ring-primary-500'] { --tw-ring-color: var(--cn-accent) !important; }
+.lc-console [class~='focus:ring-primary-500']:focus { --tw-ring-color: var(--cn-accent) !important; }
+.lc-console [class~='hover:text-primary-600']:hover,
+.lc-console [class~='hover:text-primary-700']:hover { color: var(--cn-accent-hi) !important; }
+
+.lc-console [class~='bg-white'] { background-color: var(--cn-panel) !important; }
+.lc-console [class~='bg-gray-50'] { background-color: var(--cn-panel-2) !important; }
+.dark .lc-console [class~='dark:bg-dark-700'],
+.dark .lc-console [class~='dark:bg-dark-800'],
+.dark .lc-console [class~='dark:bg-dark-800/50'],
+.dark .lc-console [class~='dark:bg-dark-900'] { background-color: var(--cn-panel) !important; }
+
+.lc-console [class~='text-gray-900'] { color: var(--cn-text) !important; }
+.lc-console [class~='text-gray-700'],
+.lc-console [class~='text-gray-600'] { color: var(--cn-text-2) !important; }
+.lc-console [class~='text-gray-500'],
+.lc-console [class~='text-gray-400'] { color: var(--cn-muted) !important; }
+.dark .lc-console [class~='dark:text-white'] { color: var(--cn-text) !important; }
+.dark .lc-console [class~='dark:text-gray-300'],
+.dark .lc-console [class~='dark:text-dark-300'] { color: var(--cn-text-2) !important; }
+.dark .lc-console [class~='dark:text-gray-400'],
+.dark .lc-console [class~='dark:text-dark-400'] { color: var(--cn-muted) !important; }
+
+.lc-console [class~='border-gray-100'],
+.lc-console [class~='border-gray-200'],
+.lc-console [class~='border-gray-300'] { border-color: var(--cn-line) !important; }
+.dark .lc-console [class~='dark:border-dark-600'],
+.dark .lc-console [class~='dark:border-dark-700'],
+.dark .lc-console [class~='dark:border-dark-800'] { border-color: var(--cn-line) !important; }
+
+.lc-console .dropdown,
+.lc-console [role='menu'],
+.lc-console [role='listbox'] {
+  color: var(--cn-text-2);
+  background-color: var(--cn-panel) !important;
+  border-color: var(--cn-line) !important;
+}
+
+.lc-console .code { color: var(--cn-accent-hi) !important; background: var(--cn-accent-soft) !important; }
+.lc-console .text-gradient {
+  color: var(--cn-accent-hi) !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor;
+}

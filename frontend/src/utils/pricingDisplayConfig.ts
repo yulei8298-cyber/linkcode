@@ -4,6 +4,12 @@ export interface PricingBenefitColumn {
   items: string[]
 }
 
+export interface RechargeTierConfig {
+  amount: number
+  bonusPercent: number
+  label: string
+}
+
 export interface PricingDisplayConfig {
   eyebrow: string
   title: string
@@ -20,6 +26,7 @@ export interface PricingDisplayConfig {
   activityText: string
   recommendedAmountLabel: string
   recommendedAmounts: number[]
+  rechargeTiers: RechargeTierConfig[]
   rechargeButtonText: string
   rechargeButtonUrl: string
   benefitsTitle: string
@@ -48,7 +55,8 @@ export const defaultPricingDisplayConfig: PricingDisplayConfig = {
   activityLabel: '活动期间',
   activityText: '',
   recommendedAmountLabel: '推荐充值金额',
-  recommendedAmounts: [10, 20, 50, 100, 200],
+  recommendedAmounts: [20, 50, 100, 200],
+  rechargeTiers: [],
   rechargeButtonText: '前往在线充值',
   rechargeButtonUrl: '/payment',
   benefitsTitle: '福利说明',
@@ -84,6 +92,25 @@ function normalizeNumberArray(value: unknown, fallback: number[]): number[] {
   return items.length > 0 ? items : fallback
 }
 
+function normalizeRechargeTiers(value: unknown): RechargeTierConfig[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => {
+      const source = item as Partial<RechargeTierConfig>
+      const amount = Number(source.amount)
+      const bonusPercent = Number(source.bonusPercent ?? 0)
+      if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(bonusPercent) || bonusPercent < 0) {
+        return null
+      }
+      return {
+        amount,
+        bonusPercent,
+        label: typeof source.label === 'string' ? source.label.trim() : '',
+      }
+    })
+    .filter((item): item is RechargeTierConfig => item !== null)
+}
+
 export function parsePricingDisplayConfig(raw: unknown): PricingDisplayConfig {
   if (typeof raw !== 'string' || raw.trim() === '') {
     return { ...defaultPricingDisplayConfig }
@@ -113,6 +140,7 @@ export function parsePricingDisplayConfig(raw: unknown): PricingDisplayConfig {
         parsed.recommendedAmounts,
         defaultPricingDisplayConfig.recommendedAmounts,
       ),
+      rechargeTiers: normalizeRechargeTiers(parsed.rechargeTiers),
       rechargeButtonText: normalizeString(parsed.rechargeButtonText, defaultPricingDisplayConfig.rechargeButtonText),
       rechargeButtonUrl: normalizeString(parsed.rechargeButtonUrl, defaultPricingDisplayConfig.rechargeButtonUrl),
       benefitsTitle: normalizeString(parsed.benefitsTitle, defaultPricingDisplayConfig.benefitsTitle),
@@ -140,6 +168,27 @@ export function parsePricingDisplayConfig(raw: unknown): PricingDisplayConfig {
   } catch {
     return { ...defaultPricingDisplayConfig }
   }
+}
+
+export function findRechargeBenefit(benefits: string[], amount: number): string | null {
+  for (const benefit of benefits) {
+    const matches = benefit.matchAll(/(?:[¥￥]\s*|充值\s*)(\d+(?:\.\d+)?)(?:\s*元)?/gi)
+    for (const match of matches) {
+      if (Number(match[1]) === amount) return benefit
+    }
+  }
+  return null
+}
+
+export function extractRechargeBenefitAmounts(benefits: string[]): number[] {
+  const amounts = new Set<number>()
+  for (const benefit of benefits) {
+    for (const match of benefit.matchAll(/(?:[¥￥]\s*|充值\s*)(\d+(?:\.\d+)?)(?:\s*元)?/gi)) {
+      const amount = Number(match[1])
+      if (Number.isFinite(amount) && amount > 0) amounts.add(amount)
+    }
+  }
+  return [...amounts].sort((a, b) => a - b)
 }
 
 export function stringifyDefaultPricingDisplayConfig(): string {

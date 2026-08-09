@@ -363,6 +363,7 @@ import Select from '@/components/common/Select.vue'
 import ModelDistributionChart from '@/components/charts/ModelDistributionChart.vue'
 import TokenUsageTrend from '@/components/charts/TokenUsageTrend.vue'
 import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
+import { useDocumentDarkMode } from '@/composables/useDocumentDarkMode'
 
 import {
   Chart as ChartJS,
@@ -436,10 +437,7 @@ const granularityOptions = computed(() => [
   { value: 'hour', label: t('admin.dashboard.hour') }
 ])
 
-// Dark mode detection
-const isDarkMode = computed(() => {
-  return document.documentElement.classList.contains('dark')
-})
+const { isDarkMode } = useDocumentDarkMode()
 
 // Chart colors
 const chartColors = computed(() => ({

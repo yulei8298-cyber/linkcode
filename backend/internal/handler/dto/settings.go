@@ -152,11 +152,13 @@ type SystemSettings struct {
 	SiteSubtitle                string           `json:"site_subtitle"`
 	APIBaseURL                  string           `json:"api_base_url"`
 	ContactInfo                 string           `json:"contact_info"`
+	QQGroup                     string           `json:"qq_group"`
 	DocURL                      string           `json:"doc_url"`
 	HomeContent                 string           `json:"home_content"`
 	PricingDisplayConfig        string           `json:"pricing_display_config"`
 	TutorialContentMD           string           `json:"tutorial_content_md"`
 	ChatStationURL              string           `json:"chat_station_url"`
+	TelegramGroupURL            string           `json:"telegram_group_url"`
 	CompactHomeEnabled          bool             `json:"compact_home_enabled"`
 	HideCcsImportButton         bool             `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled bool             `json:"purchase_subscription_enabled"`
@@ -368,11 +370,14 @@ type PublicSettings struct {
 	SiteSubtitle                     string                   `json:"site_subtitle"`
 	APIBaseURL                       string                   `json:"api_base_url"`
 	ContactInfo                      string                   `json:"contact_info"`
+	QQGroup                          string                   `json:"qq_group"`
 	DocURL                           string                   `json:"doc_url"`
 	HomeContent                      string                   `json:"home_content"`
 	PricingDisplayConfig             string                   `json:"pricing_display_config"`
 	TutorialContentMD                string                   `json:"tutorial_content_md"`
 	ChatStationURL                   string                   `json:"chat_station_url"`
+	TelegramGroupURL                 string                   `json:"telegram_group_url"`
+	AffiliateRebateRate              float64                  `json:"affiliate_rebate_rate"`
 	CompactHomeEnabled               bool                     `json:"compact_home_enabled"`
 	HideCcsImportButton              bool                     `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled      bool                     `json:"purchase_subscription_enabled"`

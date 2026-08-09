@@ -1,5 +1,10 @@
 import { sanitizeUrl } from '@/utils/url'
 
+export function normalizeSiteName(value: string | null | undefined): string {
+  const name = value?.trim() || 'LinkCode'
+  return name.toLowerCase() === 'linkcode' ? 'LinkCode' : name
+}
+
 export function updateFavicon(logoUrl: string): void {
   const sanitizedLogoUrl = sanitizeUrl(logoUrl, {
     allowRelative: true,
