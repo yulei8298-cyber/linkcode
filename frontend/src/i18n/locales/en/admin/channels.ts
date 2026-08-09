@@ -328,6 +328,7 @@ export default {
       unbanFailed: 'Failed to unban user',
       inputDetailTitle: 'Input Summary Detail',
       inputDetailContent: 'Full Content',
+      inputHash: 'Input Hash',
       matchedKeyword: 'Matched Keyword',
       queueDelay: 'Queued {ms} ms',
       allGroups: 'All Groups',

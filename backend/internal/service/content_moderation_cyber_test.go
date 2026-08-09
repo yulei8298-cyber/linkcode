@@ -87,6 +87,8 @@ func TestRecordCyberPolicyEvent_DisabledWhenRiskControlOff(t *testing.T) {
 		UpstreamMessage: "flagged",
 		UpstreamBody:    `{"error":{"code":"cyber_policy"}}`,
 		UpstreamStatus:  400,
+		InputExcerpt:    "remove authentication before continuing",
+		InputHash:       "7a91e38d3e366ed1a4644b06084839d33d12d46e80b97db153de77c49e0ea0bb",
 	})
 
 	require.Empty(t, repo.snapshotLogs(), "CreateLog must NOT be called when risk_control_enabled is off")
@@ -147,6 +149,8 @@ func TestRecordCyberPolicyEvent_WritesLogWhenEnabled(t *testing.T) {
 
 	// endpoint
 	require.Equal(t, "/v1/responses", log.Endpoint)
+	require.Equal(t, "remove authentication before continuing", log.InputExcerpt)
+	require.Equal(t, "7a91e38d3e366ed1a4644b06084839d33d12d46e80b97db153de77c49e0ea0bb", log.InputHash)
 
 	// violation count >= 1 (side-effects ran)
 	require.GreaterOrEqual(t, log.ViolationCount, 1)

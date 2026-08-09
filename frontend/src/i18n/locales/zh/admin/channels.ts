@@ -328,6 +328,7 @@ export default {
       unbanFailed: '解封用户失败',
       inputDetailTitle: '输入摘要详情',
       inputDetailContent: '完整内容',
+      inputHash: '输入哈希',
       matchedKeyword: '命中关键词',
       queueDelay: '排队 {ms} ms',
       allGroups: '全部分组',
