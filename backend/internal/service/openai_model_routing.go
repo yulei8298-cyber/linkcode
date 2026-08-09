@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 )
@@ -37,6 +38,27 @@ func (p openAIModelRoutingPolicy) rejectionReason() string {
 		return "model_routing_target_only"
 	}
 	return "model_routing_reserved"
+}
+
+// prioritizeAccounts keeps the routed-account preference after another
+// selection strategy has ordered the candidates. It is intentionally stable
+// so priority, load and LRU ordering remain effective within each pool.
+func (p openAIModelRoutingPolicy) prioritizeAccounts(accounts []*Account) {
+	if !p.hasMatchedAccounts() {
+		return
+	}
+	sort.SliceStable(accounts, func(i, j int) bool {
+		return p.isPreferred(accounts[i].ID) && !p.isPreferred(accounts[j].ID)
+	})
+}
+
+func (p openAIModelRoutingPolicy) prioritizeAccountsWithLoad(accounts []accountWithLoad) {
+	if !p.hasMatchedAccounts() {
+		return
+	}
+	sort.SliceStable(accounts, func(i, j int) bool {
+		return p.isPreferred(accounts[i].account.ID) && !p.isPreferred(accounts[j].account.ID)
+	})
 }
 
 func (s *OpenAIGatewayService) openAIModelRoutingForRequest(ctx context.Context, groupID *int64, platform, requestedModel string) openAIModelRoutingPolicy {

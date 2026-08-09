@@ -706,12 +706,14 @@ func (s *OpenAIGatewayService) tryStickySessionHit(ctx context.Context, groupID 
 		return nil
 	}
 	if !modelRouting.allows(accountID) {
+		_ = s.deleteStickySessionAccountID(ctx, groupID, sessionHash)
 		return nil
 	}
 	// Do not let a sticky session bypass a healthy routed account. If the
 	// preferred account cannot be selected later, normal selection still
 	// includes this account as the fallback pool.
 	if modelRouting.hasMatchedAccounts() && !modelRouting.isPreferred(accountID) {
+		_ = s.deleteStickySessionAccountID(ctx, groupID, sessionHash)
 		return nil
 	}
 
@@ -938,6 +940,10 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 	// ============ Layer 1: Sticky session ============
 	if sessionHash != "" {
 		accountID := stickyAccountID
+		if accountID > 0 && modelRouting.hasMatchedAccounts() && !modelRouting.isPreferred(accountID) {
+			_ = s.deleteStickySessionAccountID(ctx, groupID, sessionHash)
+			accountID = 0
+		}
 		if accountID > 0 && !isExcluded(accountID) && modelRouting.allows(accountID) {
 			account, err := s.getSchedulableAccount(ctx, accountID)
 			if err == nil {
@@ -1087,6 +1093,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 				return rateOrder.compare(available[i].account, available[j].account) < 0
 			})
 		}
+		modelRouting.prioritizeAccountsWithLoad(available)
 
 		selectionOrder := make([]accountWithLoad, 0, len(available))
 		if requireCompact {
@@ -1146,6 +1153,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 		if requireCompact {
 			ordered = prioritizeOpenAICompactAccounts(ordered)
 		}
+		modelRouting.prioritizeAccounts(ordered)
 		for _, acc := range ordered {
 			fresh := s.resolveFreshSchedulableOpenAIAccount(ctx, acc, platform, requestedModel, false, requiredCapability)
 			if fresh == nil {
@@ -1196,6 +1204,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 	if requireCompact {
 		candidates = prioritizeOpenAICompactAccounts(candidates)
 	}
+	modelRouting.prioritizeAccounts(candidates)
 	for _, acc := range candidates {
 		fresh := s.resolveFreshSchedulableOpenAIAccount(ctx, acc, platform, requestedModel, false, requiredCapability)
 		if fresh == nil {
