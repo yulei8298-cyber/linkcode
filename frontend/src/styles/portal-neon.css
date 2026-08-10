@@ -145,7 +145,7 @@
 .lc-availability { display: flex; align-items: end; justify-content: space-between; gap: 10px; margin-top: 18px; }
 .lc-availability small { color: var(--lc-muted); }
 .lc-availability b { color: var(--lc-accent-hi); font: 800 20px/1 ui-monospace, monospace; }
-.lc-timeline { display: grid; grid-template-columns: repeat(30, 1fr); gap: 2px; margin-top: 15px; }
+.lc-timeline { display: grid; grid-template-columns: repeat(60, 1fr); gap: 1px; margin-top: 15px; }
 .lc-timeline i { height: 21px; border-radius: 2px; background: rgba(154,230,110,.62); }
 .lc-timeline i.degraded { background: rgba(245,158,11,.76); }
 .lc-timeline i.bad { background: rgba(255,90,74,.72); }

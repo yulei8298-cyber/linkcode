@@ -39,7 +39,7 @@
           </div>
           <div class="lc-availability"><small>可用率 · {{ currentWindowLabel }}<template v-if="item.extra_models?.length"> · 另含 {{ item.extra_models.length }} 个模型</template></small><b>{{ formatAvailability(resolveAvailability(item)) }}</b></div>
           <div class="lc-timeline" aria-hidden="true">
-            <i v-for="(point, index) in normalizedTimeline(item)" :key="index" :class="timelineClass(point?.status)"></i>
+            <i v-for="(point, index) in normalizedTimeline(item)" :key="index" :class="timelineClass(point?.status)" :title="timelineTitle(point)"></i>
           </div>
         </button>
       </div>
@@ -124,12 +124,17 @@ function resolveAvailability(item: UserMonitorView) {
   return currentWindow.value === '15d' ? primary?.availability_15d ?? null : primary?.availability_30d ?? null
 }
 function normalizedTimeline(item: UserMonitorView): Array<MonitorTimelinePoint | null> {
-  const points = item.timeline || []
-  if (points.length >= 30) return points.slice(-30)
-  const missing = Array.from({ length: 30 - points.length }, () => null)
+  const points = (item.timeline || []).slice(0, 60).reverse()
+  const missing = Array.from({ length: 60 - points.length }, () => null)
   return [...missing, ...points]
 }
 function timelineClass(status?: string) { return statusClass(status) }
+function timelineTitle(point: MonitorTimelinePoint | null) {
+  if (!point) return ''
+  const checkedAt = new Date(point.checked_at)
+  const checkedAtLabel = Number.isNaN(checkedAt.getTime()) ? point.checked_at : checkedAt.toLocaleString('zh-CN', { hour12: false })
+  return `${checkedAtLabel} · ${statusLabel(point.status)} · ${formatLatency(point.latency_ms)}`
+}
 
 onMounted(() => { void reload(false); autoRefresh.setEnabled(true) })
 onBeforeUnmount(() => abortController?.abort())
