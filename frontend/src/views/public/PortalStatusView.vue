@@ -31,7 +31,7 @@
           <div class="lc-monitor-top">
             <span class="lc-provider">{{ providerCode(item.provider) }}</span>
             <div class="lc-monitor-name"><b>{{ item.name }}</b><div class="lc-monitor-meta">{{ providerLabel(item.provider) }} · {{ item.primary_model }}</div></div>
-            <span class="lc-status" :class="{ bad: !isOperational(item.primary_status) }">{{ statusLabel(item.primary_status) }}</span>
+            <span class="lc-status" :class="statusClass(item.primary_status)">{{ statusLabel(item.primary_status) }}</span>
           </div>
           <div class="lc-metrics">
             <div class="lc-metric"><small>模型延迟</small><b>{{ formatLatency(item.primary_latency_ms) }}</b></div>
@@ -60,6 +60,7 @@ import PortalMonitorDetailDialog from './components/PortalMonitorDetailDialog.vu
 import Icon from '@/components/icons/Icon.vue'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
 import { extractApiErrorMessage } from '@/utils/apiError'
+import { STATUS_DEGRADED } from '@/constants/channelMonitor'
 
 type MonitorWindow = '7d' | '15d' | '30d'
 const windows: { value: MonitorWindow; label: string }[] = [{ value: '7d', label: '7 天' }, { value: '15d', label: '15 天' }, { value: '30d', label: '30 天' }]
@@ -109,7 +110,10 @@ async function manualReload() { await reload(false); await loadDetails() }
 function openDetail(item: UserMonitorView) { detailTarget.value = item; showDetail.value = true }
 function closeDetail() { showDetail.value = false; detailTarget.value = null }
 function isOperational(status: string) { return status === 'operational' || status === 'success' }
-function statusLabel(status: string) { return isOperational(status) ? '正常' : status === 'unknown' ? '未知' : '异常' }
+function isDegraded(status?: string) { return status === STATUS_DEGRADED }
+function isUnknown(status?: string) { return !status || status === 'unknown' }
+function statusClass(status?: string) { return isOperational(status || '') ? '' : isDegraded(status) ? 'degraded' : isUnknown(status) ? 'unknown' : 'bad' }
+function statusLabel(status: string) { return isOperational(status) ? '正常' : isDegraded(status) ? '降级' : isUnknown(status) ? '未知' : '异常' }
 function providerCode(provider: string) { return ({ anthropic: 'AN', openai: 'OA', gemini: 'GM', grok: 'XA' } as Record<string,string>)[provider] || provider.slice(0, 2).toUpperCase() }
 function providerLabel(provider: string) { return ({ anthropic: 'ANTHROPIC', openai: 'OPENAI', gemini: 'GEMINI', grok: 'xAI' } as Record<string,string>)[provider] || provider.toUpperCase() }
 function formatLatency(value: number | null) { return value == null ? '--' : `${Math.round(value)} ms` }
@@ -125,7 +129,7 @@ function normalizedTimeline(item: UserMonitorView): Array<MonitorTimelinePoint |
   const missing = Array.from({ length: 30 - points.length }, () => null)
   return [...missing, ...points]
 }
-function timelineClass(status?: string) { return !status ? 'unknown' : isOperational(status) ? '' : 'bad' }
+function timelineClass(status?: string) { return statusClass(status) }
 
 onMounted(() => { void reload(false); autoRefresh.setEnabled(true) })
 onBeforeUnmount(() => abortController?.abort())

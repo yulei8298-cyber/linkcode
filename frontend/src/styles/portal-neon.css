@@ -135,7 +135,9 @@
 .lc-monitor-name b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lc-monitor-meta { margin-top: 5px; overflow: hidden; color: var(--lc-muted); font: 11px/1.4 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
 .lc-status { flex: 0 0 auto; padding: 5px 8px; border-radius: 999px; color: var(--lc-green); background: rgba(154,230,110,.08); font-size: 11px; font-weight: 750; }
+.lc-status.degraded { color: #fbbf24; background: rgba(245,158,11,.12); }
 .lc-status.bad { color: #ff816f; background: rgba(255,90,74,.09); }
+.lc-status.unknown { color: var(--lc-muted); background: rgba(255,255,255,.06); }
 .lc-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
 .lc-metric { padding: 12px; border: 1px solid var(--lc-line-soft); border-radius: 6px; background: var(--lc-bg-2); }
 .lc-metric small { display: block; color: var(--lc-muted); }
@@ -145,6 +147,7 @@
 .lc-availability b { color: var(--lc-accent-hi); font: 800 20px/1 ui-monospace, monospace; }
 .lc-timeline { display: grid; grid-template-columns: repeat(30, 1fr); gap: 2px; margin-top: 15px; }
 .lc-timeline i { height: 21px; border-radius: 2px; background: rgba(154,230,110,.62); }
+.lc-timeline i.degraded { background: rgba(245,158,11,.76); }
 .lc-timeline i.bad { background: rgba(255,90,74,.72); }
 .lc-timeline i.unknown { background: rgba(255,255,255,.1); }
 .lc-empty { margin-top: 20px; padding: 42px; text-align: center; }
