@@ -246,6 +246,39 @@ func TestEstimateOpenAIInputTokens_RequestSamples(t *testing.T) {
 	}
 }
 
+func TestEstimateOpenAIResponsesInputTokens(t *testing.T) {
+	body := []byte(`{"model":"gpt-5.4","instructions":"Be concise.","input":[{"role":"user","content":"hello"}]}`)
+
+	got, err := EstimateOpenAIResponsesInputTokens(body)
+	require.NoError(t, err)
+	require.Positive(t, got)
+
+	for _, invalidBody := range []string{
+		`{`,
+		`{"input":[{"role":"user","content":"hello"}]}`,
+	} {
+		_, err := EstimateOpenAIResponsesInputTokens([]byte(invalidBody))
+		require.Error(t, err, "body=%s", invalidBody)
+	}
+}
+
+func TestIsOpenAIResponsesInputTokensRequestPath(t *testing.T) {
+	for _, path := range []string{
+		"/v1/responses/input_tokens",
+		"/responses/input_tokens/",
+		"/backend-api/codex/responses/input_tokens",
+	} {
+		require.True(t, IsOpenAIResponsesInputTokensRequestPath(path), "path=%s", path)
+	}
+	for _, path := range []string{
+		"/v1/responses",
+		"/v1/responses/input_tokens/extra",
+		"",
+	} {
+		require.False(t, IsOpenAIResponsesInputTokensRequestPath(path), "path=%s", path)
+	}
+}
+
 func TestEstimateGrokCountTokens_AnthropicRequests(t *testing.T) {
 	cases := []struct {
 		name string

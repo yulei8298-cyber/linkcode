@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
@@ -10,8 +11,47 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )
+
+// ResponsesInputTokens handles OpenAI Responses POST /input_tokens locally.
+// It is an informational client probe, not a billable model request, and
+// must not consume account concurrency or call an upstream OAuth endpoint.
+func (h *OpenAIGatewayHandler) ResponsesInputTokens(c *gin.Context) {
+	body, err := readLenientJSONRequestBodyWithPrealloc(c.Request, h.cfg)
+	if err != nil {
+		if maxErr, ok := extractMaxBytesError(err); ok {
+			h.errorResponse(c, http.StatusRequestEntityTooLarge, "invalid_request_error", buildBodyTooLargeMessage(maxErr.Limit))
+			return
+		}
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to read request body")
+		return
+	}
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to parse request body")
+		return
+	}
+
+	model := strings.TrimSpace(gjson.GetBytes(body, "model").String())
+	if model == "" {
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "model is required")
+		return
+	}
+
+	estimated, err := service.EstimateOpenAIResponsesInputTokens(body)
+	if err != nil {
+		requestLogger(c, "handler.openai_gateway.responses_input_tokens").Warn(
+			"openai.responses_input_tokens.local_estimate_failed", zap.Error(err),
+		)
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to estimate input tokens")
+		return
+	}
+
+	setOpsRequestContext(c, model, false)
+	setOpsEndpointContext(c, "", int16(service.RequestTypeSync))
+	c.JSON(http.StatusOK, gin.H{"input_tokens": estimated})
+}
 
 // GrokCountTokens handles Anthropic-compatible count_tokens requests locally.
 // The route middleware already authenticates the API key and resolves the

@@ -241,6 +241,25 @@ func TestOpsErrorLoggerMiddleware_DoesNotBreakOuterMiddlewares(t *testing.T) {
 	require.Equal(t, http.StatusNoContent, rec.Code)
 }
 
+func TestIsCountTokensRequest_RecognizesResponsesInputTokens(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	for _, path := range []string{
+		"/v1/responses/input_tokens",
+		"/backend-api/codex/responses/input_tokens/",
+	} {
+		recorder := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(recorder)
+		c.Request = httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{"model":"gpt-5"}`))
+		require.True(t, isCountTokensRequest(c), "path=%s", path)
+	}
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", strings.NewReader(`{"model":"gpt-5"}`))
+	require.False(t, isCountTokensRequest(c))
+}
+
 // setupOpsErrorLogTestQueue 阻止 enqueueOpsErrorLog 启动真实 worker，改用可检查的测试队列。
 func setupOpsErrorLogTestQueue(t *testing.T, size int) {
 	t.Helper()

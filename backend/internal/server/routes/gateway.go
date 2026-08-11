@@ -86,6 +86,13 @@ func RegisterGatewayRoutes(
 		return getGroupPlatform(c) == service.PlatformOpenAI
 	}
 	responsesHandler := func(c *gin.Context) {
+		// Claude Code sends /responses/input_tokens as an informational probe.
+		// OAuth upstreams commonly return 404 for this optional endpoint; keep it
+		// local so the probe cannot create a false upstream-health failure.
+		if service.IsOpenAIResponsesInputTokensRequestPath(c.Request.URL.Path) {
+			h.OpenAIGateway.ResponsesInputTokens(c)
+			return
+		}
 		if isOpenAIResponsesCompatibleGatewayPlatform(c) {
 			h.OpenAIGateway.Responses(c)
 			return

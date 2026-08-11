@@ -23,6 +23,14 @@ const (
 	openAIInputTokensFallbackMinimum      = 1
 )
 
+// IsOpenAIResponsesInputTokensRequestPath identifies the optional OpenAI
+// Responses token-counting endpoint. Different clients expose this endpoint
+// through different gateway prefixes, so match the stable suffix only.
+func IsOpenAIResponsesInputTokensRequestPath(path string) bool {
+	normalized := strings.TrimRight(strings.TrimSpace(path), "/")
+	return normalized != "" && strings.HasSuffix(normalized, "/responses/input_tokens")
+}
+
 type openAIInputTokensCountRequest struct {
 	Model        string                    `json:"model"`
 	Instructions string                    `json:"instructions,omitempty"`
@@ -37,6 +45,29 @@ type openAIInputTokensCountPrepared struct {
 	NormalizedModel string
 	BillingModel    string
 	UpstreamModel   string
+}
+
+// EstimateOpenAIResponsesInputTokens estimates a Responses API
+// /input_tokens request locally. OAuth upstreams do not expose this optional
+// endpoint consistently, so the gateway must not depend on an upstream call
+// for this informational request.
+func EstimateOpenAIResponsesInputTokens(body []byte) (int, error) {
+	var req openAIInputTokensCountRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		return 0, fmt.Errorf("parse responses input_tokens request: %w", err)
+	}
+	if strings.TrimSpace(req.Model) == "" {
+		return 0, fmt.Errorf("parse responses input_tokens request: model is required")
+	}
+
+	estimated, err := estimateOpenAIInputTokens(req)
+	if err != nil {
+		return 0, fmt.Errorf("estimate responses input_tokens: %w", err)
+	}
+	if estimated < openAIInputTokensFallbackMinimum {
+		estimated = openAIInputTokensFallbackMinimum
+	}
+	return estimated, nil
 }
 
 // EstimateGrokCountTokens estimates an Anthropic-compatible count_tokens request
