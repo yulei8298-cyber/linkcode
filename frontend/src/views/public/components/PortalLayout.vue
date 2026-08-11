@@ -105,11 +105,11 @@ const mobileOpen = ref(false)
 
 const settings = computed(() => appStore.cachedPublicSettings)
 const siteName = computed(() => normalizeSiteName(settings.value?.site_name || appStore.siteName))
-const siteLogo = computed(() => sanitizeUrl(settings.value?.site_logo || appStore.siteLogo || '', {
+const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', {
   allowRelative: true,
   allowDataUrl: true,
 }))
-const docUrl = computed(() => sanitizeUrl(settings.value?.doc_url || appStore.docUrl || ''))
+const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
 const chatStationUrl = computed(() => sanitizeUrl(settings.value?.chat_station_url || ''))
 const telegramGroupUrl = computed(() => sanitizeUrl(settings.value?.telegram_group_url || ''))
 const qqGroup = computed(() => settings.value?.qq_group?.trim() || '')
