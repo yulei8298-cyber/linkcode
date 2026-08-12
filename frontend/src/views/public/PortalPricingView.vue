@@ -172,7 +172,10 @@ const allConfiguredModels = computed<DisplayModel[]>(() => {
 })
 const latestModels = computed<DisplayModel[]>(() => {
   const anthropic = selectLatestClaude(allConfiguredModels.value.filter(item => item.platform === 'anthropic'))
-  const openai = allConfiguredModels.value.filter(item => item.platform === 'openai' && /gpt[-_. ]?5[-_. ]?6/i.test(item.name)).sort((a,b) => a.name.localeCompare(b.name)).slice(0, 3)
+  const configuredOpenAI = allConfiguredModels.value.filter(item => item.platform === 'openai')
+  const openai = latestOpenAIModelNames
+    .map(name => configuredOpenAI.find(item => item.name.toLowerCase() === name))
+    .filter((model): model is DisplayModel => Boolean(model))
   return [...(anthropic.length ? anthropic : fallbackClaudeModels), ...(openai.length ? openai : fallbackOpenAIModels)]
 })
 const channelRows = computed(() => channels.value.flatMap(channel => channel.platforms.filter(section => ['anthropic', 'openai'].includes(section.platform)).flatMap(section => section.groups.filter(group => !group.is_exclusive).map(group => ({ channel: channel.name, platform: section.platform, group })))))
@@ -182,7 +185,8 @@ const channelRateSections = computed(() => ['anthropic', 'openai'].map(platform 
 }).filter(section => section.rows.length > 0))
 
 const fallbackClaudeModels: DisplayModel[] = ['claude-opus-5', 'claude-sonnet-5', 'claude-haiku-4.5'].map(name => ({ name, platform: 'anthropic', pricing: null }))
-const fallbackOpenAIModels: DisplayModel[] = ['gpt-5.6', 'gpt-5.6-codex', 'gpt-5.6-mini'].map(name => ({ name, platform: 'openai', pricing: null }))
+const latestOpenAIModelNames = ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']
+const fallbackOpenAIModels: DisplayModel[] = latestOpenAIModelNames.map(name => ({ name, platform: 'openai', pricing: null }))
 
 function selectLatestClaude(models: DisplayModel[]) {
   return ['opus', 'sonnet', 'haiku'].map(family => models.filter(model => model.name.toLowerCase().includes(family)).sort((a,b) => b.name.localeCompare(a.name, undefined, { numeric: true }))[0]).filter((model): model is DisplayModel => Boolean(model))
