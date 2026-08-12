@@ -236,7 +236,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	var streamEarlyErr error
 	eventInProgress := false
 	eventStartsClientOutput := false
-	eventStartsVisibleOutput := false
+	eventStartsFirstToken := false
 	eventShouldFlush := false
 	handlePendingWriteError := func(err error) {
 		if firstOutputStage != nil && !firstOutputProgressObserved && !firstOutputStage.closed {
@@ -256,7 +256,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	}
 	completeGuardedEvent := func(queueDrained bool) {
 		completedProgressEvent := eventStartsClientOutput
-		completedVisibleEvent := eventStartsVisibleOutput
+		completedFirstTokenEvent := eventStartsFirstToken
 		shouldFlush := eventShouldFlush || (queueDrained && clientOutputStarted)
 		eventInProgress = false
 		if !clientDisconnected {
@@ -278,12 +278,12 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			firstOutputProgressObserved = true
 			stopFirstOutputTimer()
 		}
-		if completedVisibleEvent && firstTokenMs == nil {
+		if completedFirstTokenEvent && firstTokenMs == nil {
 			ms := int(time.Since(startTime).Milliseconds())
 			firstTokenMs = &ms
 		}
 		eventStartsClientOutput = false
-		eventStartsVisibleOutput = false
+		eventStartsFirstToken = false
 		eventShouldFlush = false
 	}
 	sendErrorEvent := func(reason string) {
@@ -547,10 +547,10 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 				line = s.replaceModelInSSELine(line, mappedModel, originalModel)
 			}
 			startsClientOutput := forceFlushFailedEvent || openAIStreamDataStartsClientOutput(data, eventType)
-			startsVisibleOutput := openAIStreamDataStartsVisibleOutput(data, eventType)
+			startsFirstToken := startsClientOutput && data != "[DONE]" && !openAIStreamEventTypeIsTerminal(eventType)
 			if guardFirstOutput {
 				eventStartsClientOutput = eventStartsClientOutput || startsClientOutput
-				eventStartsVisibleOutput = eventStartsVisibleOutput || startsVisibleOutput
+				eventStartsFirstToken = eventStartsFirstToken || startsFirstToken
 			}
 			if startsClientOutput && !openAIStreamEventTypeIsTerminal(eventType) {
 				responsesSemanticOutputSeen = true
@@ -571,7 +571,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			// 写入客户端（客户端断开后继续 drain 上游）
 			if !clientDisconnected {
 				shouldFlush := queueDrained && (clientOutputStarted || startsClientOutput)
-				if firstTokenMs == nil && startsVisibleOutput {
+				if firstTokenMs == nil && startsFirstToken {
 					// 保证首个 token 事件尽快出站，避免影响 TTFT。
 					shouldFlush = true
 				}
@@ -586,7 +586,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			}
 
 			// Record first token time
-			if !guardFirstOutput && firstTokenMs == nil && startsVisibleOutput {
+			if !guardFirstOutput && firstTokenMs == nil && startsFirstToken {
 				ms := int(time.Since(startTime).Milliseconds())
 				firstTokenMs = &ms
 				stopFirstOutputTimer()
