@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 // pngBytes is a minimal payload whose signature makes http.DetectContentType
@@ -95,6 +96,28 @@ func TestImageResultUploaderRewritesURL(t *testing.T) {
 	}
 	require.NoError(t, json.Unmarshal(out, &parsed))
 	require.JSONEq(t, `"https://cdn.test/images/imgtask_xyz-0.png"`, string(parsed.Data[0]["url"]))
+}
+
+func TestImageResultUploaderRewriteItemSupportsImageURL(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		_, _ = w.Write(pngBytes)
+	}))
+	defer upstream.Close()
+
+	storage := &fakeImageStorage{}
+	uploader := NewImageResultUploader(storage, "images/", 0, nil)
+	item := json.RawMessage(`{"type":"image_generation.completed","image_url":"` + upstream.URL + `/pic.png","revised_prompt":"kept"}`)
+
+	out, err := uploader.RewriteItem(context.Background(), "sync_stream", item)
+	require.NoError(t, err)
+	require.Len(t, storage.saved, 1)
+	require.Equal(t, "images/sync_stream-0.png", storage.saved[0].key)
+	require.Equal(t, pngBytes, storage.saved[0].data)
+	require.Equal(t, "https://cdn.test/images/sync_stream-0.png", gjson.GetBytes(out, "url").String())
+	require.False(t, gjson.GetBytes(out, "image_url").Exists())
+	require.False(t, gjson.GetBytes(out, "b64_json").Exists())
+	require.Equal(t, "kept", gjson.GetBytes(out, "revised_prompt").String())
 }
 
 func TestImageResultUploaderRewritesImageDataURLWithoutHTTP(t *testing.T) {

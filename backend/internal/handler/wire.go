@@ -115,6 +115,7 @@ func ProvideGatewayHandler(
 
 func ProvideOpenAIGatewayHandler(
 	gatewayService *service.OpenAIGatewayService,
+	imageStorageSettings *service.ImageStorageSettingService,
 	concurrencyService *service.ConcurrencyService,
 	billingCacheService *service.BillingCacheService,
 	apiKeyService *service.APIKeyService,
@@ -126,6 +127,9 @@ func ProvideOpenAIGatewayHandler(
 	cfg *config.Config,
 	coordinator *securityaudit.Coordinator,
 ) *OpenAIGatewayHandler {
+	if imageStorageSettings != nil {
+		gatewayService.SetImageStorageResolver(imageStorageSettings.Resolver())
+	}
 	h := NewOpenAIGatewayHandler(gatewayService, concurrencyService, billingCacheService, apiKeyService,
 		usageRecordWorkerPool, errorPassthroughService, contentModerationService, opsService, cfg)
 	h.securityAuditCoordinator = coordinator

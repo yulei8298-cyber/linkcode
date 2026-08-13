@@ -41,6 +41,11 @@ func RegisterGatewayRoutes(
 	compositeTarget := compositeTargetPlatformMiddleware(compositeResolver)
 	compositeGeminiTarget := compositeGeminiTargetPlatformMiddleware(compositeResolver)
 
+	// Public short-lived image URLs contain an opaque Redis token and stream the
+	// upstream image without exposing its origin or requiring API credentials.
+	r.GET("/v1/images/proxy/:token", clientRequestID, h.OpenAIGateway.ImageProxy)
+	r.GET("/images/proxy/:token", clientRequestID, h.OpenAIGateway.ImageProxy)
+
 	// 未分组 Key 拦截中间件（按协议格式区分错误响应）
 	requireGroupAnthropic := middleware.RequireGroupAssignment(settingService, middleware.AnthropicErrorWriter)
 	requireGroupGoogle := middleware.RequireGroupAssignment(settingService, middleware.GoogleErrorWriter)

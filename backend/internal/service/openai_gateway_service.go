@@ -431,6 +431,7 @@ type OpenAIGatewayService struct {
 	userPlatformQuotaRepo UserPlatformQuotaRepository
 	liveAttestation       liveattestation.Provider
 	liveAttestationCipher SecretEncryptor
+	imageStorageResolver  ImageStorageResolver
 
 	openaiWSPoolOnce               sync.Once
 	openaiWSStateStoreOnce         sync.Once
@@ -540,6 +541,16 @@ func NewOpenAIGatewayService(
 	}
 	svc.logOpenAIWSModeBootstrap()
 	return svc
+}
+
+// SetImageStorageResolver enables optional object-storage offload for synchronous
+// image responses. It is injected after construction to keep the widely used
+// NewOpenAIGatewayService constructor stable.
+func (s *OpenAIGatewayService) SetImageStorageResolver(resolver ImageStorageResolver) {
+	if s == nil {
+		return
+	}
+	s.imageStorageResolver = resolver
 }
 
 // ResolveChannelMapping 解析渠道级模型映射（代理到 ChannelService）

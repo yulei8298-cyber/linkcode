@@ -422,6 +422,27 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 	}
 }
 
+// ImageProxy streams a short-lived upstream image through the public gateway.
+// The image bytes are never persisted by the application.
+func (h *OpenAIGatewayHandler) ImageProxy(c *gin.Context) {
+	if h == nil || h.gatewayService == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"type": "not_found_error", "message": "Image link is unavailable or expired"}})
+		return
+	}
+	err := h.gatewayService.ServeImageProxy(c.Request.Context(), c.Param("token"), c.Writer)
+	if err == nil {
+		return
+	}
+	if errors.Is(err, service.ErrImageProxyURLNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"type": "not_found_error", "message": "Image link is unavailable or expired"}})
+		return
+	}
+	logger.FromContext(c.Request.Context()).Warn("openai.image_proxy.failed", zap.Error(err))
+	if !c.Writer.Written() {
+		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{"type": "upstream_error", "message": "Failed to load image"}})
+	}
+}
+
 func (h *OpenAIGatewayHandler) openAIImagesJSONKeepaliveInterval() time.Duration {
 	if h.cfg == nil || h.cfg.Gateway.ImageNonstreamKeepaliveInterval <= 0 {
 		return 0

@@ -16,6 +16,7 @@ import (
 
 const stickySessionPrefix = "sticky_session:"
 const liveCallPrefix = "live:call:"
+const imageProxyURLPrefix = "image_proxy_url:"
 
 type gatewayCache struct {
 	rdb *redis.Client
@@ -63,6 +64,36 @@ func (c *gatewayCache) RefreshSessionTTL(ctx context.Context, groupID int64, ses
 func (c *gatewayCache) DeleteSessionAccountID(ctx context.Context, groupID int64, sessionHash string) error {
 	key := buildSessionKey(groupID, sessionHash)
 	return c.rdb.Del(ctx, key).Err()
+}
+
+func (c *gatewayCache) SetImageProxyURL(ctx context.Context, token, upstreamURL string, ttl time.Duration) error {
+	if c == nil || c.rdb == nil {
+		return errors.New("gateway cache unavailable")
+	}
+	token = strings.TrimSpace(token)
+	upstreamURL = strings.TrimSpace(upstreamURL)
+	if token == "" || upstreamURL == "" {
+		return errors.New("invalid image proxy url payload")
+	}
+	if ttl <= 0 {
+		ttl = 24 * time.Hour
+	}
+	return c.rdb.Set(ctx, imageProxyURLPrefix+token, upstreamURL, ttl).Err()
+}
+
+func (c *gatewayCache) GetImageProxyURL(ctx context.Context, token string) (string, error) {
+	if c == nil || c.rdb == nil {
+		return "", errors.New("gateway cache unavailable")
+	}
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return "", service.ErrImageProxyURLNotFound
+	}
+	value, err := c.rdb.Get(ctx, imageProxyURLPrefix+token).Result()
+	if errors.Is(err, redis.Nil) {
+		return "", service.ErrImageProxyURLNotFound
+	}
+	return strings.TrimSpace(value), err
 }
 
 const (
@@ -130,6 +161,7 @@ func (c *gatewayCache) ReleaseGrokVideoBilled(ctx context.Context, key string) e
 // Compile-time assertion: gatewayCache must implement CyberSessionBlockStore.
 var _ service.CyberSessionBlockStore = (*gatewayCache)(nil)
 var _ service.LiveCallStore = (*gatewayCache)(nil)
+var _ service.ImageProxyURLStore = (*gatewayCache)(nil)
 
 const cyberSessionBlockPrefix = "cyber_session_block:"
 

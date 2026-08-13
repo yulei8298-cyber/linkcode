@@ -96,6 +96,7 @@ func (u *ImageResultUploader) Rewrite(ctx context.Context, taskID string, result
 		}
 		item["url"] = urlRaw
 		delete(item, "b64_json")
+		delete(item, "image_url")
 		items[i] = item
 	}
 	newData, err := json.Marshal(items)
@@ -108,6 +109,34 @@ func (u *ImageResultUploader) Rewrite(ctx context.Context, taskID string, result
 		return nil, fmt.Errorf("encode image response: %w", err)
 	}
 	return out, nil
+}
+
+// RewriteItem offloads a single image object used by streaming completion
+// events. The object may contain b64_json, url, or image_url.
+func (u *ImageResultUploader) RewriteItem(ctx context.Context, taskID string, item json.RawMessage) (json.RawMessage, error) {
+	if u == nil || u.storage == nil {
+		return item, nil
+	}
+	wrapped, err := json.Marshal(map[string]json.RawMessage{
+		"data": json.RawMessage("[" + string(item) + "]"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("wrap image item: %w", err)
+	}
+	rewritten, err := u.Rewrite(ctx, taskID, wrapped)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data []json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(rewritten, &result); err != nil {
+		return nil, fmt.Errorf("unwrap image item: %w", err)
+	}
+	if len(result.Data) != 1 {
+		return nil, errors.New("rewritten image item is missing")
+	}
+	return result.Data[0], nil
 }
 
 func (u *ImageResultUploader) fetchImageBytes(ctx context.Context, item map[string]json.RawMessage) ([]byte, string, error) {
@@ -134,7 +163,18 @@ func (u *ImageResultUploader) fetchImageBytes(ctx context.Context, item map[stri
 			}
 		}
 	}
-	return nil, "", errors.New("image item has neither b64_json nor url")
+	if raw, ok := item["image_url"]; ok {
+		var rawURL string
+		if err := json.Unmarshal(raw, &rawURL); err == nil {
+			if rawURL = strings.TrimSpace(rawURL); rawURL != "" {
+				if len(rawURL) >= len("data:") && strings.EqualFold(rawURL[:len("data:")], "data:") {
+					return u.decodeImageDataURL(rawURL)
+				}
+				return u.download(ctx, rawURL)
+			}
+		}
+	}
+	return nil, "", errors.New("image item has neither b64_json, url nor image_url")
 }
 
 func (u *ImageResultUploader) decodeImageDataURL(rawURL string) ([]byte, string, error) {

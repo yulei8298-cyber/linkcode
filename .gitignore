@@ -142,6 +142,7 @@ docs/*
 !docs/ASYNC_IMAGE_TASKS.md
 !docs/同步开源0.1.158记录.md
 !docs/同步开源0.1.166记录.md
+!docs/生图上游地址隐藏代理开发记录.md
 !docs/legal/
 !docs/legal/*.md
 .serena/

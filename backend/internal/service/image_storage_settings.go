@@ -120,7 +120,9 @@ func (s *ImageStorageSettingService) resolve() (*ImageResultUploader, bool) {
 		logger.L().Error("image_storage.client_build_failed; async image tasks stay disabled", zap.Error(err))
 		return nil, false
 	}
-	s.uploader = NewImageResultUploader(storage, cfg.Prefix, cfg.MaxDownloadByte, nil)
+	// Remote image URLs are fetched by the same hardened client used by the
+	// public image proxy, including SSRF and DNS-rebinding protections.
+	s.uploader = NewImageResultUploader(storage, cfg.Prefix, cfg.MaxDownloadByte, imageProxyHTTPClient)
 	s.enabled = true
 	return s.uploader, true
 }

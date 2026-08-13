@@ -488,6 +488,15 @@ type GatewayCache interface {
 	ReleaseGrokVideoBilled(ctx context.Context, key string) error
 }
 
+// ImageProxyURLStore stores short-lived opaque image proxy targets. The image
+// bytes are never persisted; only the upstream URL is retained until expiry.
+type ImageProxyURLStore interface {
+	SetImageProxyURL(ctx context.Context, token, upstreamURL string, ttl time.Duration) error
+	GetImageProxyURL(ctx context.Context, token string) (string, error)
+}
+
+var ErrImageProxyURLNotFound = errors.New("image proxy url not found")
+
 // derefGroupID safely dereferences *int64 to int64, returning 0 if nil
 func derefGroupID(groupID *int64) int64 {
 	if groupID == nil {

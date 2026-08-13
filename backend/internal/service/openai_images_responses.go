@@ -1302,6 +1302,7 @@ func (s *OpenAIGatewayService) handleOpenAIImagesOAuthNonStreamingResponse(
 		return OpenAIUsage{}, 0, nil, err
 	}
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	responseBody = s.rewriteImageResponseForDelivery(c.Request.Context(), c, responseBody)
 	c.Data(resp.StatusCode, "application/json; charset=utf-8", responseBody)
 	return usage, len(results), openAIResponsesImageResultSizes(results), nil
 }
@@ -1444,6 +1445,7 @@ func (s *OpenAIGatewayService) handleOpenAIImagesOAuthStreamingResponse(
 					continue
 				}
 				payload := buildOpenAIImagesStreamCompletedPayload(eventName, img, format, createdAt, usageRaw)
+				payload = s.rewriteBuiltImageStreamPayloadForDelivery(c.Request.Context(), c, eventName, payload)
 				emitted[key] = struct{}{}
 				s.tryWriteOpenAIImagesStreamEvent(c, flusher, &clientDisconnected, &lastDownstreamWriteAt, eventName, payload)
 			}
@@ -1500,6 +1502,7 @@ func (s *OpenAIGatewayService) handleOpenAIImagesOAuthStreamingResponse(
 					continue
 				}
 				payload := buildOpenAIImagesStreamCompletedPayload(eventName, img, format, createdAt, nil)
+				payload = s.rewriteBuiltImageStreamPayloadForDelivery(c.Request.Context(), c, eventName, payload)
 				emitted[key] = struct{}{}
 				s.tryWriteOpenAIImagesStreamEvent(c, flusher, &clientDisconnected, &lastDownstreamWriteAt, eventName, payload)
 			}

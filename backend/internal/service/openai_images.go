@@ -894,10 +894,12 @@ func (s *OpenAIGatewayService) handleOpenAIImagesNonStreamingResponse(resp *http
 			contentType = upstreamType
 		}
 	}
-	c.Data(resp.StatusCode, contentType, body)
-
 	usage, _ := extractOpenAIUsageFromJSONBytes(body)
-	return usage, extractOpenAIImageCountFromJSONBytes(body), collectOpenAIResponseImageOutputSizesFromJSONBytes(body), nil
+	imageCount := extractOpenAIImageCountFromJSONBytes(body)
+	imageSizes := collectOpenAIResponseImageOutputSizesFromJSONBytes(body)
+	body = s.rewriteImageResponseForDelivery(c.Request.Context(), c, body)
+	c.Data(resp.StatusCode, contentType, body)
+	return usage, imageCount, imageSizes, nil
 }
 
 func (s *OpenAIGatewayService) handleOpenAIImagesStreamingResponse(
@@ -950,8 +952,9 @@ func (s *OpenAIGatewayService) handleOpenAIImagesStreamingResponse(
 			ms := int(time.Since(startTime).Milliseconds())
 			firstTokenMs = &ms
 		}
+		downstreamLine := s.rewriteImageSSELineForDelivery(c.Request.Context(), c, line)
 		if !clientDisconnected {
-			if _, writeErr := c.Writer.Write(line); writeErr != nil {
+			if _, writeErr := c.Writer.Write(downstreamLine); writeErr != nil {
 				clientDisconnected = true
 				logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Images stream client disconnected, continue draining upstream for billing")
 			} else {

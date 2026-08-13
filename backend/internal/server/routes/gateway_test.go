@@ -126,6 +126,33 @@ func TestGatewayRoutesOpenAIImagesPathsAreRegistered(t *testing.T) {
 	}
 }
 
+func TestGatewayRoutesImageProxyPathsArePubliclyRegistered(t *testing.T) {
+	router := newGatewayRoutesTestRouter()
+	registered := make(map[string]bool)
+	for _, route := range router.Routes() {
+		if route.Method == http.MethodGet {
+			registered[route.Path] = true
+		}
+	}
+
+	require.True(t, registered["/v1/images/proxy/:token"])
+	require.True(t, registered["/images/proxy/:token"])
+}
+
+func TestGatewayRoutesImageProxyDoesNotRequireAPIKey(t *testing.T) {
+	router := newGatewayRoutesTestRouter()
+	for _, path := range []string{"/v1/images/proxy/expired", "/images/proxy/expired"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusNotFound, w.Code, "path=%s", path)
+		require.Contains(t, w.Body.String(), "Image link is unavailable or expired")
+		require.NotContains(t, w.Body.String(), "API key")
+	}
+}
+
 func TestGatewayRoutesAsyncImagesPathsAreRegistered(t *testing.T) {
 	router := newGatewayRoutesTestRouter()
 	registered := make(map[string]bool)
