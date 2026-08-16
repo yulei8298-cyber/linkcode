@@ -570,6 +570,7 @@ export interface Group {
   monthly_limit_usd: number | null
   ip_whitelist: string[]
   ip_blacklist: string[]
+  long_context_pricing_enabled: boolean
   // 图片生成计费配置
   allow_image_generation: boolean
   allow_batch_image_generation: boolean
@@ -616,6 +617,7 @@ export interface Group {
 }
 
 export interface AdminGroup extends Group {
+  model_pricing: import('@/api/admin/channels').ChannelModelPricing[]
   // 分组利润控制（openai/anthropic/gemini/grok/antigravity 分组可启用；margin/buffer 为小数存储）。
   // 仅管理员可见：与 rate_multiplier 相乘即可反推上游成本上限，不得下放到 Group。
   profit_control_enabled: boolean
@@ -784,6 +786,8 @@ export interface CreateGroupRequest {
   monthly_limit_usd?: number | null
   ip_whitelist?: string[]
   ip_blacklist?: string[]
+  long_context_pricing_enabled?: boolean
+  model_pricing?: import('@/api/admin/channels').ChannelModelPricing[]
   allow_image_generation?: boolean
   allow_batch_image_generation?: boolean
   image_rate_independent?: boolean
@@ -850,6 +854,8 @@ export interface UpdateGroupRequest {
   monthly_limit_usd?: number | null
   ip_whitelist?: string[]
   ip_blacklist?: string[]
+  long_context_pricing_enabled?: boolean
+  model_pricing?: import('@/api/admin/channels').ChannelModelPricing[]
   allow_image_generation?: boolean
   allow_batch_image_generation?: boolean
   image_rate_independent?: boolean
