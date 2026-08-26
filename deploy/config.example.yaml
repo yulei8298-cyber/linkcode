@@ -208,6 +208,13 @@ security:
 # 网关配置
 # =============================================================================
 gateway:
+  # Periodically check Kimi/DeepSeek pay-as-you-go balances. Keep disabled by
+  # default: some upstream balance endpoints do not reflect usable credits.
+  # 是否周期探测 Kimi/DeepSeek 按量付费余额。默认关闭，避免余额接口与实际
+  # 可用额度不同步时误把可用账号移出调度。
+  cn_providers:
+    balance_check_enabled: false
+
   # Timeout for waiting upstream response headers (seconds)
   # 等待上游响应头超时时间（秒）
   response_header_timeout: 600

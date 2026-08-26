@@ -1123,7 +1123,7 @@ type GatewayGrokConfig struct {
 // GatewayCNProvidersConfig 国产 OpenAI 兼容供应商（kimi/zhipu/deepseek）的余额检测配置。
 //
 // 仅作用于 payg（按量付费）账号（kimi/deepseek 有公开余额端点；zhipu 无，仅靠响应式 429/402）。
-//   - balance_check_enabled: 是否启用周期余额检测（默认 true）
+//   - balance_check_enabled: 是否启用周期余额检测（默认 false）
 //   - balance_threshold: 余额低于此值（账户货币单位，默认 0.5）触发临时停调
 //   - balance_check_interval_minutes: 余额检测周期（分钟，默认 10）
 type GatewayCNProvidersConfig struct {
@@ -2441,7 +2441,9 @@ func setDefaults() {
 	viper.SetDefault("gateway.grok.free_quota_window_hours", 24)
 	viper.SetDefault("gateway.grok.free_quota_stats_cache_seconds", 60)
 	// 国产供应商余额检测（kimi/deepseek payg；zhipu 无余额端点，仅靠响应式 429/402）。
-	viper.SetDefault("gateway.cn_providers.balance_check_enabled", true)
+	// 默认关闭周期余额探测：部分上游余额接口不能准确反映实际可用额度，
+	// 不应仅因探测结果而自动移除可正常调用的账号。
+	viper.SetDefault("gateway.cn_providers.balance_check_enabled", false)
 	viper.SetDefault("gateway.cn_providers.balance_threshold", 0.5)
 	viper.SetDefault("gateway.cn_providers.balance_check_interval_minutes", 10)
 	viper.SetDefault("gateway.image_concurrency.enabled", false)
