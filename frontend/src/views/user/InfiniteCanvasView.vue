@@ -13,7 +13,10 @@ import {
 const config = ref<InfiniteCanvasConfig | null>(null)
 const loading = ref(true)
 const errorMessage = ref('')
-const canvasOrigin = (import.meta.env.VITE_INFINITE_CANVAS_ORIGIN || '').trim().replace(/\/+$/, '')
+const configuredCanvasUrl = (import.meta.env.VITE_INFINITE_CANVAS_ORIGIN || '').trim()
+const configuredCanvas = configuredCanvasUrl ? new URL(configuredCanvasUrl) : null
+const canvasOrigin = configuredCanvas ? `${configuredCanvas.protocol}//${configuredCanvas.host}` : ''
+const canvasBasePath = configuredCanvas ? configuredCanvas.pathname.replace(/\/+$/, '') : ''
 const UPSTREAM_SIGNATURE_KEY = 'linkcode-infinite-canvas:upstream-signature'
 const CANVAS_ROUTE_KEY = 'linkcode-infinite-canvas:route'
 
@@ -102,9 +105,10 @@ function upstreamSignature(value: InfiniteCanvasConfig): string {
 
 const iframeSrc = computed(() => {
   if (!config.value || !canvasOrigin) return ''
-  const url = new URL(initialCanvasRoute, canvasOrigin)
+  const routePath = `${canvasBasePath}${initialCanvasRoute === '/' ? '/' : initialCanvasRoute}` || '/'
+  const url = new URL(routePath, canvasOrigin)
   // Bust a previously opened iframe document after embedded UI bootstrap changes.
-  url.searchParams.set('linkcodeEmbed', '7')
+  url.searchParams.set('linkcodeEmbed', '8')
   const signature = upstreamSignature(config.value)
   if (localStorage.getItem(UPSTREAM_SIGNATURE_KEY) !== signature) {
     // hash 不会发到服务器；静态站点在原版 React 启动前写入其既有配置存储。

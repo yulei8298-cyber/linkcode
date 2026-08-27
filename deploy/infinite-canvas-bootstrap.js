@@ -2,6 +2,7 @@
   const storeKey = "infinite-canvas:ai_config_store";
   const signatureKey = "linkcode-infinite-canvas:config-signature";
   const fixedBaseUrl = "https://api-fast.linkcode.site/v1";
+  const embeddedPrefix = "/infinite-canvas-static";
   let restoringStore = false;
 
   const normalizeStoreValue = (value) => {
@@ -46,7 +47,8 @@
     }
   }
 
-  const route = () => window.location.pathname;
+  const stripEmbeddedPrefix = (path) => path === embeddedPrefix ? "/" : path.startsWith(`${embeddedPrefix}/`) ? path.slice(embeddedPrefix.length) : path;
+  const route = () => stripEmbeddedPrefix(window.location.pathname);
   let addDraft = null;
   const textOf = (element) => (element?.textContent || "").replace(/\s/g, "");
   const storeSnapshot = () => window.localStorage.getItem(storeKey);
@@ -104,12 +106,16 @@
     if (window.parent !== window) {
       window.parent.postMessage({
         type: "linkcode-infinite-canvas-route",
-        path: `${window.location.pathname}${window.location.search}`,
+        path: `${stripEmbeddedPrefix(window.location.pathname)}${window.location.search}`,
       }, "*");
     }
   };
   const originalPushState = history.pushState.bind(history);
   const originalReplaceState = history.replaceState.bind(history);
+  if (window.location.pathname === embeddedPrefix || window.location.pathname.startsWith(`${embeddedPrefix}/`)) {
+    const normalizedPath = `${stripEmbeddedPrefix(window.location.pathname)}${window.location.search}${window.location.hash}`;
+    originalReplaceState(null, "", normalizedPath);
+  }
   history.pushState = (data, unused, url) => { originalPushState(data, unused, url); notifyParent(); };
   history.replaceState = (data, unused, url) => { originalReplaceState(data, unused, url); notifyParent(); };
   window.addEventListener("popstate", notifyParent);
