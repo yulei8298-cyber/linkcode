@@ -14,6 +14,7 @@ ARG POSTGRES_IMAGE=postgres:18-alpine
 ARG GOPROXY=https://proxy.golang.org,direct
 ARG GOSUMDB=sum.golang.org
 ARG NPM_CONFIG_REGISTRY=
+ARG VITE_INFINITE_CANVAS_ORIGIN=
 
 # -----------------------------------------------------------------------------
 # Stage 1: Frontend Builder
@@ -22,6 +23,8 @@ ARG NPM_CONFIG_REGISTRY=
 # it on the native host arch instead of under QEMU emulation for the target.
 FROM --platform=${BUILDPLATFORM} ${NODE_IMAGE} AS frontend-builder
 ARG NPM_CONFIG_REGISTRY
+ARG VITE_INFINITE_CANVAS_ORIGIN
+ENV VITE_INFINITE_CANVAS_ORIGIN=${VITE_INFINITE_CANVAS_ORIGIN}
 
 WORKDIR /app/frontend
 

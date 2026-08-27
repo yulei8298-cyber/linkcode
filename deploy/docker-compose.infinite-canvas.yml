@@ -1,0 +1,10 @@
+services:
+  infinite-canvas:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${INFINITE_CANVAS_BIND_HOST:-0.0.0.0}:${INFINITE_CANVAS_PORT:-18082}:80"
+    volumes:
+      - ../frontend/public/infinite-canvas:/usr/share/nginx/html:ro
+      - ./infinite-canvas.nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infinite-canvas-bootstrap.js:/etc/nginx/linkcode-bootstrap.js:ro

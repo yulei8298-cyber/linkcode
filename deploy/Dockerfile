@@ -14,6 +14,7 @@ ARG POSTGRES_IMAGE=postgres:18-alpine
 ARG GOPROXY=https://proxy.golang.org,direct
 ARG GOSUMDB=sum.golang.org
 ARG NPM_CONFIG_REGISTRY=
+ARG VITE_INFINITE_CANVAS_ORIGIN=
 
 # -----------------------------------------------------------------------------
 # Stage 1: Frontend Builder
@@ -21,6 +22,8 @@ ARG NPM_CONFIG_REGISTRY=
 # 前端产物与架构无关，固定在构建机原生架构执行，避免 QEMU 放大耗时和内存。
 FROM --platform=${BUILDPLATFORM} ${NODE_IMAGE} AS frontend-builder
 ARG NPM_CONFIG_REGISTRY
+ARG VITE_INFINITE_CANVAS_ORIGIN
+ENV VITE_INFINITE_CANVAS_ORIGIN=${VITE_INFINITE_CANVAS_ORIGIN}
 
 WORKDIR /app/frontend
 # The prompt-audit admin module makes vue-tsc's project build exceed the old

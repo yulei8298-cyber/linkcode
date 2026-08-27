@@ -720,8 +720,10 @@ type SecurityConfig struct {
 	URLAllowlist    URLAllowlistConfig   `mapstructure:"url_allowlist"`
 	ResponseHeaders ResponseHeaderConfig `mapstructure:"response_headers"`
 	CSP             CSPConfig            `mapstructure:"csp"`
-	ProxyFallback   ProxyFallbackConfig  `mapstructure:"proxy_fallback"`
-	ProxyProbe      ProxyProbeConfig     `mapstructure:"proxy_probe"`
+	// InfiniteCanvasOrigin 是允许嵌入用户工作台的可信静态画布站点来源。
+	InfiniteCanvasOrigin string              `mapstructure:"infinite_canvas_origin"`
+	ProxyFallback        ProxyFallbackConfig `mapstructure:"proxy_fallback"`
+	ProxyProbe           ProxyProbeConfig    `mapstructure:"proxy_probe"`
 	// TrustForwardedIPForAPIKeyACL enables legacy raw forwarded-header takeover.
 	// When disabled, server.trusted_proxies is authoritative for all client-IP consumers.
 	TrustForwardedIPForAPIKeyACL  bool                                       `mapstructure:"trust_forwarded_ip_for_api_key_acl"`
@@ -2570,6 +2572,7 @@ func setDefaults() {
 // environment. Any subsystem that wants a richer default still applies it after
 // unmarshal, exactly as before.
 func setEnvReachableDefaults() {
+	viper.SetDefault("security.infinite_canvas_origin", "")
 	viper.SetDefault("gateway.forced_codex_instructions_template_file", "")
 	viper.SetDefault("gateway.session_idle_timeout_minutes", 0)
 	viper.SetDefault("gateway.user_message_queue.mode", "")

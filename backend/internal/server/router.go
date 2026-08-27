@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"log"
+	"net/url"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -43,6 +45,14 @@ func SetupRouter(
 	emptyOrigins := []string{}
 	cachedFrameOrigins.Store(&emptyOrigins)
 
+	canvasOrigin := infiniteCanvasOrigin(cfg.Security.InfiniteCanvasOrigin)
+	// The canvas runs in its own origin and calls the gateway API from inside
+	// the iframe. Trust that explicitly configured origin without requiring
+	// every deployment to duplicate it in cors.allowed_origins.
+	corsConfig := cfg.CORS
+	if canvasOrigin != "" && !containsOrigin(corsConfig.AllowedOrigins, canvasOrigin) && !containsOrigin(corsConfig.AllowedOrigins, "*") {
+		corsConfig.AllowedOrigins = append(append([]string(nil), corsConfig.AllowedOrigins...), canvasOrigin)
+	}
 	refreshFrameOrigins := func() {
 		ctx, cancel := context.WithTimeout(context.Background(), frameSrcRefreshTimeout)
 		defer cancel()
@@ -50,6 +60,9 @@ func SetupRouter(
 		if err != nil {
 			// 获取失败时保留已有缓存，避免 frame-src 被意外清空
 			return
+		}
+		if canvasOrigin != "" {
+			origins = append(origins, canvasOrigin)
 		}
 		cachedFrameOrigins.Store(&origins)
 	}
@@ -61,7 +74,7 @@ func SetupRouter(
 	// 解析模式按请求快照：兼容开关开启时信任原始转发头，关闭时使用 server.trusted_proxies。
 	r.Use(middleware2.SessionBindingContext(cfg))
 	r.Use(middleware2.Logger())
-	r.Use(middleware2.CORS(cfg.CORS))
+	r.Use(middleware2.CORS(corsConfig))
 	r.Use(middleware2.SecurityHeaders(cfg.Security.CSP, func() []string {
 		if p := cachedFrameOrigins.Load(); p != nil {
 			return *p
@@ -93,6 +106,27 @@ func SetupRouter(
 	registerRoutes(r, handlers, jwtAuth, optionalJWTAuth, adminAuth, apiKeyAuth, auditLog, stepUpAuth, apiKeyService, subscriptionService, opsService, settingService, compositeResolver, cfg, redisClient)
 
 	return r
+}
+
+func infiniteCanvasOrigin(raw string) string {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host
+}
+
+func containsOrigin(origins []string, wanted string) bool {
+	wanted = strings.TrimSpace(wanted)
+	if wanted == "" {
+		return false
+	}
+	for _, origin := range origins {
+		if strings.TrimSpace(origin) == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 // registerRoutes 注册所有 HTTP 路由
