@@ -112,12 +112,23 @@
   };
   const originalPushState = history.pushState.bind(history);
   const originalReplaceState = history.replaceState.bind(history);
+  const embedMarker = new URLSearchParams(window.location.search).get("linkcodeEmbed");
+  const keepEmbedMarker = (url) => {
+    if (!embedMarker || url == null) return url;
+    try {
+      const next = new URL(String(url), window.location.href);
+      if (!next.searchParams.has("linkcodeEmbed")) next.searchParams.set("linkcodeEmbed", embedMarker);
+      return `${next.pathname}${next.search}${next.hash}`;
+    } catch {
+      return url;
+    }
+  };
   if (window.location.pathname === embeddedPrefix || window.location.pathname.startsWith(`${embeddedPrefix}/`)) {
     const normalizedPath = `${stripEmbeddedPrefix(window.location.pathname)}${window.location.search}${window.location.hash}`;
     originalReplaceState(null, "", normalizedPath);
   }
-  history.pushState = (data, unused, url) => { originalPushState(data, unused, url); notifyParent(); };
-  history.replaceState = (data, unused, url) => { originalReplaceState(data, unused, url); notifyParent(); };
+  history.pushState = (data, unused, url) => { originalPushState(data, unused, keepEmbedMarker(url)); notifyParent(); };
+  history.replaceState = (data, unused, url) => { originalReplaceState(data, unused, keepEmbedMarker(url)); notifyParent(); };
   window.addEventListener("popstate", notifyParent);
   window.addEventListener("hashchange", notifyParent);
   window.setTimeout(notifyParent, 0);
