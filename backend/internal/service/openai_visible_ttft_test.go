@@ -28,6 +28,30 @@ func TestOpenAIResponsesTTFTStartsAtStructuralProgress(t *testing.T) {
 	}
 }
 
+func TestOpenAIStreamStructuralProgressClassification(t *testing.T) {
+	cases := []struct {
+		name      string
+		data      string
+		eventType string
+		want      bool
+	}{
+		{name: "created preamble", data: `{"type":"response.created"}`, eventType: "response.created", want: false},
+		{name: "in progress preamble", data: `{"type":"response.in_progress"}`, eventType: "response.in_progress", want: false},
+		{name: "empty reasoning item is structural progress", data: `{"type":"response.output_item.added","item":{"type":"reasoning","summary":[]}}`, eventType: "response.output_item.added", want: true},
+		{name: "empty content part is structural progress", data: `{"type":"response.content_part.added","part":{"type":"output_text","text":""}}`, eventType: "response.content_part.added", want: true},
+		{name: "empty delta is structural progress", data: `{"type":"response.output_text.delta","delta":""}`, eventType: "response.output_text.delta", want: true},
+		{name: "response failed is terminal", data: `{"type":"response.failed"}`, eventType: "response.failed", want: false},
+		{name: "response incomplete is terminal", data: `{"type":"response.incomplete"}`, eventType: "response.incomplete", want: false},
+		{name: "done marker is terminal", data: `[DONE]`, eventType: "", want: false},
+		{name: "retryable error is not progress", data: `{"type":"error","error":{"code":"server_is_overloaded"}}`, eventType: "error", want: false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, openAIStreamDataStartsStructuralProgress(tc.data, tc.eventType))
+		})
+	}
+}
+
 func TestOpenAINativeProgressDisarmsTimeoutAndStartsTTFT(t *testing.T) {
 	result := runSyntheticTTFTStream(t, false, 1200*time.Millisecond, 1,
 		`{"type":"response.output_text.delta","delta":"test output"}`)
@@ -35,7 +59,7 @@ func TestOpenAINativeProgressDisarmsTimeoutAndStartsTTFT(t *testing.T) {
 	require.Less(t, *result.firstTokenMs, 500)
 }
 
-func TestOpenAINativeMetadataDoesNotDisarmFirstOutputTimeout(t *testing.T) {
+func TestOpenAINativePreambleDoesNotDisarmFirstOutputTimeout(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{
 		MaxLineSize:                     defaultMaxLineSize,
@@ -47,7 +71,7 @@ func TestOpenAINativeMetadataDoesNotDisarmFirstOutputTimeout(t *testing.T) {
 		defer close(writerDone)
 		defer func() { _ = writer.Close() }()
 		_, _ = io.WriteString(writer, "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_test\"}}\n\n")
-		_, _ = io.WriteString(writer, "data: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"item_test\",\"type\":\"reasoning\",\"summary\":[]}}\n\n")
+		_, _ = io.WriteString(writer, "data: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_test\"}}\n\n")
 		time.Sleep(1200 * time.Millisecond)
 	}()
 

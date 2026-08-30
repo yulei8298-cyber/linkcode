@@ -27,6 +27,15 @@
           >
             <Icon name="book" size="md" />
           </a>
+          <RouterLink
+            v-if="showModelPlazaEntry"
+            to="/model-plaza"
+            class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+            :title="t('nav.modelPlaza')"
+          >
+            <Icon name="grid" size="md" />
+            <span class="hidden sm:inline">{{ t('nav.modelPlaza') }}</span>
+          </RouterLink>
           <button
             type="button"
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-dark-400 dark:hover:bg-dark-800"
@@ -77,6 +86,9 @@
               <Icon name="arrowRight" size="sm" />
             </RouterLink>
             <RouterLink to="/portal/pricing" class="lc-button">查看定价方案</RouterLink>
+            <RouterLink v-if="showModelPlazaEntry" to="/model-plaza" class="lc-button">
+              {{ t('nav.modelPlaza') }}
+            </RouterLink>
           </div>
         </div>
 
@@ -202,6 +214,7 @@ import Icon from '@/components/icons/Icon.vue'
 import { parsePricingDisplayConfig } from '@/utils/pricingDisplayConfig'
 import { sanitizeUrl } from '@/utils/url'
 import { normalizeSiteName } from '@/utils/branding'
+import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
@@ -213,8 +226,13 @@ const siteSubtitle = computed(() => settings.value?.site_subtitle || '')
 const homeContent = computed(() => settings.value?.home_content || '')
 const hasHomeContent = computed(() => homeContent.value.trim().length > 0)
 const compactHomeEnabled = computed(() => settings.value?.compact_home_enabled === true)
+const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
 const isHomeContentUrl = computed(() => /^https?:\/\//.test(homeContent.value.trim()))
 const isAuthenticated = computed(() => authStore.isAuthenticated)
+const modelPlazaRequiresAuth = computed(() => settings.value?.model_plaza_require_auth === true)
+const showModelPlazaEntry = computed(
+  () => modelPlazaEnabled.value && (isAuthenticated.value || !modelPlazaRequiresAuth.value),
+)
 const dashboardPath = computed(() => (authStore.isAdmin ? '/admin/dashboard' : '/dashboard'))
 const apiBaseUrl = computed(() => settings.value?.api_base_url?.trim() || '')
 const normalizedApiBaseUrl = computed(() => {

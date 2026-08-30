@@ -1300,17 +1300,7 @@
             type="password"
             required
             class="input font-mono"
-            :placeholder="
-              isCNPlatform
-                ? apiKeyValuePlaceholder
-                : form.platform === 'openai'
-                  ? 'sk-proj-...'
-                  : form.platform === 'gemini'
-                    ? 'AIza...'
-                    : form.platform === 'grok'
-                      ? 'xai-...'
-                      : 'sk-ant-...'
-            "
+            :placeholder="apiKeyValuePlaceholder"
           />
           <p v-if="apiKeyHint" class="input-hint">{{ apiKeyHint }}</p>
         </div>
