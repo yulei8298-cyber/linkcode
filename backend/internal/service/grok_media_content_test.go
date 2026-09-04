@@ -3,8 +3,11 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"io"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -67,6 +70,116 @@ func grokMediaContentStatusResponse(body string) *http.Response {
 		StatusCode: http.StatusOK,
 		Header:     http.Header{"Content-Type": []string{"application/json"}},
 		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}
+
+func TestForwardGrokMediaNormalizesJSONContentTypeAndPreservesMultipartBoundary(t *testing.T) {
+	tests := []struct {
+		name            string
+		body            []byte
+		contentType     string
+		wantContentType string
+	}{
+		{
+			name:            "standard json",
+			body:            []byte(`{"model":"grok-imagine-video-1.5","prompt":"waves"}`),
+			contentType:     "application/json",
+			wantContentType: "application/json",
+		},
+		{
+			name:            "json with charset",
+			body:            []byte(`{"model":"grok-imagine-video-1.5","prompt":"waves"}`),
+			contentType:     "application/json; charset=utf-8",
+			wantContentType: "application/json",
+		},
+		{
+			name:            "json sent as text plain",
+			body:            []byte(`{"model":"grok-imagine-video-1.5","prompt":"waves"}`),
+			contentType:     "text/plain",
+			wantContentType: "application/json",
+		},
+		{
+			name:            "json without content type",
+			body:            []byte(`{"model":"grok-imagine-video-1.5","prompt":"waves"}`),
+			wantContentType: "application/json",
+		},
+		{
+			name:            "non json keeps original content type",
+			body:            []byte(`not-json`),
+			contentType:     "text/plain; charset=utf-8",
+			wantContentType: "text/plain; charset=utf-8",
+		},
+	}
+
+	var multipartBody bytes.Buffer
+	multipartWriter := multipart.NewWriter(&multipartBody)
+	require.NoError(t, multipartWriter.WriteField("model", "grok-imagine-video-1.5"))
+	require.NoError(t, multipartWriter.WriteField("prompt", "waves"))
+	require.NoError(t, multipartWriter.Close())
+	tests = append(tests, struct {
+		name            string
+		body            []byte
+		contentType     string
+		wantContentType string
+	}{
+		name:            "multipart keeps boundary",
+		body:            multipartBody.Bytes(),
+		contentType:     multipartWriter.FormDataContentType(),
+		wantContentType: multipartWriter.FormDataContentType(),
+	})
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			upstream := &grokMediaContentUpstreamStub{response: &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body:       io.NopCloser(strings.NewReader(`{"request_id":"video-task-1"}`)),
+			}}
+			svc := &OpenAIGatewayService{cfg: &config.Config{}, httpUpstream: upstream}
+			c, _ := grokMediaContentTestContext(http.MethodPost, "https://api.example/v1/videos", nil)
+
+			_, err := svc.ForwardGrokMedia(
+				context.Background(), c, grokMediaContentTestAccount(),
+				GrokMediaEndpointVideosGenerations, "", tt.body, tt.contentType,
+			)
+
+			require.NoError(t, err)
+			require.NotNil(t, upstream.request)
+			require.Equal(t, tt.wantContentType, upstream.request.Header.Get("Content-Type"))
+			require.Equal(t, []string{tt.wantContentType}, upstream.request.Header.Values("Content-Type"))
+			forwardedBody, err := io.ReadAll(upstream.request.Body)
+			require.NoError(t, err)
+			require.Equal(t, tt.body, forwardedBody)
+			require.Equal(t, int64(len(tt.body)), upstream.request.ContentLength)
+
+			if tt.name == "multipart keeps boundary" {
+				mediaType, params, err := mime.ParseMediaType(upstream.request.Header.Get("Content-Type"))
+				require.NoError(t, err)
+				require.Equal(t, "multipart/form-data", mediaType)
+				require.NotEmpty(t, params["boundary"])
+				reader := multipart.NewReader(bytes.NewReader(forwardedBody), params["boundary"])
+				part, err := reader.NextPart()
+				require.NoError(t, err)
+				require.Equal(t, "model", part.FormName())
+			}
+		})
+	}
+}
+
+func TestGrokMediaNormalizesJSONContentTypeForEveryBodyEndpoint(t *testing.T) {
+	body := []byte(`{"model":"grok-imagine-video-1.5","prompt":"waves"}`)
+	for _, endpoint := range []GrokMediaEndpoint{
+		GrokMediaEndpointImagesGenerations,
+		GrokMediaEndpointImagesEdits,
+		GrokMediaEndpointVideosGenerations,
+		GrokMediaEndpointVideosEdits,
+		GrokMediaEndpointVideosExtensions,
+	} {
+		t.Run(string(endpoint), func(t *testing.T) {
+			_, contentType, err := normalizeGrokMediaForwardBody(endpoint, body, "application/json; charset=utf-8")
+			require.NoError(t, err)
+			require.Equal(t, "application/json", contentType)
+		})
 	}
 }
 

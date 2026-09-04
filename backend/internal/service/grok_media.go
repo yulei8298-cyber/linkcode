@@ -1041,6 +1041,12 @@ func normalizeGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, cont
 	if !endpoint.RequiresRequestBody() || !gjson.ValidBytes(body) {
 		return body, contentType, nil
 	}
+	// xAI media endpoints require the exact JSON media type and reject otherwise
+	// valid JSON sent with parameters (for example, charset) or a compatibility
+	// client default such as text/plain. Once the body is known to be JSON,
+	// normalize the upstream header without changing the payload. Non-JSON bodies
+	// keep their original Content-Type so multipart boundaries remain intact.
+	contentType = "application/json"
 	var imageFields []string
 	switch endpoint {
 	case GrokMediaEndpointImagesEdits:
