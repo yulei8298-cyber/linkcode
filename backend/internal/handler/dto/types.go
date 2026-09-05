@@ -153,6 +153,8 @@ type Group struct {
 	RPMLimit int `json:"rpm_limit"`
 	// MaxReasoningEffort OpenAI/Codex 请求的推理强度上限，空字符串表示不限制。
 	MaxReasoningEffort string `json:"max_reasoning_effort"`
+	// MaxReasoningEffortOverLimit 超过上限时的访问控制：downgrade（默认）或 deny。
+	MaxReasoningEffortOverLimit string `json:"max_reasoning_effort_over_limit"`
 	// ReasoningEffortMappings OpenAI/Codex 推理强度精确映射。
 	ReasoningEffortMappings []domain.ReasoningEffortMapping `json:"reasoning_effort_mappings"`
 
@@ -164,6 +166,9 @@ type Group struct {
 // 注意：普通用户接口不得返回 model_routing/account_count/account_groups 等内部信息。
 type AdminGroup struct {
 	Group
+	// OpenAI Fast 策略仅供管理员配置，普通用户 DTO 不暴露。
+	ForceOpenAIFast   bool     `json:"force_openai_fast"`
+	FreeOpenAIFast    bool     `json:"free_openai_fast"`
 	IsHidden          bool     `json:"is_hidden"`
 	IsFree            bool     `json:"is_free"`
 	DailyFreeLimitUSD *float64 `json:"daily_free_limit_usd"`

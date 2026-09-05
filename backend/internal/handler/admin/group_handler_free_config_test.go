@@ -80,7 +80,8 @@ func TestGroupHandlerUpdateMapsExplicitFreeDisableAndNullLimit(t *testing.T) {
 	require.NotNil(t, stub.updated.IsFree)
 	require.False(t, *stub.updated.IsFree)
 	require.NotNil(t, stub.updated.DailyFreeLimitUSD)
-	require.Zero(t, *stub.updated.DailyFreeLimitUSD)
+	// null 使用负数哨兵传递“清除限制”语义，供 service 层归一化为 NULL。
+	require.Equal(t, -1.0, *stub.updated.DailyFreeLimitUSD)
 	require.NotNil(t, stub.updated.ChatStationOnly)
 	require.False(t, *stub.updated.ChatStationOnly)
 }
