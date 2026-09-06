@@ -190,6 +190,44 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 		}
 	}
 
+	// A group can declare models without a pricing channel. The saved model list
+	// is also its display catalog; Enabled only controls gateway list filtering.
+	for _, gid := range order {
+		g, pg := groupEnt[gid], byGroup[gid]
+		idx := modelIdx[gid]
+		if idx == nil {
+			idx = make(map[modelKey]int)
+		}
+		add := func(name, platform string, pricing *ChannelModelPricing) {
+			name = strings.TrimSpace(name)
+			if name == "" || strings.ContainsAny(name, "*?") || !isConcreteRequestPlatform(platform) {
+				return
+			}
+			if g.Platform != PlatformComposite && platform != g.Platform {
+				return
+			}
+			key := modelKey{platform: platform, name: name}
+			if _, exists := idx[key]; exists {
+				return
+			}
+			idx[key] = len(pg.Models)
+			pg.Models = append(pg.Models, PlazaModel{Name: name, Platform: platform, Pricing: pricing})
+		}
+		for _, name := range g.ModelsListConfig.Models {
+			add(name, g.Platform, nil)
+		}
+		for i := range g.ModelPricing {
+			pricing := &g.ModelPricing[i]
+			platform := pricing.Platform
+			if platform == "" {
+				platform = g.Platform
+			}
+			for _, name := range pricing.Models {
+				add(name, platform, pricing)
+			}
+		}
+	}
+
 	officialMemo := make(map[string]*PlazaOfficialPricing)
 	out := make([]PlazaGroup, 0, len(order))
 	for _, gid := range order {

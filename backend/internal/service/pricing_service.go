@@ -186,6 +186,7 @@ type PricingService struct {
 	remoteClient PricingRemoteClient
 	mu           sync.RWMutex
 	pricingData  map[string]*LiteLLMModelPricing
+	adminOverrides map[string]AdminModelPrice
 	lastUpdated  time.Time
 	localHash    string
 	// fallback/override 文件在最近一次成功重建时的内容指纹，定时器据此判断是否
@@ -215,6 +216,9 @@ func (s *PricingService) Initialize() error {
 		logger.LegacyPrintf("service.pricing", "[Pricing] Failed to create data directory: %v", err)
 	}
 
+	if err := s.loadAdminPricing(); err != nil {
+		return err
+	}
 	// 首次加载价格数据
 	if err := s.checkAndUpdatePricing(); err != nil {
 		logger.LegacyPrintf("service.pricing", "[Pricing] Initial load failed, using fallback: %v", err)
@@ -1112,6 +1116,10 @@ func (s *PricingService) validatePricingURL(raw string) (string, error) {
 func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	return s.applyAdminPricingLocked(modelName, s.getCatalogModelPricingLocked(modelName))
+}
+
+func (s *PricingService) getCatalogModelPricingLocked(modelName string) *LiteLLMModelPricing {
 
 	if modelName == "" {
 		return nil
@@ -1194,7 +1202,7 @@ func (s *PricingService) GetIdentifiedModelPricing(modelName string) *LiteLLMMod
 	if modelLower == "" {
 		return nil
 	}
-	return s.lookupIdentifiedModelPricingLocked(s.buildModelLookupCandidates(modelLower))
+	return s.applyAdminPricingLocked(modelName, s.lookupIdentifiedModelPricingLocked(s.buildModelLookupCandidates(modelLower)))
 }
 
 func (s *PricingService) buildModelLookupCandidates(modelLower string) []string {
