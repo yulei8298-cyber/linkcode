@@ -15,11 +15,10 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-// v20 includes local free/chat-station authorization plus upstream
-// search/audio/video-model pricing fields and forces older snapshots to refresh.
-// v20 also carries group long-context and model-pricing fields, forcing older
-// snapshots to refresh.
-const apiKeyAuthSnapshotVersion = 22 // v22: group Fast and reasoning ceiling policy fields
+// v23 includes local free/chat-station authorization, pricing and Fast/reasoning
+// policy fields, plus the Codex model manifest configuration. Bump this whenever
+// snapshot shape changes so stale L2 entries are rebuilt.
+const apiKeyAuthSnapshotVersion = 23
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
