@@ -39,6 +39,7 @@
           <RouterLink to="/home" class="lc-navlink" @click="closeMenu">首页</RouterLink>
           <RouterLink to="/portal/status" class="lc-navlink" @click="closeMenu">可用性检测</RouterLink>
           <RouterLink to="/portal/pricing" class="lc-navlink" @click="closeMenu">定价方案</RouterLink>
+          <RouterLink v-if="showModelPlaza" to="/model-plaza" class="lc-navlink" @click="closeMenu">模型广场</RouterLink>
           <a
             v-if="chatStationUrl"
             :href="chatStationUrl"
@@ -118,6 +119,8 @@ const qqGroupLabel = computed(() => {
   return `QQ群 ${value}`
 })
 const isAuthenticated = computed(() => authStore.isAuthenticated)
+const showModelPlaza = computed(() => settings.value?.model_plaza_enabled === true &&
+  (isAuthenticated.value || settings.value?.model_plaza_require_auth !== true))
 const dashboardPath = computed(() => (authStore.isAdmin ? '/admin/dashboard' : '/dashboard'))
 const currentYear = new Date().getFullYear()
 
