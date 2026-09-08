@@ -1,6 +1,8 @@
 export interface ModelsListConfig {
   enabled: boolean
   models: string[]
+  plaza_enabled?: boolean
+  plaza_models?: string[] | null
 }
 
 export interface ModelsListItem {
@@ -12,6 +14,10 @@ export interface ModelsListState {
   enabled: boolean
   savedModels: string[]
   items: ModelsListItem[]
+  plazaEnabled?: boolean
+  plazaModels?: string[]
+  plazaConfigured?: boolean
+  plazaCustomModels?: boolean
 }
 
 export const createModelsListState = (
@@ -20,6 +26,10 @@ export const createModelsListState = (
   enabled: config?.enabled ?? false,
   savedModels: normalizeModels(config?.models ?? []),
   items: [],
+  plazaEnabled: config?.plaza_enabled ?? true,
+  plazaModels: config?.plaza_models ?? [],
+  plazaConfigured: config?.plaza_enabled !== undefined || config?.plaza_models !== undefined,
+  plazaCustomModels: Array.isArray(config?.plaza_models),
 })
 
 export const hydrateModelsListState = (
@@ -104,6 +114,7 @@ export const buildModelsListConfig = (state: ModelsListState): ModelsListConfig 
   models: state.items.length > 0
     ? state.items.filter(item => item.selected).map(item => item.id)
     : [...state.savedModels],
+  ...(state.plazaConfigured ? { plaza_enabled: state.plazaEnabled ?? true, plaza_models: state.plazaCustomModels ? normalizeModels(state.plazaModels ?? []) : null } : {}),
 })
 
 const normalizeModels = (models: string[]): string[] => {

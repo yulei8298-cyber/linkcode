@@ -665,6 +665,8 @@ export interface AdminGroup extends Group {
 export interface ModelsListConfig {
   enabled: boolean
   models: string[]
+  plaza_enabled?: boolean
+  plaza_models?: string[] | null
 }
 
 // 固定账号获取 Codex Model Manifest 配置（仅 openai 分组）

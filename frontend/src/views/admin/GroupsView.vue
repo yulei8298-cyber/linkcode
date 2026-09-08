@@ -874,6 +874,7 @@
           </div>
         </div>
 
+        <GroupPlazaFields :model-value="createModelsListState" @update:model-value="Object.assign(createModelsListState, $event)" />
         <div class="border-t pt-4">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
@@ -2689,6 +2690,7 @@
           </div>
         </div>
 
+        <GroupPlazaFields :model-value="editModelsListState" @update:model-value="Object.assign(editModelsListState, $event)" />
         <div class="border-t pt-4">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
@@ -4653,6 +4655,7 @@ import GroupRPMOverridesModal from "@/components/admin/group/GroupRPMOverridesMo
 import GroupCapacityBadge from "@/components/common/GroupCapacityBadge.vue";
 import ReasoningEffortPolicyFields from "@/components/admin/group/ReasoningEffortPolicyFields.vue";
 import CodexManifestAccountsField from "@/components/admin/group/CodexManifestAccountsField.vue";
+import GroupPlazaFields from "@/components/admin/group/GroupPlazaFields.vue";
 import PricingEntryCard from "@/components/admin/channel/PricingEntryCard.vue";
 import type { PricingFormEntry } from "@/components/admin/channel/types";
 import {
@@ -5541,6 +5544,10 @@ const resetModelsListState = (
   state.enabled = fresh.enabled;
   state.savedModels = fresh.savedModels;
   state.items = fresh.items;
+  state.plazaEnabled = fresh.plazaEnabled;
+  state.plazaModels = fresh.plazaModels;
+  state.plazaConfigured = fresh.plazaConfigured;
+  state.plazaCustomModels = fresh.plazaCustomModels;
 };
 
 const loadModelsListCandidates = async (

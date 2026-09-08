@@ -11,7 +11,9 @@ const saving = ref(false)
 const message = ref('')
 const error = ref('')
 const edited = ref(false)
-const values = ref<Record<string, string>>({})
+const values = ref<Record<string, string | number>>({})
+const loadedModel = ref('')
+const canSave = computed(() => !loading.value && !saving.value && loadedModel.value !== '' && loadedModel.value === model.value.trim())
 const fields = [
   ['input_price', '输入 token'], ['output_price', '输出 token'],
   ['cache_write_price', '缓存写入（5m）'], ['cache_write_1h_price', '缓存写入（1h）'],
@@ -22,10 +24,12 @@ const fields = [
 const hasModel = computed(() => model.value.trim().length > 0)
 
 async function load() {
-  if (!hasModel.value) return
+  if (!hasModel.value || loading.value || saving.value) return
+  const requestedModel = model.value.trim()
   loading.value = true; error.value = ''; message.value = ''
   try {
-    const result = await adminAPI.modelBasePricing.getModelBasePricing(model.value.trim())
+    const result = await adminAPI.modelBasePricing.getModelBasePricing(requestedModel)
+    loadedModel.value = requestedModel
     edited.value = result.edited
     const catalog = result.catalog as Record<string, number> | null
     const override = result.override as Record<string, number | null> | undefined
@@ -38,29 +42,34 @@ async function load() {
         image_output_price: 'output_cost_per_image_token', per_image_price: 'output_cost_per_image'
       } as Record<string, string>)[key]
       const value = override?.[overrideKey] ?? catalog?.[catalogKey]
-      return [key, value == null ? '' : String(value)]
+      const tokenField = key !== 'per_image_price'
+      return [key, value == null ? '' : String(Number((tokenField ? value * 1_000_000 : value).toPrecision(12)))]
     }))
   } catch (err: unknown) { error.value = extractApiErrorMessage(err) }
   finally { loading.value = false }
 }
 
 async function save() {
-  if (!hasModel.value) return
+  if (!canSave.value) return
   saving.value = true; error.value = ''; message.value = ''
   try {
-    const price = Object.fromEntries(Object.entries(values.value).filter(([, value]) => value.trim() !== '').map(([key, value]) => [key, Number(value)]))
-    await adminAPI.modelBasePricing.updateModelBasePricing(model.value.trim(), price)
-    edited.value = true; message.value = '已保存，模型广场会立即使用新的基准价。'
+    const entries = Object.entries(values.value).filter(([, value]) => String(value).trim() !== '')
+    if (entries.some(([, value]) => !Number.isFinite(Number(value)) || Number(value) < 0)) throw new Error('价格必须为大于或等于 0 的数字')
+    const price = Object.fromEntries(entries.map(([key, value]) => [key, Number(value) / (key === 'per_image_price' ? 1 : 1_000_000)]))
+    await adminAPI.modelBasePricing.updateModelBasePricing(loadedModel.value, entries.length ? price : null)
+    edited.value = entries.length > 0; message.value = '已保存，模型广场会立即使用新的基准价。'
   } catch (err: unknown) { error.value = extractApiErrorMessage(err) }
   finally { saving.value = false }
 }
 
 async function restore() {
-  if (!hasModel.value) return
+  if (!canSave.value) return
   saving.value = true; error.value = ''; message.value = ''
   try {
-    await adminAPI.modelBasePricing.updateModelBasePricing(model.value.trim(), null)
-    edited.value = false; message.value = '已恢复官方目录价格。'; await load()
+    await adminAPI.modelBasePricing.updateModelBasePricing(loadedModel.value, null)
+    saving.value = false
+    await load()
+    message.value = '已恢复官方目录价格。'
   } catch (err: unknown) { error.value = extractApiErrorMessage(err) }
   finally { saving.value = false }
 }
@@ -78,21 +87,23 @@ async function restore() {
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-dark-500 dark:bg-dark-800">
         <label class="text-sm font-medium text-gray-700 dark:text-gray-200">模型名称</label>
         <div class="mt-2 flex flex-col gap-3 sm:flex-row">
-          <input v-model="model" class="input flex-1" placeholder="例如 gpt-5.5、claude-sonnet-4-6" @keyup.enter="load" />
-          <button class="btn btn-primary sm:min-w-28" :disabled="loading || !hasModel" @click="load"><Icon name="search" size="sm" class="mr-2" />{{ loading ? '读取中…' : '读取价格' }}</button>
+          <input v-model="model" :disabled="saving || loading" class="input flex-1" placeholder="例如 gpt-5.5、claude-sonnet-4-6" @keyup.enter="load" />
+          <button class="btn btn-primary sm:min-w-28" :disabled="saving || loading || !hasModel" @click="load"><Icon name="search" size="sm" class="mr-2" />{{ loading ? '读取中…' : '读取价格' }}</button>
         </div>
       </div>
 
       <div v-if="hasModel && (Object.keys(values).length || loading)" class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-dark-500 dark:bg-dark-800">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div><h2 class="font-medium text-gray-900 dark:text-white">{{ model }}</h2><p class="mt-1 text-xs text-gray-500">单位：USD / token；每张图片按 USD / image。</p></div>
+          <div><h2 class="font-medium text-gray-900 dark:text-white">{{ loadedModel }}</h2><p class="mt-1 text-xs text-gray-500">单位：USD / 百万 token（1M）；每张图片按 USD / image。</p></div>
           <span v-if="edited" class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">已覆盖官方价</span>
         </div>
         <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label v-for="[key, label] in fields" :key="key" class="text-sm text-gray-600 dark:text-gray-300">{{ label }}<input v-model="values[key]" type="number" min="0" step="any" class="input mt-1" placeholder="继承官方" /></label>
         </div>
-        <div class="mt-5 flex flex-wrap items-center gap-3"><button class="btn btn-primary" :disabled="saving" @click="save">保存基准价</button><button class="btn btn-secondary" :disabled="saving || !edited" @click="restore">恢复官方目录</button><span v-if="message" class="text-sm text-emerald-600">{{ message }}</span><span v-if="error" class="text-sm text-red-600">{{ error }}</span></div>
+        <div class="mt-5 flex flex-wrap items-center gap-3"><button class="btn btn-primary" :disabled="!canSave" @click="save">保存基准价</button><button class="btn btn-secondary" :disabled="!canSave || !edited" @click="restore">恢复官方目录</button></div>
       </div>
+      <p v-if="message" role="status" class="text-sm text-emerald-600">{{ message }}</p>
+      <p v-if="error" role="alert" class="text-sm text-red-600">{{ error }}</p>
     </div>
   </AppLayout>
 </template>

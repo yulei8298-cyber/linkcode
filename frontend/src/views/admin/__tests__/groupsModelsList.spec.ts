@@ -12,6 +12,16 @@ import {
 } from "../groupsModelsList";
 
 describe("groupsModelsList", () => {
+  it("round trips independent plaza selection without changing gateway models", () => {
+    const cfg = { enabled: true, models: ["gateway-model"], plaza_enabled: false, plaza_models: ["display-model"] };
+    expect(buildModelsListConfig(createModelsListState(cfg))).toEqual(cfg);
+    const state = createModelsListState(cfg);
+    state.plazaModels = [];
+    expect(buildModelsListConfig(state).plaza_models).toEqual([]);
+    state.plazaCustomModels = false;
+    expect(buildModelsListConfig(state).plaza_models).toBeNull();
+    expect(buildModelsListConfig(state).models).toEqual(["gateway-model"]);
+  });
   it("selects all default candidates for a new disabled config", () => {
     const state = createModelsListState();
 

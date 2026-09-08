@@ -194,6 +194,9 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 	// is also its display catalog; Enabled only controls gateway list filtering.
 	for _, gid := range order {
 		g, pg := groupEnt[gid], byGroup[gid]
+		if g.ModelsListConfig.PlazaEnabled != nil && !*g.ModelsListConfig.PlazaEnabled {
+			continue
+		}
 		idx := modelIdx[gid]
 		if idx == nil {
 			idx = make(map[modelKey]int)
@@ -213,7 +216,11 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 			idx[key] = len(pg.Models)
 			pg.Models = append(pg.Models, PlazaModel{Name: name, Platform: platform, Pricing: pricing})
 		}
-		for _, name := range g.ModelsListConfig.Models {
+		modelNames := g.ModelsListConfig.Models
+		if g.ModelsListConfig.PlazaModels != nil {
+			modelNames = *g.ModelsListConfig.PlazaModels
+		}
+		for _, name := range modelNames {
 			add(name, g.Platform, nil)
 		}
 		for i := range g.ModelPricing {
@@ -232,6 +239,25 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 	out := make([]PlazaGroup, 0, len(order))
 	for _, gid := range order {
 		pg := byGroup[gid]
+		cfg := groupEnt[gid].ModelsListConfig
+		if cfg.PlazaEnabled != nil && !*cfg.PlazaEnabled {
+			continue
+		}
+		// An explicit selection is a display allowlist, including an empty list.
+		// Apply it after aggregation so channel pricing cannot re-add hidden models.
+		if cfg.PlazaModels != nil {
+			selected := make(map[string]bool, len(*cfg.PlazaModels))
+			for _, name := range *cfg.PlazaModels {
+				selected[strings.TrimSpace(name)] = true
+			}
+			models := make([]PlazaModel, 0, len(pg.Models))
+			for _, model := range pg.Models {
+				if selected[model.Name] {
+					models = append(models, model)
+				}
+			}
+			pg.Models = models
+		}
 		if len(pg.Models) == 0 {
 			continue
 		}

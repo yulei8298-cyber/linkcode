@@ -1,0 +1,45 @@
+import { flushPromises, mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import ModelBasePricingView from '../ModelBasePricingView.vue'
+
+const api = vi.hoisted(() => ({ getModelBasePricing: vi.fn(), updateModelBasePricing: vi.fn() }))
+vi.mock('@/api/admin', () => ({ adminAPI: { modelBasePricing: api } }))
+vi.mock('@/components/layout/AppLayout.vue', () => ({ default: { template: '<div><slot /></div>' } }))
+vi.mock('@/components/icons/Icon.vue', () => ({ default: { template: '<span />' } }))
+beforeEach(() => {
+  vi.clearAllMocks()
+  api.getModelBasePricing.mockResolvedValue({ edited: false, catalog: { input_cost_per_token: 0.000005, output_cost_per_token: 0.00003, cache_read_input_token_cost: 0.0000005, output_cost_per_image: 0.04 } })
+  api.updateModelBasePricing.mockResolvedValue({})
+})
+describe('ModelBasePricingView', () => {
+  it('edits token prices per million while retaining per-image units and zero', async () => {
+    const wrapper = mount(ModelBasePricingView)
+    await wrapper.get('input').setValue('gpt-5.5')
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    const prices = wrapper.findAll('input[type="number"]')
+    expect((prices[0].element as HTMLInputElement).value).toBe('5')
+    expect((prices[4].element as HTMLInputElement).value).toBe('0.5')
+    expect((prices[7].element as HTMLInputElement).value).toBe('0.04')
+    await prices[0].setValue('6')
+    await prices[1].setValue('0')
+    await wrapper.findAll('button')[1].trigger('click')
+    await flushPromises()
+    expect(api.updateModelBasePricing).toHaveBeenCalledWith('gpt-5.5', { input_price: 0.000006, output_price: 0, cache_read_price: 0.0000005, per_image_price: 0.04 })
+    await wrapper.get('input').setValue('another-model')
+    expect(wrapper.findAll('button')[1].attributes('disabled')).toBeDefined()
+    wrapper.unmount()
+  })
+  it('restores the catalog using a null override', async () => {
+    api.getModelBasePricing.mockResolvedValue({ edited: true, override: { input_price: 0.000009 }, catalog: {} })
+    const wrapper = mount(ModelBasePricingView)
+    await wrapper.get('input').setValue('gpt-5.5')
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    await wrapper.findAll('button')[2].trigger('click')
+    await flushPromises()
+    expect(api.updateModelBasePricing).toHaveBeenCalledWith('gpt-5.5', null)
+    expect(api.getModelBasePricing).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
+})

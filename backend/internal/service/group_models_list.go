@@ -3,7 +3,19 @@ package service
 import "strings"
 
 func normalizeGroupModelsListConfig(cfg GroupModelsListConfig) GroupModelsListConfig {
-	out := GroupModelsListConfig{Enabled: cfg.Enabled}
+	out := GroupModelsListConfig{Enabled: cfg.Enabled, PlazaEnabled: cfg.PlazaEnabled}
+	if cfg.PlazaModels != nil {
+		models := make([]string, 0, len(*cfg.PlazaModels))
+		seen := make(map[string]bool)
+		for _, name := range *cfg.PlazaModels {
+			name = strings.TrimSpace(name)
+			if name != "" && !seen[name] && !strings.ContainsAny(name, "*?") {
+				models = append(models, name)
+				seen[name] = true
+			}
+		}
+		out.PlazaModels = &models
+	}
 	if len(cfg.Models) == 0 {
 		return out
 	}
