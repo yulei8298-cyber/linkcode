@@ -7,8 +7,9 @@ import (
 	"strings"
 )
 
-// PlazaOfficialPricing 模型广场展示用的官方参考价（USD per token），与计费同源：
-// LiteLLM → 内置兜底价卡 → 模型策略。字段为 nil 表示该项缺失（0 视为未配置）。
+// PlazaOfficialPricing 模型广场展示用的官方参考价（per token）。
+// 外币模型沿用 LiteLLM/内置价卡的 USD 数值；国产模型使用官方人民币价卡。
+// 字段为 nil 表示该项缺失（0 视为未配置）。
 type PlazaOfficialPricing struct {
 	InputPrice        *float64
 	OutputPrice       *float64
@@ -437,6 +438,55 @@ func (s *ModelPlazaService) lookupOfficialPricing(ctx context.Context, modelName
 			result = nil
 		}
 	}
+	// 计费服务内部仍以 USD 作为统一扣费基准；模型广场对已知国产模型
+	// 直接使用厂商中国区公开的人民币价，避免把美元数值仅替换成 ¥ 符号。
+	if cny := domesticOfficialPricingCNY(modelName); cny != nil {
+		if result == nil {
+			result = cny
+		} else {
+			result.InputPrice = cny.InputPrice
+			result.OutputPrice = cny.OutputPrice
+			result.CacheWritePrice = cny.CacheWritePrice
+			result.CacheWrite1hPrice = cny.CacheWrite1hPrice
+			result.CacheReadPrice = cny.CacheReadPrice
+		}
+	}
 	memo[modelName] = result
 	return result
+}
+
+// domesticOfficialPricingCNY 返回厂商中国区公开价卡（元/token）。
+// 价格来源：DeepSeek https://api-docs.deepseek.com/zh-cn/quick_start/pricing/；
+// 智谱 GLM https://bigmodel.cn/pricing；月之暗面 Kimi
+// https://platform.moonshot.cn/docs/pricing/overview。计费 fallback 仍保持 USD，避免改变实际扣费口径。
+func domesticOfficialPricingCNY(modelName string) *PlazaOfficialPricing {
+	name := strings.ToLower(strings.TrimSpace(modelName))
+	var input, output, cacheRead float64 // 元/token
+	switch {
+	case strings.HasPrefix(name, "deepseek-v4-pro"):
+		input, output, cacheRead = 4.5e-6, 13.5e-6, 0.15e-6
+	case strings.HasPrefix(name, "deepseek-v4-flash"):
+		input, output, cacheRead = 1.5e-6, 4.5e-6, 0.05e-6
+	case strings.Contains(name, "kimi-k3") || strings.HasSuffix(name, "/k3") || name == "k3":
+		input, output, cacheRead = 20e-6, 100e-6, 2e-6
+	case strings.Contains(name, "glm-5.3"):
+		input, output, cacheRead = 8e-6, 28e-6, 2e-6
+	case strings.Contains(name, "glm-5.2"):
+		input, output, cacheRead = 8e-6, 28e-6, 2e-6
+	case strings.Contains(name, "glm-5.1"):
+		input, output, cacheRead = 6e-6, 24e-6, 1.3e-6
+	case strings.Contains(name, "glm-5-turbo") || strings.Contains(name, "glm-5turbo"):
+		input, output, cacheRead = 5e-6, 22e-6, 1.2e-6
+	case strings.HasPrefix(name, "glm-5"):
+		input, output, cacheRead = 4e-6, 18e-6, 1e-6
+	case strings.Contains(name, "glm-4.7"):
+		input, output, cacheRead = 2e-6, 8e-6, 0.4e-6
+	case strings.Contains(name, "glm-4.5-air"):
+		input, output, cacheRead = 0.8e-6, 2e-6, 0.16e-6
+	default:
+		return nil
+	}
+	return &PlazaOfficialPricing{
+		InputPrice: nonZeroPtr(input), OutputPrice: nonZeroPtr(output), CacheReadPrice: nonZeroPtr(cacheRead),
+	}
 }
