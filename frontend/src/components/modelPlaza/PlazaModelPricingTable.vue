@@ -276,7 +276,7 @@
             <span v-else class="text-gray-400 dark:text-dark-500">-</span>
           </td>
 
-          <!-- 折扣倍率(分时时段行展示 生效倍率×时段倍率;生图独立倍率行展示独立倍率;专属倍率划线展示原倍率) -->
+          <!-- 折扣倍率(统一展示分组/专属倍率;分时倍率通过价格和提示说明) -->
           <td
             class="border-l border-gray-100 py-2.5 pl-3 pr-5 text-right align-middle font-mono text-xs dark:border-dark-700/60"
           >
@@ -284,7 +284,7 @@
               v-if="period"
               class="font-bold text-primary-600 dark:text-primary-400"
               :title="t('modelPlaza.table.timePricingRateHint', { rate: effectiveRate, multiplier: period.multiplier })"
-              >{{ periodRate(period) }}x</span
+              >{{ effectiveRate }}x</span
             >
             <span
               v-else-if="usesIndependentImageRate(m)"
@@ -399,6 +399,8 @@ function billingModeLabel(m: PlazaModel): string {
 
 /** 价格统一保底 2 位小数,更长的有效小数原样保留。 */
 const MIN_DECIMALS = 2
+/** 官方参考价来自 USD 价卡;模型广场对国产平台按固定汇率换算成人民币。 */
+const USD_TO_CNY = 6.71
 
 /** 表格行:每个模型一行标准价;配置了分时倍率的模型再按时段各加一行。 */
 interface PlazaRow {
@@ -450,7 +452,8 @@ function paidRequestPrice(m: PlazaModel, value: number | null | undefined): stri
 /** 官方参考价不乘倍率。 */
 function official(value: number | null | undefined, m: PlazaModel): string {
   if (value == null) return '-'
-  return formatScaled(value, PER_MILLION, MIN_DECIMALS, currencyForModel(m))
+  const converted = isDomesticPlatform(m.platform) ? value * USD_TO_CNY : value
+  return formatScaled(converted, PER_MILLION, MIN_DECIMALS, currencyForModel(m))
 }
 
 /** 非 token 计费的单位后缀:按图片 → “/ 张”,按次 → “/ 次”。 */

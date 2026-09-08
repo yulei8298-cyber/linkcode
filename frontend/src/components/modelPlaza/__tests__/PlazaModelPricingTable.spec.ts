@@ -584,7 +584,7 @@ describe('PlazaModelPricingTable 分时计价', () => {
     expect(baseCells[1].text()).toContain('¥2.40')
     expect(baseCells[7].text()).toContain('0.8x')
 
-    // 夜间时段行:输入 3 × 0.8 × 0.5,倍率 0.4x,标注时段不含时区
+    // 夜间时段行:输入 3 × 0.8 × 0.5,倍率列仍展示分组倍率 0.8x,标注时段不含时区
     const nightCells = trs[1].findAll('td')
     expect(nightCells[0].text()).toContain('deepseek-chat')
     expect(nightCells[0].text()).toContain('00:30–08:30')
@@ -594,16 +594,16 @@ describe('PlazaModelPricingTable 分时计价', () => {
     expect(nightCells[1].text()).toContain('¥1.20')
     expect(nightCells[2].text()).toContain('¥6.00')
     expect(nightCells[3].text()).toContain('¥1.50')
-    expect(nightCells[7].text()).toContain('0.4x')
+    expect(nightCells[7].text()).toContain('0.8x')
 
-    // 晚高峰行:3 × 0.8 × 1.2 = 2.88,倍率 0.96x
+    // 晚高峰行:3 × 0.8 × 1.2 = 2.88,倍率列仍展示分组倍率 0.8x
     const peakCells = trs[2].findAll('td')
     expect(peakCells[0].text()).toContain('18:00–22:00')
     expect(peakCells[1].text()).toContain('¥2.88')
-    expect(peakCells[7].text()).toContain('0.96x')
+    expect(peakCells[7].text()).toContain('0.8x')
 
     // 官方列不受时段影响
-    expect(nightCells[4].text()).toContain('¥3.00')
+    expect(nightCells[4].text()).toContain('¥20.13')
   })
 
   it('仅工作日生效时时段行带工作日前缀,tooltip 换用周末回落文案', () => {
@@ -636,7 +636,7 @@ describe('PlazaModelPricingTable 分时计价', () => {
     expect(title).toContain('modelPlaza.table.timePricingRowHintPeak')
     // 行内数字仍是 基础倍率 × 时段倍率(0.8 × 0.5),高峰只进披露不进价格
     expect(nightCells[1].text()).toContain('¥1.20')
-    expect(nightCells[7].text()).toContain('0.4x')
+    expect(nightCells[7].text()).toContain('0.8x')
   })
 
   it('分组未启用高峰(peakWindow 缺省)时 tooltip 不含高峰披露', () => {
