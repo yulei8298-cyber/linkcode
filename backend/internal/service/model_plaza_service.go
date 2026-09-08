@@ -469,6 +469,8 @@ func domesticOfficialPricingCNY(modelName string) *PlazaOfficialPricing {
 		input, output, cacheRead = 1.5e-6, 4.5e-6, 0.05e-6
 	case strings.Contains(name, "kimi-k3") || strings.HasSuffix(name, "/k3") || name == "k3":
 		input, output, cacheRead = 20e-6, 100e-6, 2e-6
+	case strings.Contains(name, "kimi-k2.7-code") || strings.Contains(name, "kimi-k2-7-code"):
+		input, output, cacheRead = 6.5e-6, 27e-6, 1.3e-6
 	case strings.Contains(name, "glm-5.3"):
 		input, output, cacheRead = 8e-6, 28e-6, 2e-6
 	case strings.Contains(name, "glm-5.2"):

@@ -260,6 +260,7 @@ func TestDomesticOfficialPricingCNY(t *testing.T) {
 		{"deepseek-v4-flash", 1.5e-6, 4.5e-6, 0.05e-6},
 		{"deepseek-v4-pro", 4.5e-6, 13.5e-6, 0.15e-6},
 		{"kimi-k3", 20e-6, 100e-6, 2e-6},
+		{"kimi-k2.7-code", 6.5e-6, 27e-6, 1.3e-6},
 		{"glm-5.3", 8e-6, 28e-6, 2e-6},
 	}
 	for _, tt := range tests {
