@@ -307,6 +307,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatScaled } from '@/utils/pricing'
+import { currencyForModel, isDomesticModel } from '@/utils/modelPlazaPricing'
 import { platformAccentColor, platformBadgeLightClass, platformLabel } from '@/utils/platformColors'
 import {
   BILLING_MODE_TOKEN,
@@ -364,24 +365,11 @@ const sortedModels = computed(() => {
 })
 
 const effectiveRate = computed(() => props.userRateMultiplier ?? props.rateMultiplier)
-const DOMESTIC_PLATFORMS = new Set([
-  'deepseek', 'zhipu', 'kimi', 'qwen', 'moonshot', 'minimax', 'doubao',
-  'baichuan', 'yi', 'lingyi', 'wenxin', 'hunyuan'
-])
-
-function isDomesticPlatform(platform: string | undefined): boolean {
-  return DOMESTIC_PLATFORMS.has((platform ?? '').trim().toLowerCase())
-}
-
 const unitPerMillionLabel = computed(() =>
-  t(isDomesticPlatform(props.platform)
+  t(props.models.length > 0 && props.models.every(isDomesticModel)
     ? 'modelPlaza.table.unitPerMillionRmb'
     : 'modelPlaza.table.unitPerMillionUsd')
 )
-
-function currencyForModel(m: PlazaModel): string {
-  return isDomesticPlatform(m.platform) ? '¥' : '$'
-}
 
 const hasCustomRate = computed(
   () => props.userRateMultiplier != null && props.userRateMultiplier !== props.rateMultiplier
@@ -399,9 +387,6 @@ function billingModeLabel(m: PlazaModel): string {
 
 /** 价格统一保底 2 位小数,更长的有效小数原样保留。 */
 const MIN_DECIMALS = 2
-/** 官方参考价来自 USD 价卡;模型广场对国产平台按固定汇率换算成人民币。 */
-const USD_TO_CNY = 6.71
-
 /** 表格行:每个模型一行标准价;配置了分时倍率的模型再按时段各加一行。 */
 interface PlazaRow {
   model: PlazaModel
@@ -452,8 +437,7 @@ function paidRequestPrice(m: PlazaModel, value: number | null | undefined): stri
 /** 官方参考价不乘倍率。 */
 function official(value: number | null | undefined, m: PlazaModel): string {
   if (value == null) return '-'
-  const converted = isDomesticPlatform(m.platform) ? value * USD_TO_CNY : value
-  return formatScaled(converted, PER_MILLION, MIN_DECIMALS, currencyForModel(m))
+  return formatScaled(value, PER_MILLION, MIN_DECIMALS, currencyForModel(m))
 }
 
 /** 非 token 计费的单位后缀:按图片 → “/ 张”,按次 → “/ 次”。 */
