@@ -573,7 +573,7 @@ describe('PlazaModelPricingTable 分时计价', () => {
     })
   }
 
-  it('有分时倍率的模型展开为标准行 + 每时段一行,时段行价格按倍率折算且倍率列显示生效倍率', () => {
+  it('有分时倍率的模型展开为标准行 + 每时段一行,实付价和官方参考价均按时段倍率展示', () => {
     const wrapper = mountTable([timePricedModel()], 0.8)
     const trs = wrapper.findAll('tbody tr')
     expect(trs).toHaveLength(3)
@@ -602,8 +602,9 @@ describe('PlazaModelPricingTable 分时计价', () => {
     expect(peakCells[1].text()).toContain('¥2.88')
     expect(peakCells[7].text()).toContain('0.8x')
 
-    // 官方列不受时段影响
-    expect(nightCells[4].text()).toContain('¥3.00')
+    // 官方参考价也按官方峰谷倍率展示
+    expect(nightCells[4].text()).toContain('¥1.50')
+    expect(peakCells[4].text()).toContain('¥3.60')
   })
 
   it('仅工作日生效时时段行带工作日前缀,tooltip 换用周末回落文案', () => {
