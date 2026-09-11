@@ -1,6 +1,20 @@
 import type { ModelPlazaGroup, PlazaModel } from '@/api/modelPlaza'
 import { formatScaled } from '@/utils/pricing'
 
+const DOMESTIC_PLATFORMS = new Set([
+  'deepseek', 'zhipu', 'kimi', 'qwen', 'moonshot', 'minimax', 'doubao',
+  'baichuan', 'yi', 'lingyi', 'wenxin', 'hunyuan'
+])
+
+export function isDomesticModel(model: PlazaModel): boolean {
+  if (DOMESTIC_PLATFORMS.has(model.platform.trim().toLowerCase())) return true
+  return /^(deepseek|glm|chatglm|kimi|qwen|moonshot|minimax|doubao|baichuan|yi-|yi_|lingyi|wenxin|hunyuan|ernie|step-)/.test(model.name.trim().toLowerCase())
+}
+
+export function currencyForModel(model: PlazaModel): string {
+  return isDomesticModel(model) ? '¥' : '$'
+}
+
 export function plazaGroupRate(group: ModelPlazaGroup): number {
   return group.user_rate_multiplier ?? group.rate_multiplier
 }
@@ -32,9 +46,10 @@ export function plazaCardPricing(model: PlazaModel, group: ModelPlazaGroup) {
     const reference = field === 'per_request_price' ? null : official?.[field] ?? null
     const isOfficial = value != null && reference != null && Math.abs(value - reference) <= Math.max(Math.abs(reference) * 1e-9, 1e-15)
     const scale = token ? 1_000_000 : 1
+    const currency = currencyForModel(model)
     return {
-      field, price: formatScaled(value == null ? null : value * rate, scale, 2),
-      base: formatScaled(value, scale, 2), official: formatScaled(reference, scale, 2),
+      field, price: formatScaled(value == null ? null : value * rate, scale, 2, currency),
+      base: formatScaled(value, scale, 2, currency), official: formatScaled(reference, scale, 2, currency),
       isOfficial, available: value != null
     }
   })

@@ -250,6 +250,29 @@ func TestListPlazaGroups_OfficialPricingFill(t *testing.T) {
 	require.Nil(t, byName["token-absent"].OfficialPricing)
 }
 
+func TestDomesticOfficialPricingCNY(t *testing.T) {
+	tests := []struct {
+		model     string
+		input     float64
+		output    float64
+		cacheRead float64
+	}{
+		{"deepseek-v4-flash", 1.5e-6, 4.5e-6, 0.05e-6},
+		{"deepseek-v4-pro", 4.5e-6, 13.5e-6, 0.15e-6},
+		{"kimi-k3", 20e-6, 100e-6, 2e-6},
+		{"kimi-k2.7-code", 6.5e-6, 27e-6, 1.3e-6},
+		{"glm-5.3", 8e-6, 28e-6, 2e-6},
+	}
+	for _, tt := range tests {
+		p := domesticOfficialPricingCNY(tt.model)
+		require.NotNil(t, p, tt.model)
+		require.InDelta(t, tt.input, *p.InputPrice, 1e-15, tt.model)
+		require.InDelta(t, tt.output, *p.OutputPrice, 1e-15, tt.model)
+		require.InDelta(t, tt.cacheRead, *p.CacheReadPrice, 1e-15, tt.model)
+	}
+	require.Nil(t, domesticOfficialPricingCNY("gpt-5.5"))
+}
+
 func TestListPlazaGroups_GroupImagePriceOverridesChannelPricing(t *testing.T) {
 	// 图片计费模型:档位价按实收口径合成(分组图片价 > 渠道档位价 > 渠道默认按次价),
 	// 分组独立倍率字段透传;未配图片价的分组保持渠道定价原样。
