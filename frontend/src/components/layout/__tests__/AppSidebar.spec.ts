@@ -28,6 +28,25 @@ describe('AppSidebar custom menu navigation', () => {
   })
 })
 
+describe('AppSidebar 智力检测入口', () => {
+  it('在模型广场后添加受公开开关控制的用户入口', () => {
+    expect(componentSource).toContain(
+      "const flagIntelCheck = makeSidebarFlag(FeatureFlags.intelCheck)",
+    )
+
+    const modelPlazaIndex = componentSource.indexOf("{ path: '/model-plaza'")
+    const intelCheckIndex = componentSource.indexOf("{ path: '/portal/intel-check'")
+    const infiniteCanvasIndex = componentSource.indexOf("{ path: '/infinite-canvas'")
+
+    expect(modelPlazaIndex).toBeGreaterThan(-1)
+    expect(intelCheckIndex).toBeGreaterThan(modelPlazaIndex)
+    expect(intelCheckIndex).toBeLessThan(infiniteCanvasIndex)
+    expect(componentSource).toContain(
+      "{ path: '/portal/intel-check', label: t('nav.intelCheck'), icon: SignalIcon, featureFlag: flagIntelCheck }",
+    )
+  })
+})
+
 describe('AppSidebar scroll position persistence', () => {
   it('binds a template ref to the sidebar nav element', () => {
     expect(componentSource).toContain('ref="sidebarNavRef"')
