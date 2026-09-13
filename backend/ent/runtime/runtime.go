@@ -24,6 +24,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckquestion"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
+	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -1301,6 +1305,214 @@ func init() {
 	identityadoptiondecisionDescDecidedAt := identityadoptiondecisionFields[4].Descriptor()
 	// identityadoptiondecision.DefaultDecidedAt holds the default value on creation for the decided_at field.
 	identityadoptiondecision.DefaultDecidedAt = identityadoptiondecisionDescDecidedAt.Default.(func() time.Time)
+	intelcheckquestionMixin := schema.IntelCheckQuestion{}.Mixin()
+	intelcheckquestionMixinFields0 := intelcheckquestionMixin[0].Fields()
+	_ = intelcheckquestionMixinFields0
+	intelcheckquestionFields := schema.IntelCheckQuestion{}.Fields()
+	_ = intelcheckquestionFields
+	// intelcheckquestionDescCreatedAt is the schema descriptor for created_at field.
+	intelcheckquestionDescCreatedAt := intelcheckquestionMixinFields0[0].Descriptor()
+	// intelcheckquestion.DefaultCreatedAt holds the default value on creation for the created_at field.
+	intelcheckquestion.DefaultCreatedAt = intelcheckquestionDescCreatedAt.Default.(func() time.Time)
+	// intelcheckquestionDescUpdatedAt is the schema descriptor for updated_at field.
+	intelcheckquestionDescUpdatedAt := intelcheckquestionMixinFields0[1].Descriptor()
+	// intelcheckquestion.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	intelcheckquestion.DefaultUpdatedAt = intelcheckquestionDescUpdatedAt.Default.(func() time.Time)
+	// intelcheckquestion.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	intelcheckquestion.UpdateDefaultUpdatedAt = intelcheckquestionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// intelcheckquestionDescTitle is the schema descriptor for title field.
+	intelcheckquestionDescTitle := intelcheckquestionFields[1].Descriptor()
+	// intelcheckquestion.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	intelcheckquestion.TitleValidator = func() func(string) error {
+		validators := intelcheckquestionDescTitle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(title string) error {
+			for _, fn := range fns {
+				if err := fn(title); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// intelcheckquestionDescPrompt is the schema descriptor for prompt field.
+	intelcheckquestionDescPrompt := intelcheckquestionFields[2].Descriptor()
+	// intelcheckquestion.PromptValidator is a validator for the "prompt" field. It is called by the builders before save.
+	intelcheckquestion.PromptValidator = intelcheckquestionDescPrompt.Validators[0].(func(string) error)
+	// intelcheckquestionDescExpectedAnswer is the schema descriptor for expected_answer field.
+	intelcheckquestionDescExpectedAnswer := intelcheckquestionFields[3].Descriptor()
+	// intelcheckquestion.DefaultExpectedAnswer holds the default value on creation for the expected_answer field.
+	intelcheckquestion.DefaultExpectedAnswer = intelcheckquestionDescExpectedAnswer.Default.(string)
+	// intelcheckquestion.ExpectedAnswerValidator is a validator for the "expected_answer" field. It is called by the builders before save.
+	intelcheckquestion.ExpectedAnswerValidator = intelcheckquestionDescExpectedAnswer.Validators[0].(func(string) error)
+	// intelcheckquestionDescMatchMode is the schema descriptor for match_mode field.
+	intelcheckquestionDescMatchMode := intelcheckquestionFields[4].Descriptor()
+	// intelcheckquestion.DefaultMatchMode holds the default value on creation for the match_mode field.
+	intelcheckquestion.DefaultMatchMode = intelcheckquestionDescMatchMode.Default.(string)
+	// intelcheckquestion.MatchModeValidator is a validator for the "match_mode" field. It is called by the builders before save.
+	intelcheckquestion.MatchModeValidator = intelcheckquestionDescMatchMode.Validators[0].(func(string) error)
+	// intelcheckquestionDescReferenceHTML is the schema descriptor for reference_html field.
+	intelcheckquestionDescReferenceHTML := intelcheckquestionFields[5].Descriptor()
+	// intelcheckquestion.DefaultReferenceHTML holds the default value on creation for the reference_html field.
+	intelcheckquestion.DefaultReferenceHTML = intelcheckquestionDescReferenceHTML.Default.(string)
+	// intelcheckquestionDescReviewRubric is the schema descriptor for review_rubric field.
+	intelcheckquestionDescReviewRubric := intelcheckquestionFields[8].Descriptor()
+	// intelcheckquestion.DefaultReviewRubric holds the default value on creation for the review_rubric field.
+	intelcheckquestion.DefaultReviewRubric = intelcheckquestionDescReviewRubric.Default.(string)
+	// intelcheckquestionDescEnabled is the schema descriptor for enabled field.
+	intelcheckquestionDescEnabled := intelcheckquestionFields[9].Descriptor()
+	// intelcheckquestion.DefaultEnabled holds the default value on creation for the enabled field.
+	intelcheckquestion.DefaultEnabled = intelcheckquestionDescEnabled.Default.(bool)
+	intelcheckresultFields := schema.IntelCheckResult{}.Fields()
+	_ = intelcheckresultFields
+	// intelcheckresultDescPromptSnapshot is the schema descriptor for prompt_snapshot field.
+	intelcheckresultDescPromptSnapshot := intelcheckresultFields[5].Descriptor()
+	// intelcheckresult.DefaultPromptSnapshot holds the default value on creation for the prompt_snapshot field.
+	intelcheckresult.DefaultPromptSnapshot = intelcheckresultDescPromptSnapshot.Default.(string)
+	// intelcheckresultDescRawReply is the schema descriptor for raw_reply field.
+	intelcheckresultDescRawReply := intelcheckresultFields[6].Descriptor()
+	// intelcheckresult.DefaultRawReply holds the default value on creation for the raw_reply field.
+	intelcheckresult.DefaultRawReply = intelcheckresultDescRawReply.Default.(string)
+	// intelcheckresultDescExtractedAnswer is the schema descriptor for extracted_answer field.
+	intelcheckresultDescExtractedAnswer := intelcheckresultFields[7].Descriptor()
+	// intelcheckresult.DefaultExtractedAnswer holds the default value on creation for the extracted_answer field.
+	intelcheckresult.DefaultExtractedAnswer = intelcheckresultDescExtractedAnswer.Default.(string)
+	// intelcheckresult.ExtractedAnswerValidator is a validator for the "extracted_answer" field. It is called by the builders before save.
+	intelcheckresult.ExtractedAnswerValidator = intelcheckresultDescExtractedAnswer.Validators[0].(func(string) error)
+	// intelcheckresultDescHTMLOutput is the schema descriptor for html_output field.
+	intelcheckresultDescHTMLOutput := intelcheckresultFields[8].Descriptor()
+	// intelcheckresult.DefaultHTMLOutput holds the default value on creation for the html_output field.
+	intelcheckresult.DefaultHTMLOutput = intelcheckresultDescHTMLOutput.Default.(string)
+	// intelcheckresultDescErrorMessage is the schema descriptor for error_message field.
+	intelcheckresultDescErrorMessage := intelcheckresultFields[10].Descriptor()
+	// intelcheckresult.DefaultErrorMessage holds the default value on creation for the error_message field.
+	intelcheckresult.DefaultErrorMessage = intelcheckresultDescErrorMessage.Default.(string)
+	// intelcheckresult.ErrorMessageValidator is a validator for the "error_message" field. It is called by the builders before save.
+	intelcheckresult.ErrorMessageValidator = intelcheckresultDescErrorMessage.Validators[0].(func(string) error)
+	// intelcheckresultDescCheckedAt is the schema descriptor for checked_at field.
+	intelcheckresultDescCheckedAt := intelcheckresultFields[13].Descriptor()
+	// intelcheckresult.DefaultCheckedAt holds the default value on creation for the checked_at field.
+	intelcheckresult.DefaultCheckedAt = intelcheckresultDescCheckedAt.Default.(func() time.Time)
+	intelcheckroundFields := schema.IntelCheckRound{}.Fields()
+	_ = intelcheckroundFields
+	// intelcheckroundDescStartedAt is the schema descriptor for started_at field.
+	intelcheckroundDescStartedAt := intelcheckroundFields[1].Descriptor()
+	// intelcheckround.DefaultStartedAt holds the default value on creation for the started_at field.
+	intelcheckround.DefaultStartedAt = intelcheckroundDescStartedAt.Default.(func() time.Time)
+	// intelcheckroundDescTriggerSource is the schema descriptor for trigger_source field.
+	intelcheckroundDescTriggerSource := intelcheckroundFields[5].Descriptor()
+	// intelcheckround.DefaultTriggerSource holds the default value on creation for the trigger_source field.
+	intelcheckround.DefaultTriggerSource = intelcheckroundDescTriggerSource.Default.(string)
+	// intelcheckround.TriggerSourceValidator is a validator for the "trigger_source" field. It is called by the builders before save.
+	intelcheckround.TriggerSourceValidator = intelcheckroundDescTriggerSource.Validators[0].(func(string) error)
+	intelchecktargetMixin := schema.IntelCheckTarget{}.Mixin()
+	intelchecktargetMixinFields0 := intelchecktargetMixin[0].Fields()
+	_ = intelchecktargetMixinFields0
+	intelchecktargetFields := schema.IntelCheckTarget{}.Fields()
+	_ = intelchecktargetFields
+	// intelchecktargetDescCreatedAt is the schema descriptor for created_at field.
+	intelchecktargetDescCreatedAt := intelchecktargetMixinFields0[0].Descriptor()
+	// intelchecktarget.DefaultCreatedAt holds the default value on creation for the created_at field.
+	intelchecktarget.DefaultCreatedAt = intelchecktargetDescCreatedAt.Default.(func() time.Time)
+	// intelchecktargetDescUpdatedAt is the schema descriptor for updated_at field.
+	intelchecktargetDescUpdatedAt := intelchecktargetMixinFields0[1].Descriptor()
+	// intelchecktarget.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	intelchecktarget.DefaultUpdatedAt = intelchecktargetDescUpdatedAt.Default.(func() time.Time)
+	// intelchecktarget.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	intelchecktarget.UpdateDefaultUpdatedAt = intelchecktargetDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// intelchecktargetDescName is the schema descriptor for name field.
+	intelchecktargetDescName := intelchecktargetFields[0].Descriptor()
+	// intelchecktarget.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	intelchecktarget.NameValidator = func() func(string) error {
+		validators := intelchecktargetDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// intelchecktargetDescDescription is the schema descriptor for description field.
+	intelchecktargetDescDescription := intelchecktargetFields[1].Descriptor()
+	// intelchecktarget.DefaultDescription holds the default value on creation for the description field.
+	intelchecktarget.DefaultDescription = intelchecktargetDescDescription.Default.(string)
+	// intelchecktarget.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	intelchecktarget.DescriptionValidator = intelchecktargetDescDescription.Validators[0].(func(string) error)
+	// intelchecktargetDescBaseURL is the schema descriptor for base_url field.
+	intelchecktargetDescBaseURL := intelchecktargetFields[2].Descriptor()
+	// intelchecktarget.BaseURLValidator is a validator for the "base_url" field. It is called by the builders before save.
+	intelchecktarget.BaseURLValidator = func() func(string) error {
+		validators := intelchecktargetDescBaseURL.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(base_url string) error {
+			for _, fn := range fns {
+				if err := fn(base_url); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// intelchecktargetDescAPIKeyEncrypted is the schema descriptor for api_key_encrypted field.
+	intelchecktargetDescAPIKeyEncrypted := intelchecktargetFields[3].Descriptor()
+	// intelchecktarget.APIKeyEncryptedValidator is a validator for the "api_key_encrypted" field. It is called by the builders before save.
+	intelchecktarget.APIKeyEncryptedValidator = intelchecktargetDescAPIKeyEncrypted.Validators[0].(func(string) error)
+	// intelchecktargetDescAPIMode is the schema descriptor for api_mode field.
+	intelchecktargetDescAPIMode := intelchecktargetFields[4].Descriptor()
+	// intelchecktarget.DefaultAPIMode holds the default value on creation for the api_mode field.
+	intelchecktarget.DefaultAPIMode = intelchecktargetDescAPIMode.Default.(string)
+	// intelchecktarget.APIModeValidator is a validator for the "api_mode" field. It is called by the builders before save.
+	intelchecktarget.APIModeValidator = intelchecktargetDescAPIMode.Validators[0].(func(string) error)
+	// intelchecktargetDescModel is the schema descriptor for model field.
+	intelchecktargetDescModel := intelchecktargetFields[5].Descriptor()
+	// intelchecktarget.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	intelchecktarget.ModelValidator = func() func(string) error {
+		validators := intelchecktargetDescModel.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(model string) error {
+			for _, fn := range fns {
+				if err := fn(model); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// intelchecktargetDescReasoningEffort is the schema descriptor for reasoning_effort field.
+	intelchecktargetDescReasoningEffort := intelchecktargetFields[6].Descriptor()
+	// intelchecktarget.DefaultReasoningEffort holds the default value on creation for the reasoning_effort field.
+	intelchecktarget.DefaultReasoningEffort = intelchecktargetDescReasoningEffort.Default.(string)
+	// intelchecktarget.ReasoningEffortValidator is a validator for the "reasoning_effort" field. It is called by the builders before save.
+	intelchecktarget.ReasoningEffortValidator = intelchecktargetDescReasoningEffort.Validators[0].(func(string) error)
+	// intelchecktargetDescRateLabel is the schema descriptor for rate_label field.
+	intelchecktargetDescRateLabel := intelchecktargetFields[7].Descriptor()
+	// intelchecktarget.DefaultRateLabel holds the default value on creation for the rate_label field.
+	intelchecktarget.DefaultRateLabel = intelchecktargetDescRateLabel.Default.(string)
+	// intelchecktarget.RateLabelValidator is a validator for the "rate_label" field. It is called by the builders before save.
+	intelchecktarget.RateLabelValidator = intelchecktargetDescRateLabel.Validators[0].(func(string) error)
+	// intelchecktargetDescEnabled is the schema descriptor for enabled field.
+	intelchecktargetDescEnabled := intelchecktargetFields[8].Descriptor()
+	// intelchecktarget.DefaultEnabled holds the default value on creation for the enabled field.
+	intelchecktarget.DefaultEnabled = intelchecktargetDescEnabled.Default.(bool)
+	// intelchecktargetDescSortOrder is the schema descriptor for sort_order field.
+	intelchecktargetDescSortOrder := intelchecktargetFields[9].Descriptor()
+	// intelchecktarget.DefaultSortOrder holds the default value on creation for the sort_order field.
+	intelchecktarget.DefaultSortOrder = intelchecktargetDescSortOrder.Default.(int)
 	paymentauditlogFields := schema.PaymentAuditLog{}.Fields()
 	_ = paymentauditlogFields
 	// paymentauditlogDescOrderID is the schema descriptor for order_id field.

@@ -34,6 +34,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckquestion"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
+	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -101,6 +105,14 @@ type Client struct {
 	IdempotencyRecord *IdempotencyRecordClient
 	// IdentityAdoptionDecision is the client for interacting with the IdentityAdoptionDecision builders.
 	IdentityAdoptionDecision *IdentityAdoptionDecisionClient
+	// IntelCheckQuestion is the client for interacting with the IntelCheckQuestion builders.
+	IntelCheckQuestion *IntelCheckQuestionClient
+	// IntelCheckResult is the client for interacting with the IntelCheckResult builders.
+	IntelCheckResult *IntelCheckResultClient
+	// IntelCheckRound is the client for interacting with the IntelCheckRound builders.
+	IntelCheckRound *IntelCheckRoundClient
+	// IntelCheckTarget is the client for interacting with the IntelCheckTarget builders.
+	IntelCheckTarget *IntelCheckTargetClient
 	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
 	PaymentAuditLog *PaymentAuditLogClient
 	// PaymentOrder is the client for interacting with the PaymentOrder builders.
@@ -171,6 +183,10 @@ func (c *Client) init() {
 	c.Group = NewGroupClient(c.config)
 	c.IdempotencyRecord = NewIdempotencyRecordClient(c.config)
 	c.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(c.config)
+	c.IntelCheckQuestion = NewIntelCheckQuestionClient(c.config)
+	c.IntelCheckResult = NewIntelCheckResultClient(c.config)
+	c.IntelCheckRound = NewIntelCheckRoundClient(c.config)
+	c.IntelCheckTarget = NewIntelCheckTargetClient(c.config)
 	c.PaymentAuditLog = NewPaymentAuditLogClient(c.config)
 	c.PaymentOrder = NewPaymentOrderClient(c.config)
 	c.PaymentProviderInstance = NewPaymentProviderInstanceClient(c.config)
@@ -302,6 +318,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
 		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
+		IntelCheckQuestion:            NewIntelCheckQuestionClient(cfg),
+		IntelCheckResult:              NewIntelCheckResultClient(cfg),
+		IntelCheckRound:               NewIntelCheckRoundClient(cfg),
+		IntelCheckTarget:              NewIntelCheckTargetClient(cfg),
 		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
 		PaymentOrder:                  NewPaymentOrderClient(cfg),
 		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
@@ -360,6 +380,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
 		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
+		IntelCheckQuestion:            NewIntelCheckQuestionClient(cfg),
+		IntelCheckResult:              NewIntelCheckResultClient(cfg),
+		IntelCheckRound:               NewIntelCheckRoundClient(cfg),
+		IntelCheckTarget:              NewIntelCheckTargetClient(cfg),
 		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
 		PaymentOrder:                  NewPaymentOrderClient(cfg),
 		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
@@ -414,7 +438,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.BatchImageJob, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
 		c.CompositeModelRoute, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
-		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
+		c.IdentityAdoptionDecision, c.IntelCheckQuestion, c.IntelCheckResult,
+		c.IntelCheckRound, c.IntelCheckTarget, c.PaymentAuditLog, c.PaymentOrder,
 		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
 		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
 		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
@@ -434,7 +459,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.BatchImageJob, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
 		c.CompositeModelRoute, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
-		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
+		c.IdentityAdoptionDecision, c.IntelCheckQuestion, c.IntelCheckResult,
+		c.IntelCheckRound, c.IntelCheckTarget, c.PaymentAuditLog, c.PaymentOrder,
 		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
 		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
 		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
@@ -486,6 +512,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.IdempotencyRecord.mutate(ctx, m)
 	case *IdentityAdoptionDecisionMutation:
 		return c.IdentityAdoptionDecision.mutate(ctx, m)
+	case *IntelCheckQuestionMutation:
+		return c.IntelCheckQuestion.mutate(ctx, m)
+	case *IntelCheckResultMutation:
+		return c.IntelCheckResult.mutate(ctx, m)
+	case *IntelCheckRoundMutation:
+		return c.IntelCheckRound.mutate(ctx, m)
+	case *IntelCheckTargetMutation:
+		return c.IntelCheckTarget.mutate(ctx, m)
 	case *PaymentAuditLogMutation:
 		return c.PaymentAuditLog.mutate(ctx, m)
 	case *PaymentOrderMutation:
@@ -3574,6 +3608,602 @@ func (c *IdentityAdoptionDecisionClient) mutate(ctx context.Context, m *Identity
 		return (&IdentityAdoptionDecisionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown IdentityAdoptionDecision mutation op: %q", m.Op())
+	}
+}
+
+// IntelCheckQuestionClient is a client for the IntelCheckQuestion schema.
+type IntelCheckQuestionClient struct {
+	config
+}
+
+// NewIntelCheckQuestionClient returns a client for the IntelCheckQuestion from the given config.
+func NewIntelCheckQuestionClient(c config) *IntelCheckQuestionClient {
+	return &IntelCheckQuestionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `intelcheckquestion.Hooks(f(g(h())))`.
+func (c *IntelCheckQuestionClient) Use(hooks ...Hook) {
+	c.hooks.IntelCheckQuestion = append(c.hooks.IntelCheckQuestion, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `intelcheckquestion.Intercept(f(g(h())))`.
+func (c *IntelCheckQuestionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IntelCheckQuestion = append(c.inters.IntelCheckQuestion, interceptors...)
+}
+
+// Create returns a builder for creating a IntelCheckQuestion entity.
+func (c *IntelCheckQuestionClient) Create() *IntelCheckQuestionCreate {
+	mutation := newIntelCheckQuestionMutation(c.config, OpCreate)
+	return &IntelCheckQuestionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IntelCheckQuestion entities.
+func (c *IntelCheckQuestionClient) CreateBulk(builders ...*IntelCheckQuestionCreate) *IntelCheckQuestionCreateBulk {
+	return &IntelCheckQuestionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IntelCheckQuestionClient) MapCreateBulk(slice any, setFunc func(*IntelCheckQuestionCreate, int)) *IntelCheckQuestionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IntelCheckQuestionCreateBulk{err: fmt.Errorf("calling to IntelCheckQuestionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IntelCheckQuestionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IntelCheckQuestionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IntelCheckQuestion.
+func (c *IntelCheckQuestionClient) Update() *IntelCheckQuestionUpdate {
+	mutation := newIntelCheckQuestionMutation(c.config, OpUpdate)
+	return &IntelCheckQuestionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IntelCheckQuestionClient) UpdateOne(_m *IntelCheckQuestion) *IntelCheckQuestionUpdateOne {
+	mutation := newIntelCheckQuestionMutation(c.config, OpUpdateOne, withIntelCheckQuestion(_m))
+	return &IntelCheckQuestionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IntelCheckQuestionClient) UpdateOneID(id int64) *IntelCheckQuestionUpdateOne {
+	mutation := newIntelCheckQuestionMutation(c.config, OpUpdateOne, withIntelCheckQuestionID(id))
+	return &IntelCheckQuestionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IntelCheckQuestion.
+func (c *IntelCheckQuestionClient) Delete() *IntelCheckQuestionDelete {
+	mutation := newIntelCheckQuestionMutation(c.config, OpDelete)
+	return &IntelCheckQuestionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IntelCheckQuestionClient) DeleteOne(_m *IntelCheckQuestion) *IntelCheckQuestionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IntelCheckQuestionClient) DeleteOneID(id int64) *IntelCheckQuestionDeleteOne {
+	builder := c.Delete().Where(intelcheckquestion.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IntelCheckQuestionDeleteOne{builder}
+}
+
+// Query returns a query builder for IntelCheckQuestion.
+func (c *IntelCheckQuestionClient) Query() *IntelCheckQuestionQuery {
+	return &IntelCheckQuestionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIntelCheckQuestion},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IntelCheckQuestion entity by its id.
+func (c *IntelCheckQuestionClient) Get(ctx context.Context, id int64) (*IntelCheckQuestion, error) {
+	return c.Query().Where(intelcheckquestion.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IntelCheckQuestionClient) GetX(ctx context.Context, id int64) *IntelCheckQuestion {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *IntelCheckQuestionClient) Hooks() []Hook {
+	return c.hooks.IntelCheckQuestion
+}
+
+// Interceptors returns the client interceptors.
+func (c *IntelCheckQuestionClient) Interceptors() []Interceptor {
+	return c.inters.IntelCheckQuestion
+}
+
+func (c *IntelCheckQuestionClient) mutate(ctx context.Context, m *IntelCheckQuestionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IntelCheckQuestionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IntelCheckQuestionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IntelCheckQuestionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IntelCheckQuestionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IntelCheckQuestion mutation op: %q", m.Op())
+	}
+}
+
+// IntelCheckResultClient is a client for the IntelCheckResult schema.
+type IntelCheckResultClient struct {
+	config
+}
+
+// NewIntelCheckResultClient returns a client for the IntelCheckResult from the given config.
+func NewIntelCheckResultClient(c config) *IntelCheckResultClient {
+	return &IntelCheckResultClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `intelcheckresult.Hooks(f(g(h())))`.
+func (c *IntelCheckResultClient) Use(hooks ...Hook) {
+	c.hooks.IntelCheckResult = append(c.hooks.IntelCheckResult, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `intelcheckresult.Intercept(f(g(h())))`.
+func (c *IntelCheckResultClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IntelCheckResult = append(c.inters.IntelCheckResult, interceptors...)
+}
+
+// Create returns a builder for creating a IntelCheckResult entity.
+func (c *IntelCheckResultClient) Create() *IntelCheckResultCreate {
+	mutation := newIntelCheckResultMutation(c.config, OpCreate)
+	return &IntelCheckResultCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IntelCheckResult entities.
+func (c *IntelCheckResultClient) CreateBulk(builders ...*IntelCheckResultCreate) *IntelCheckResultCreateBulk {
+	return &IntelCheckResultCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IntelCheckResultClient) MapCreateBulk(slice any, setFunc func(*IntelCheckResultCreate, int)) *IntelCheckResultCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IntelCheckResultCreateBulk{err: fmt.Errorf("calling to IntelCheckResultClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IntelCheckResultCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IntelCheckResultCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IntelCheckResult.
+func (c *IntelCheckResultClient) Update() *IntelCheckResultUpdate {
+	mutation := newIntelCheckResultMutation(c.config, OpUpdate)
+	return &IntelCheckResultUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IntelCheckResultClient) UpdateOne(_m *IntelCheckResult) *IntelCheckResultUpdateOne {
+	mutation := newIntelCheckResultMutation(c.config, OpUpdateOne, withIntelCheckResult(_m))
+	return &IntelCheckResultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IntelCheckResultClient) UpdateOneID(id int64) *IntelCheckResultUpdateOne {
+	mutation := newIntelCheckResultMutation(c.config, OpUpdateOne, withIntelCheckResultID(id))
+	return &IntelCheckResultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IntelCheckResult.
+func (c *IntelCheckResultClient) Delete() *IntelCheckResultDelete {
+	mutation := newIntelCheckResultMutation(c.config, OpDelete)
+	return &IntelCheckResultDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IntelCheckResultClient) DeleteOne(_m *IntelCheckResult) *IntelCheckResultDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IntelCheckResultClient) DeleteOneID(id int64) *IntelCheckResultDeleteOne {
+	builder := c.Delete().Where(intelcheckresult.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IntelCheckResultDeleteOne{builder}
+}
+
+// Query returns a query builder for IntelCheckResult.
+func (c *IntelCheckResultClient) Query() *IntelCheckResultQuery {
+	return &IntelCheckResultQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIntelCheckResult},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IntelCheckResult entity by its id.
+func (c *IntelCheckResultClient) Get(ctx context.Context, id int64) (*IntelCheckResult, error) {
+	return c.Query().Where(intelcheckresult.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IntelCheckResultClient) GetX(ctx context.Context, id int64) *IntelCheckResult {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRound queries the round edge of a IntelCheckResult.
+func (c *IntelCheckResultClient) QueryRound(_m *IntelCheckResult) *IntelCheckRoundQuery {
+	query := (&IntelCheckRoundClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(intelcheckresult.Table, intelcheckresult.FieldID, id),
+			sqlgraph.To(intelcheckround.Table, intelcheckround.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, intelcheckresult.RoundTable, intelcheckresult.RoundColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTarget queries the target edge of a IntelCheckResult.
+func (c *IntelCheckResultClient) QueryTarget(_m *IntelCheckResult) *IntelCheckTargetQuery {
+	query := (&IntelCheckTargetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(intelcheckresult.Table, intelcheckresult.FieldID, id),
+			sqlgraph.To(intelchecktarget.Table, intelchecktarget.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, intelcheckresult.TargetTable, intelcheckresult.TargetColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IntelCheckResultClient) Hooks() []Hook {
+	return c.hooks.IntelCheckResult
+}
+
+// Interceptors returns the client interceptors.
+func (c *IntelCheckResultClient) Interceptors() []Interceptor {
+	return c.inters.IntelCheckResult
+}
+
+func (c *IntelCheckResultClient) mutate(ctx context.Context, m *IntelCheckResultMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IntelCheckResultCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IntelCheckResultUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IntelCheckResultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IntelCheckResultDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IntelCheckResult mutation op: %q", m.Op())
+	}
+}
+
+// IntelCheckRoundClient is a client for the IntelCheckRound schema.
+type IntelCheckRoundClient struct {
+	config
+}
+
+// NewIntelCheckRoundClient returns a client for the IntelCheckRound from the given config.
+func NewIntelCheckRoundClient(c config) *IntelCheckRoundClient {
+	return &IntelCheckRoundClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `intelcheckround.Hooks(f(g(h())))`.
+func (c *IntelCheckRoundClient) Use(hooks ...Hook) {
+	c.hooks.IntelCheckRound = append(c.hooks.IntelCheckRound, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `intelcheckround.Intercept(f(g(h())))`.
+func (c *IntelCheckRoundClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IntelCheckRound = append(c.inters.IntelCheckRound, interceptors...)
+}
+
+// Create returns a builder for creating a IntelCheckRound entity.
+func (c *IntelCheckRoundClient) Create() *IntelCheckRoundCreate {
+	mutation := newIntelCheckRoundMutation(c.config, OpCreate)
+	return &IntelCheckRoundCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IntelCheckRound entities.
+func (c *IntelCheckRoundClient) CreateBulk(builders ...*IntelCheckRoundCreate) *IntelCheckRoundCreateBulk {
+	return &IntelCheckRoundCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IntelCheckRoundClient) MapCreateBulk(slice any, setFunc func(*IntelCheckRoundCreate, int)) *IntelCheckRoundCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IntelCheckRoundCreateBulk{err: fmt.Errorf("calling to IntelCheckRoundClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IntelCheckRoundCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IntelCheckRoundCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IntelCheckRound.
+func (c *IntelCheckRoundClient) Update() *IntelCheckRoundUpdate {
+	mutation := newIntelCheckRoundMutation(c.config, OpUpdate)
+	return &IntelCheckRoundUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IntelCheckRoundClient) UpdateOne(_m *IntelCheckRound) *IntelCheckRoundUpdateOne {
+	mutation := newIntelCheckRoundMutation(c.config, OpUpdateOne, withIntelCheckRound(_m))
+	return &IntelCheckRoundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IntelCheckRoundClient) UpdateOneID(id int64) *IntelCheckRoundUpdateOne {
+	mutation := newIntelCheckRoundMutation(c.config, OpUpdateOne, withIntelCheckRoundID(id))
+	return &IntelCheckRoundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IntelCheckRound.
+func (c *IntelCheckRoundClient) Delete() *IntelCheckRoundDelete {
+	mutation := newIntelCheckRoundMutation(c.config, OpDelete)
+	return &IntelCheckRoundDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IntelCheckRoundClient) DeleteOne(_m *IntelCheckRound) *IntelCheckRoundDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IntelCheckRoundClient) DeleteOneID(id int64) *IntelCheckRoundDeleteOne {
+	builder := c.Delete().Where(intelcheckround.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IntelCheckRoundDeleteOne{builder}
+}
+
+// Query returns a query builder for IntelCheckRound.
+func (c *IntelCheckRoundClient) Query() *IntelCheckRoundQuery {
+	return &IntelCheckRoundQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIntelCheckRound},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IntelCheckRound entity by its id.
+func (c *IntelCheckRoundClient) Get(ctx context.Context, id int64) (*IntelCheckRound, error) {
+	return c.Query().Where(intelcheckround.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IntelCheckRoundClient) GetX(ctx context.Context, id int64) *IntelCheckRound {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryResults queries the results edge of a IntelCheckRound.
+func (c *IntelCheckRoundClient) QueryResults(_m *IntelCheckRound) *IntelCheckResultQuery {
+	query := (&IntelCheckResultClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(intelcheckround.Table, intelcheckround.FieldID, id),
+			sqlgraph.To(intelcheckresult.Table, intelcheckresult.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, intelcheckround.ResultsTable, intelcheckround.ResultsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IntelCheckRoundClient) Hooks() []Hook {
+	return c.hooks.IntelCheckRound
+}
+
+// Interceptors returns the client interceptors.
+func (c *IntelCheckRoundClient) Interceptors() []Interceptor {
+	return c.inters.IntelCheckRound
+}
+
+func (c *IntelCheckRoundClient) mutate(ctx context.Context, m *IntelCheckRoundMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IntelCheckRoundCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IntelCheckRoundUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IntelCheckRoundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IntelCheckRoundDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IntelCheckRound mutation op: %q", m.Op())
+	}
+}
+
+// IntelCheckTargetClient is a client for the IntelCheckTarget schema.
+type IntelCheckTargetClient struct {
+	config
+}
+
+// NewIntelCheckTargetClient returns a client for the IntelCheckTarget from the given config.
+func NewIntelCheckTargetClient(c config) *IntelCheckTargetClient {
+	return &IntelCheckTargetClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `intelchecktarget.Hooks(f(g(h())))`.
+func (c *IntelCheckTargetClient) Use(hooks ...Hook) {
+	c.hooks.IntelCheckTarget = append(c.hooks.IntelCheckTarget, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `intelchecktarget.Intercept(f(g(h())))`.
+func (c *IntelCheckTargetClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IntelCheckTarget = append(c.inters.IntelCheckTarget, interceptors...)
+}
+
+// Create returns a builder for creating a IntelCheckTarget entity.
+func (c *IntelCheckTargetClient) Create() *IntelCheckTargetCreate {
+	mutation := newIntelCheckTargetMutation(c.config, OpCreate)
+	return &IntelCheckTargetCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IntelCheckTarget entities.
+func (c *IntelCheckTargetClient) CreateBulk(builders ...*IntelCheckTargetCreate) *IntelCheckTargetCreateBulk {
+	return &IntelCheckTargetCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IntelCheckTargetClient) MapCreateBulk(slice any, setFunc func(*IntelCheckTargetCreate, int)) *IntelCheckTargetCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IntelCheckTargetCreateBulk{err: fmt.Errorf("calling to IntelCheckTargetClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IntelCheckTargetCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IntelCheckTargetCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IntelCheckTarget.
+func (c *IntelCheckTargetClient) Update() *IntelCheckTargetUpdate {
+	mutation := newIntelCheckTargetMutation(c.config, OpUpdate)
+	return &IntelCheckTargetUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IntelCheckTargetClient) UpdateOne(_m *IntelCheckTarget) *IntelCheckTargetUpdateOne {
+	mutation := newIntelCheckTargetMutation(c.config, OpUpdateOne, withIntelCheckTarget(_m))
+	return &IntelCheckTargetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IntelCheckTargetClient) UpdateOneID(id int64) *IntelCheckTargetUpdateOne {
+	mutation := newIntelCheckTargetMutation(c.config, OpUpdateOne, withIntelCheckTargetID(id))
+	return &IntelCheckTargetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IntelCheckTarget.
+func (c *IntelCheckTargetClient) Delete() *IntelCheckTargetDelete {
+	mutation := newIntelCheckTargetMutation(c.config, OpDelete)
+	return &IntelCheckTargetDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IntelCheckTargetClient) DeleteOne(_m *IntelCheckTarget) *IntelCheckTargetDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IntelCheckTargetClient) DeleteOneID(id int64) *IntelCheckTargetDeleteOne {
+	builder := c.Delete().Where(intelchecktarget.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IntelCheckTargetDeleteOne{builder}
+}
+
+// Query returns a query builder for IntelCheckTarget.
+func (c *IntelCheckTargetClient) Query() *IntelCheckTargetQuery {
+	return &IntelCheckTargetQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIntelCheckTarget},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IntelCheckTarget entity by its id.
+func (c *IntelCheckTargetClient) Get(ctx context.Context, id int64) (*IntelCheckTarget, error) {
+	return c.Query().Where(intelchecktarget.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IntelCheckTargetClient) GetX(ctx context.Context, id int64) *IntelCheckTarget {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryResults queries the results edge of a IntelCheckTarget.
+func (c *IntelCheckTargetClient) QueryResults(_m *IntelCheckTarget) *IntelCheckResultQuery {
+	query := (&IntelCheckResultClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(intelchecktarget.Table, intelchecktarget.FieldID, id),
+			sqlgraph.To(intelcheckresult.Table, intelcheckresult.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, intelchecktarget.ResultsTable, intelchecktarget.ResultsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IntelCheckTargetClient) Hooks() []Hook {
+	return c.hooks.IntelCheckTarget
+}
+
+// Interceptors returns the client interceptors.
+func (c *IntelCheckTargetClient) Interceptors() []Interceptor {
+	return c.inters.IntelCheckTarget
+}
+
+func (c *IntelCheckTargetClient) mutate(ctx context.Context, m *IntelCheckTargetMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IntelCheckTargetCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IntelCheckTargetUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IntelCheckTargetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IntelCheckTargetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IntelCheckTarget mutation op: %q", m.Op())
 	}
 }
 
@@ -6845,7 +7475,8 @@ type (
 		AuthIdentityChannel, BatchImageEvent, BatchImageItem, BatchImageJob,
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
 		ChannelMonitorRequestTemplate, CompositeModelRoute, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
+		Group, IdempotencyRecord, IdentityAdoptionDecision, IntelCheckQuestion,
+		IntelCheckResult, IntelCheckRound, IntelCheckTarget, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
 		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
 		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
@@ -6857,7 +7488,8 @@ type (
 		AuthIdentityChannel, BatchImageEvent, BatchImageItem, BatchImageJob,
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
 		ChannelMonitorRequestTemplate, CompositeModelRoute, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
+		Group, IdempotencyRecord, IdentityAdoptionDecision, IntelCheckQuestion,
+		IntelCheckResult, IntelCheckRound, IntelCheckTarget, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
 		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
 		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,

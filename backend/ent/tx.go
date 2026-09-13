@@ -52,6 +52,14 @@ type Tx struct {
 	IdempotencyRecord *IdempotencyRecordClient
 	// IdentityAdoptionDecision is the client for interacting with the IdentityAdoptionDecision builders.
 	IdentityAdoptionDecision *IdentityAdoptionDecisionClient
+	// IntelCheckQuestion is the client for interacting with the IntelCheckQuestion builders.
+	IntelCheckQuestion *IntelCheckQuestionClient
+	// IntelCheckResult is the client for interacting with the IntelCheckResult builders.
+	IntelCheckResult *IntelCheckResultClient
+	// IntelCheckRound is the client for interacting with the IntelCheckRound builders.
+	IntelCheckRound *IntelCheckRoundClient
+	// IntelCheckTarget is the client for interacting with the IntelCheckTarget builders.
+	IntelCheckTarget *IntelCheckTargetClient
 	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
 	PaymentAuditLog *PaymentAuditLogClient
 	// PaymentOrder is the client for interacting with the PaymentOrder builders.
@@ -242,6 +250,10 @@ func (tx *Tx) init() {
 	tx.Group = NewGroupClient(tx.config)
 	tx.IdempotencyRecord = NewIdempotencyRecordClient(tx.config)
 	tx.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(tx.config)
+	tx.IntelCheckQuestion = NewIntelCheckQuestionClient(tx.config)
+	tx.IntelCheckResult = NewIntelCheckResultClient(tx.config)
+	tx.IntelCheckRound = NewIntelCheckRoundClient(tx.config)
+	tx.IntelCheckTarget = NewIntelCheckTargetClient(tx.config)
 	tx.PaymentAuditLog = NewPaymentAuditLogClient(tx.config)
 	tx.PaymentOrder = NewPaymentOrderClient(tx.config)
 	tx.PaymentProviderInstance = NewPaymentProviderInstanceClient(tx.config)

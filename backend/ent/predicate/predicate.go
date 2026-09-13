@@ -63,6 +63,18 @@ type IdempotencyRecord func(*sql.Selector)
 // IdentityAdoptionDecision is the predicate function for identityadoptiondecision builders.
 type IdentityAdoptionDecision func(*sql.Selector)
 
+// IntelCheckQuestion is the predicate function for intelcheckquestion builders.
+type IntelCheckQuestion func(*sql.Selector)
+
+// IntelCheckResult is the predicate function for intelcheckresult builders.
+type IntelCheckResult func(*sql.Selector)
+
+// IntelCheckRound is the predicate function for intelcheckround builders.
+type IntelCheckRound func(*sql.Selector)
+
+// IntelCheckTarget is the predicate function for intelchecktarget builders.
+type IntelCheckTarget func(*sql.Selector)
+
 // PaymentAuditLog is the predicate function for paymentauditlog builders.
 type PaymentAuditLog func(*sql.Selector)
 

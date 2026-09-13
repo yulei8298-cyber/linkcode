@@ -288,6 +288,12 @@ export interface PublicSettings {
   service_quota_enabled: boolean
   affiliate_enabled: boolean
   allow_user_view_error_requests?: boolean
+  /**
+   * 模型智力检测公开页开关。它不是独立的设置行，而是后端从
+   * intel_check_settings 那块 JSON 里取出的 enabled 字段。
+   * 可选：旧的 __APP_CONFIG__ 注入缓存可能缺失该字段。
+   */
+  intel_check_enabled?: boolean
 }
 
 export interface AuthResponse {

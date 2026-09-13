@@ -964,6 +964,7 @@ var (
 		{Name: "require_privacy_set", Type: field.TypeBool, Default: false},
 		{Name: "default_mapped_model", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "messages_dispatch_model_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "models_list_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "model_allowlist", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "codex_models_manifest_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "rpm_limit", Type: field.TypeInt, Default: 0},
@@ -1108,6 +1109,143 @@ var (
 				Name:    "identityadoptiondecision_identity_id",
 				Unique:  false,
 				Columns: []*schema.Column{IdentityAdoptionDecisionsColumns[6]},
+			},
+		},
+	}
+	// IntelCheckQuestionsColumns holds the columns for the "intel_check_questions" table.
+	IntelCheckQuestionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"logic", "drawing"}},
+		{Name: "title", Type: field.TypeString, Size: 100},
+		{Name: "prompt", Type: field.TypeString, Size: 2147483647},
+		{Name: "expected_answer", Type: field.TypeString, Nullable: true, Size: 500, Default: ""},
+		{Name: "match_mode", Type: field.TypeString, Size: 32, Default: "exact"},
+		{Name: "reference_html", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
+		{Name: "reference_metrics", Type: field.TypeJSON, Nullable: true},
+		{Name: "drawing_rules", Type: field.TypeJSON, Nullable: true},
+		{Name: "review_rubric", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+	}
+	// IntelCheckQuestionsTable holds the schema information for the "intel_check_questions" table.
+	IntelCheckQuestionsTable = &schema.Table{
+		Name:       "intel_check_questions",
+		Columns:    IntelCheckQuestionsColumns,
+		PrimaryKey: []*schema.Column{IntelCheckQuestionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "intelcheckquestion_kind_enabled",
+				Unique:  false,
+				Columns: []*schema.Column{IntelCheckQuestionsColumns[3], IntelCheckQuestionsColumns[12]},
+			},
+		},
+	}
+	// IntelCheckResultsColumns holds the columns for the "intel_check_results" table.
+	IntelCheckResultsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"logic", "drawing"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pass", "fail", "request_error", "running"}},
+		{Name: "latency_ms", Type: field.TypeInt, Nullable: true},
+		{Name: "prompt_snapshot", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
+		{Name: "raw_reply", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
+		{Name: "extracted_answer", Type: field.TypeString, Nullable: true, Size: 500, Default: ""},
+		{Name: "html_output", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
+		{Name: "judge_detail", Type: field.TypeJSON, Nullable: true},
+		{Name: "error_message", Type: field.TypeString, Nullable: true, Size: 500, Default: ""},
+		{Name: "input_tokens", Type: field.TypeInt, Nullable: true},
+		{Name: "output_tokens", Type: field.TypeInt, Nullable: true},
+		{Name: "checked_at", Type: field.TypeTime},
+		{Name: "round_id", Type: field.TypeInt64},
+		{Name: "target_id", Type: field.TypeInt64},
+	}
+	// IntelCheckResultsTable holds the schema information for the "intel_check_results" table.
+	IntelCheckResultsTable = &schema.Table{
+		Name:       "intel_check_results",
+		Columns:    IntelCheckResultsColumns,
+		PrimaryKey: []*schema.Column{IntelCheckResultsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "intel_check_results_intel_check_rounds_results",
+				Columns:    []*schema.Column{IntelCheckResultsColumns[13]},
+				RefColumns: []*schema.Column{IntelCheckRoundsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "intel_check_results_intel_check_targets_results",
+				Columns:    []*schema.Column{IntelCheckResultsColumns[14]},
+				RefColumns: []*schema.Column{IntelCheckTargetsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "intelcheckresult_target_id_kind_checked_at",
+				Unique:  false,
+				Columns: []*schema.Column{IntelCheckResultsColumns[14], IntelCheckResultsColumns[1], IntelCheckResultsColumns[12]},
+			},
+			{
+				Name:    "intelcheckresult_round_id",
+				Unique:  false,
+				Columns: []*schema.Column{IntelCheckResultsColumns[13]},
+			},
+			{
+				Name:    "intelcheckresult_round_id_target_id_kind",
+				Unique:  true,
+				Columns: []*schema.Column{IntelCheckResultsColumns[13], IntelCheckResultsColumns[14], IntelCheckResultsColumns[1]},
+			},
+		},
+	}
+	// IntelCheckRoundsColumns holds the columns for the "intel_check_rounds" table.
+	IntelCheckRoundsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "seq", Type: field.TypeInt64, Unique: true},
+		{Name: "started_at", Type: field.TypeTime},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
+		{Name: "logic_question_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "drawing_question_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "trigger_source", Type: field.TypeString, Size: 16, Default: "cron"},
+	}
+	// IntelCheckRoundsTable holds the schema information for the "intel_check_rounds" table.
+	IntelCheckRoundsTable = &schema.Table{
+		Name:       "intel_check_rounds",
+		Columns:    IntelCheckRoundsColumns,
+		PrimaryKey: []*schema.Column{IntelCheckRoundsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "intelcheckround_started_at",
+				Unique:  false,
+				Columns: []*schema.Column{IntelCheckRoundsColumns[2]},
+			},
+		},
+	}
+	// IntelCheckTargetsColumns holds the columns for the "intel_check_targets" table.
+	IntelCheckTargetsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 500, Default: ""},
+		{Name: "base_url", Type: field.TypeString, Size: 500},
+		{Name: "api_key_encrypted", Type: field.TypeString},
+		{Name: "api_mode", Type: field.TypeString, Size: 32, Default: "responses"},
+		{Name: "model", Type: field.TypeString, Size: 200},
+		{Name: "reasoning_effort", Type: field.TypeString, Size: 32, Default: "medium"},
+		{Name: "rate_label", Type: field.TypeString, Nullable: true, Size: 20, Default: ""},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "created_by", Type: field.TypeInt64},
+	}
+	// IntelCheckTargetsTable holds the schema information for the "intel_check_targets" table.
+	IntelCheckTargetsTable = &schema.Table{
+		Name:       "intel_check_targets",
+		Columns:    IntelCheckTargetsColumns,
+		PrimaryKey: []*schema.Column{IntelCheckTargetsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "intelchecktarget_enabled_sort_order",
+				Unique:  false,
+				Columns: []*schema.Column{IntelCheckTargetsColumns[11], IntelCheckTargetsColumns[12]},
 			},
 		},
 	}
@@ -2122,6 +2260,10 @@ var (
 		GroupsTable,
 		IdempotencyRecordsTable,
 		IdentityAdoptionDecisionsTable,
+		IntelCheckQuestionsTable,
+		IntelCheckResultsTable,
+		IntelCheckRoundsTable,
+		IntelCheckTargetsTable,
 		PaymentAuditLogsTable,
 		PaymentOrdersTable,
 		PaymentProviderInstancesTable,
@@ -2218,6 +2360,20 @@ func init() {
 	IdentityAdoptionDecisionsTable.ForeignKeys[1].RefTable = PendingAuthSessionsTable
 	IdentityAdoptionDecisionsTable.Annotation = &entsql.Annotation{
 		Table: "identity_adoption_decisions",
+	}
+	IntelCheckQuestionsTable.Annotation = &entsql.Annotation{
+		Table: "intel_check_questions",
+	}
+	IntelCheckResultsTable.ForeignKeys[0].RefTable = IntelCheckRoundsTable
+	IntelCheckResultsTable.ForeignKeys[1].RefTable = IntelCheckTargetsTable
+	IntelCheckResultsTable.Annotation = &entsql.Annotation{
+		Table: "intel_check_results",
+	}
+	IntelCheckRoundsTable.Annotation = &entsql.Annotation{
+		Table: "intel_check_rounds",
+	}
+	IntelCheckTargetsTable.Annotation = &entsql.Annotation{
+		Table: "intel_check_targets",
 	}
 	PaymentAuditLogsTable.Annotation = &entsql.Annotation{
 		Table: "payment_audit_logs",

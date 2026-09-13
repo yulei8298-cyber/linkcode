@@ -237,6 +237,54 @@ func (f IdentityAdoptionDecisionFunc) Mutate(ctx context.Context, m ent.Mutation
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IdentityAdoptionDecisionMutation", m)
 }
 
+// The IntelCheckQuestionFunc type is an adapter to allow the use of ordinary
+// function as IntelCheckQuestion mutator.
+type IntelCheckQuestionFunc func(context.Context, *ent.IntelCheckQuestionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IntelCheckQuestionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IntelCheckQuestionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IntelCheckQuestionMutation", m)
+}
+
+// The IntelCheckResultFunc type is an adapter to allow the use of ordinary
+// function as IntelCheckResult mutator.
+type IntelCheckResultFunc func(context.Context, *ent.IntelCheckResultMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IntelCheckResultFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IntelCheckResultMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IntelCheckResultMutation", m)
+}
+
+// The IntelCheckRoundFunc type is an adapter to allow the use of ordinary
+// function as IntelCheckRound mutator.
+type IntelCheckRoundFunc func(context.Context, *ent.IntelCheckRoundMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IntelCheckRoundFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IntelCheckRoundMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IntelCheckRoundMutation", m)
+}
+
+// The IntelCheckTargetFunc type is an adapter to allow the use of ordinary
+// function as IntelCheckTarget mutator.
+type IntelCheckTargetFunc func(context.Context, *ent.IntelCheckTargetMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IntelCheckTargetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IntelCheckTargetMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IntelCheckTargetMutation", m)
+}
+
 // The PaymentAuditLogFunc type is an adapter to allow the use of ordinary
 // function as PaymentAuditLog mutator.
 type PaymentAuditLogFunc func(context.Context, *ent.PaymentAuditLogMutation) (ent.Value, error)

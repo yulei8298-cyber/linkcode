@@ -129,6 +129,14 @@ export const FeatureFlags = {
     mode: 'opt-in',
     label: 'Affiliate',
   }),
+  // opt-in：后端 DefaultIntelCheckSettings.Enabled 为 false（配置完成前不自动开放）。
+  // 若写成 opt-out，设置尚未加载的那一瞬间入口会先出现再消失，
+  // 而这个开关默认关闭，闪现的恰好是大多数部署不该看到的东西。
+  intelCheck: defineFlag({
+    key: 'intel_check_enabled',
+    mode: 'opt-in',
+    label: 'Intel Check',
+  }),
 } as const
 
 export type RegisteredFeatureFlag = keyof typeof FeatureFlags

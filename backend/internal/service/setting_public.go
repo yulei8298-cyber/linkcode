@@ -254,6 +254,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyAffiliateEnabled,
 		SettingKeyRiskControlEnabled,
 		SettingKeyAllowUserViewErrorRequests,
+		SettingKeyIntelCheckSettings,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -387,12 +388,36 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		ModelPlazaRequireAuth:   settings[SettingKeyModelPlazaRequireAuth] == "true",
 		PluginManagementEnabled: settings[SettingKeyPluginManagementEnabled] == "true",
 
+		IntelCheckEnabled: intelCheckEnabledFromRaw(settings[SettingKeyIntelCheckSettings]),
+
 		AffiliateEnabled: settings[SettingKeyAffiliateEnabled] == "true",
 
 		RiskControlEnabled: settings[SettingKeyRiskControlEnabled] == "true",
 
 		AllowUserViewErrorRequests: settings[SettingKeyAllowUserViewErrorRequests] == "true",
 	}, nil
+}
+
+// intelCheckEnabledFromRaw 从 intel_check_settings 那一整块 JSON 里只取出总开关。
+//
+// 不复用 IntelCheckSettings 反序列化：公开设置只需要知道菜单该不该显示，
+// 而那个结构体带着评审模型名与上游分组 id。把它整块解进来，
+// 日后很容易顺手多带一两个字段进公开响应——这个窄结构体就是那道边界。
+//
+// 解析失败一律按未开启处理（fail-closed），与 IntelCheckService.IsEnabled 同一取舍：
+// 读设置出错时放行，等于在故障时把一个本该受开关控制的公开页暴露出去。
+func intelCheckEnabledFromRaw(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return false
+	}
+	var payload struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+		return false
+	}
+	return payload.Enabled
 }
 
 // channelMonitorIntervalMin / channelMonitorIntervalMax bound the default interval
@@ -662,6 +687,7 @@ type PublicSettingsInjectionPayload struct {
 	AffiliateEnabled              bool `json:"affiliate_enabled"`
 	RiskControlEnabled            bool `json:"risk_control_enabled"`
 	AllowUserViewErrorRequests    bool `json:"allow_user_view_error_requests"`
+	IntelCheckEnabled             bool `json:"intel_check_enabled"`
 }
 
 // GetPublicSettingsForInjection returns public settings in a format suitable for HTML injection.
@@ -750,6 +776,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		AffiliateEnabled:                     settings.AffiliateEnabled,
 		RiskControlEnabled:                   settings.RiskControlEnabled,
 		AllowUserViewErrorRequests:           settings.AllowUserViewErrorRequests,
+		IntelCheckEnabled:                    settings.IntelCheckEnabled,
 	}, nil
 }
 

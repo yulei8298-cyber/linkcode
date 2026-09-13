@@ -119,6 +119,9 @@ func RegisterAdminRoutes(
 		registerChannelMonitorRoutes(admin, h, settingService)
 		registerChannelMonitorV2Routes(admin, h, settingService)
 
+		// 模型智力检测
+		registerIntelCheckRoutes(admin, h)
+
 		// 风控中心
 		registerContentModerationRoutes(admin, h)
 

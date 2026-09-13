@@ -226,6 +226,18 @@ const routes: RouteRecordRaw[] = [
       titleKey: 'portal.tutorial.title'
     }
   },
+  {
+    // 挂在 /portal 下而非 /intel-check：它与可用性检测、定价方案同属对外公示页，
+    // 且 BACKEND_MODE_ALLOWED_PATHS 已按 '/portal' 前缀放行，
+    // 纯后台模式下匿名可见这一点无需再维护一条白名单。
+    path: '/portal/intel-check',
+    name: 'PortalIntelCheck',
+    component: () => import('@/views/public/IntelCheckView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Model Intelligence Check'
+    }
+  },
 
   // ==================== User Routes ====================
   {
@@ -540,6 +552,22 @@ const routes: RouteRecordRaw[] = [
       title: 'Channel Monitor',
       titleKey: 'admin.channelMonitor.title',
       descriptionKey: 'admin.channelMonitor.description'
+    }
+  },
+  {
+    // 刻意不挂 requiresIntelCheck 之类的开关守卫：配置分组、录题、标定阈值
+    // 全都发生在开启之前，而后端 ValidateIntelCheckSettings 又要求开启前必须
+    // 已配好评审模型——加守卫会形成「想开启必须先开启」的死锁。
+    // 后端 registerIntelCheckRoutes 同理未挂 feature guard，两处互为印证。
+    path: '/admin/intel-check',
+    name: 'AdminIntelCheck',
+    component: () => import('@/views/admin/IntelCheckView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Model Intelligence Check',
+      titleKey: 'admin.intelCheck.title',
+      descriptionKey: 'admin.intelCheck.description'
     }
   },
   {
@@ -927,6 +955,33 @@ router.beforeEach(async (to, _from, next) => {
       // Backend mode:登录的非管理员也不可见(匿名由下方公共拦截处理,广场不在白名单)
       if (appStore.backendModeEnabled && authStore.isAuthenticated && !authStore.isAdmin) {
         next('/login')
+        return
+      }
+    }
+    // 智力检测:公开路由,仅受启用开关控制(与后端 fail-closed 同口径)。
+    // 不设「强制登录」那一档 —— 这张页面的用途就是让未登录者自行核验模型没被降智,
+    // 要求登录等于把证据锁在门后。
+    if (to.path === '/portal/intel-check') {
+      if (!appStore.publicSettingsLoaded) {
+        try {
+          await appStore.fetchPublicSettings()
+        } catch (error) {
+          console.warn('Failed to load public settings in route guard', error)
+        }
+      }
+      // 仅在设置成功加载且明确为 false 时拦截:瞬时加载失败是未知状态而非确认关闭,
+      // 交给后端 404 兜底,避免网络抖一下就把页面判成「功能没开」。
+      if (
+        appStore.publicSettingsLoaded &&
+        appStore.cachedPublicSettings?.intel_check_enabled === false
+      ) {
+        next(
+          authStore.isAuthenticated
+            ? authStore.isAdmin
+              ? '/admin/dashboard'
+              : '/dashboard'
+            : '/home'
+        )
         return
       }
     }

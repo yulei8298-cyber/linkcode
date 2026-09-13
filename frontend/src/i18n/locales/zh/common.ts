@@ -207,6 +207,7 @@ export default {
     channelManagement: '渠道管理',
     channelPricing: '渠道定价',
     channelMonitor: '渠道监控',
+    intelCheck: '智力检测',
     modelBasePricing: '模型基准价',
     channelStatus: '渠道状态',
     riskControl: '风控中心',

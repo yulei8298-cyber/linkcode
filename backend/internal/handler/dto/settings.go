@@ -442,6 +442,9 @@ type PublicSettings struct {
 	RiskControlEnabled bool `json:"risk_control_enabled"`
 
 	AllowUserViewErrorRequests bool `json:"allow_user_view_error_requests"`
+
+	// 模型智力检测：公开页路由守卫与菜单项都受这一个开关控制。
+	IntelCheckEnabled bool `json:"intel_check_enabled"`
 }
 
 type LoginAgreementDocument struct {

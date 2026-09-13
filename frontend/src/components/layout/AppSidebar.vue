@@ -861,6 +861,10 @@ const adminNavItems = computed((): NavItem[] => {
       children: [
         { path: '/admin/channels/pricing', label: t('nav.channelPricing'), icon: PriceTagIcon },
         { path: '/admin/channels/monitor', label: t('nav.channelMonitor'), icon: SignalIcon, featureFlag: flagChannelMonitor },
+        // 不挂 featureFlag：智力检测默认关闭（opt-in），若照渠道监控那样挂上开关，
+        // 管理员就会陷入「配置页因未开启而不可见、而开启必须先进配置页」的死锁。
+        // 渠道监控能挂是因为它的开关默认为开（opt-out）。
+        { path: '/admin/intel-check', label: t('nav.intelCheck'), icon: SignalIcon },
       ],
     },
     { path: '/admin/model-pricing', label: t('nav.modelBasePricing'), icon: PriceTagIcon, hideInSimpleMode: true },

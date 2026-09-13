@@ -31,6 +31,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckquestion"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
+	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -130,6 +134,10 @@ func checkColumn(t, c string) error {
 			group.Table:                         group.ValidColumn,
 			idempotencyrecord.Table:             idempotencyrecord.ValidColumn,
 			identityadoptiondecision.Table:      identityadoptiondecision.ValidColumn,
+			intelcheckquestion.Table:            intelcheckquestion.ValidColumn,
+			intelcheckresult.Table:              intelcheckresult.ValidColumn,
+			intelcheckround.Table:               intelcheckround.ValidColumn,
+			intelchecktarget.Table:              intelchecktarget.ValidColumn,
 			paymentauditlog.Table:               paymentauditlog.ValidColumn,
 			paymentorder.Table:                  paymentorder.ValidColumn,
 			paymentproviderinstance.Table:       paymentproviderinstance.ValidColumn,

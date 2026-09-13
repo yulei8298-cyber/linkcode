@@ -39,6 +39,7 @@
           <RouterLink to="/home" class="lc-navlink" @click="closeMenu">首页</RouterLink>
           <RouterLink to="/portal/status" class="lc-navlink" @click="closeMenu">可用性检测</RouterLink>
           <RouterLink to="/portal/pricing" class="lc-navlink" @click="closeMenu">定价方案</RouterLink>
+          <RouterLink v-if="showIntelCheck" to="/portal/intel-check" class="lc-navlink" @click="closeMenu">智力检测</RouterLink>
           <RouterLink v-if="showModelPlaza" to="/model-plaza" class="lc-navlink" @click="closeMenu">模型广场</RouterLink>
           <a
             v-if="chatStationUrl"
@@ -121,6 +122,9 @@ const qqGroupLabel = computed(() => {
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const showModelPlaza = computed(() => settings.value?.model_plaza_enabled === true &&
   (isAuthenticated.value || settings.value?.model_plaza_require_auth !== true))
+// 严格 === true：开关默认关闭，设置未加载时不应先把入口显出来再收回去。
+// 与模型广场不同，这里没有「强制登录」那一档——公开可见正是本页的用途。
+const showIntelCheck = computed(() => settings.value?.intel_check_enabled === true)
 const dashboardPath = computed(() => (authStore.isAdmin ? '/admin/dashboard' : '/dashboard'))
 const currentYear = new Date().getFullYear()
 

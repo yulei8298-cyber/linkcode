@@ -948,6 +948,8 @@ var ProviderSet = wire.NewSet(
 	ProvideChannelMonitorV2Aggregator,
 	NewChannelMonitorRequestTemplateService,
 	ProvideUserPlatformQuotaUsageFlusher,
+	ProvideIntelCheckService,
+	ProvideIntelCheckRunner,
 )
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
@@ -1039,4 +1041,45 @@ func ProvideChannelMonitorV2Aggregator(repo ChannelMonitorV2Repository, db *sql.
 	}
 	aggregator.Start()
 	return aggregator
+}
+
+// ProvideIntelCheckService 创建模型智力检测服务（分组/题库 CRUD + 设置读写 + 公开页聚合）。
+//
+// 必须包装而不能把 NewIntelCheckService 直接丢进 ProviderSet：它的第二个参数是
+// 包内未导出的窄接口 intelCheckSettingStore，Wire 无法为未导出类型建立绑定。
+// SettingRepository 的 GetValue/Set 与该接口在类型上逐字一致，传进去即结构化满足。
+//
+// 加密器复用已注入的 SecretEncryptor（AES-256-GCM），上游 API Key 只以密文落库。
+//
+// reloader 不在这里注入：runner 反过来要靠本服务读设置，构造参数注入会成环，
+// 改由 runner 构造完成后调用 SetReloader——与 ProvideChannelMonitorRunner
+// 用 SetScheduler 打破同类环路的做法一致。
+func ProvideIntelCheckService(
+	repo IntelCheckRepository,
+	settingRepo SettingRepository,
+	encryptor SecretEncryptor,
+) *IntelCheckService {
+	return NewIntelCheckService(repo, settingRepo, encryptor)
+}
+
+// ProvideIntelCheckRunner 创建并启动智力检测调度器。
+//
+// 先 SetReloader 再 Start：设置变更要靠 service 回调 runner 才能即时改周期，
+// 而 runner 又要靠 service 读设置，构造参数注入会成环——与
+// ProvideChannelMonitorRunner 用 SetScheduler 打破同类环路的做法一致。
+//
+// lockCache 与 db 一并传入：前者是多实例部署时的单飞锁，Redis 异常时退回到
+// 后者的 Postgres advisory lock；两者皆缺（单实例、无 Redis）时直接放行，
+// 不会让检测被静默饿死。Runner.Stop 由 cleanup function 调用。
+func ProvideIntelCheckRunner(
+	svc *IntelCheckService,
+	lockCache LeaderLockCache,
+	db *sql.DB,
+) *IntelCheckRunner {
+	r := NewIntelCheckRunner(svc, lockCache, db)
+	if svc != nil {
+		svc.SetReloader(r)
+	}
+	r.Start()
+	return r
 }

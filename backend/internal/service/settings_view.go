@@ -417,6 +417,11 @@ type PublicSettings struct {
 
 	// 允许终端用户在用量页查看自己的失败请求
 	AllowUserViewErrorRequests bool `json:"allow_user_view_error_requests"`
+
+	// 模型智力检测的总开关。它不是独立的设置行，而是从 intel_check_settings
+	// 那一整块 JSON 里取出的 enabled 字段（见 intelCheckEnabledFromRaw）——
+	// 单独存一份会立刻变成两个可以互相矛盾的真相来源。
+	IntelCheckEnabled bool `json:"intel_check_enabled"`
 }
 
 type LoginAgreementDocument struct {

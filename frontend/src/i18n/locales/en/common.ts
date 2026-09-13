@@ -207,6 +207,7 @@ export default {
     channelManagement: 'Channels',
     channelPricing: 'Channel Pricing',
     channelMonitor: 'Channel Monitor',
+    intelCheck: 'Intelligence Check',
     modelBasePricing: 'Model Base Pricing',
     channelStatus: 'Channel Status',
     riskControl: 'Risk Control',

@@ -27,6 +27,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckquestion"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
+	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
+	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -619,6 +623,114 @@ func (f TraverseIdentityAdoptionDecision) Traverse(ctx context.Context, q ent.Qu
 	return fmt.Errorf("unexpected query type %T. expect *ent.IdentityAdoptionDecisionQuery", q)
 }
 
+// The IntelCheckQuestionFunc type is an adapter to allow the use of ordinary function as a Querier.
+type IntelCheckQuestionFunc func(context.Context, *ent.IntelCheckQuestionQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f IntelCheckQuestionFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.IntelCheckQuestionQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckQuestionQuery", q)
+}
+
+// The TraverseIntelCheckQuestion type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseIntelCheckQuestion func(context.Context, *ent.IntelCheckQuestionQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseIntelCheckQuestion) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseIntelCheckQuestion) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.IntelCheckQuestionQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckQuestionQuery", q)
+}
+
+// The IntelCheckResultFunc type is an adapter to allow the use of ordinary function as a Querier.
+type IntelCheckResultFunc func(context.Context, *ent.IntelCheckResultQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f IntelCheckResultFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.IntelCheckResultQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckResultQuery", q)
+}
+
+// The TraverseIntelCheckResult type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseIntelCheckResult func(context.Context, *ent.IntelCheckResultQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseIntelCheckResult) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseIntelCheckResult) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.IntelCheckResultQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckResultQuery", q)
+}
+
+// The IntelCheckRoundFunc type is an adapter to allow the use of ordinary function as a Querier.
+type IntelCheckRoundFunc func(context.Context, *ent.IntelCheckRoundQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f IntelCheckRoundFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.IntelCheckRoundQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckRoundQuery", q)
+}
+
+// The TraverseIntelCheckRound type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseIntelCheckRound func(context.Context, *ent.IntelCheckRoundQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseIntelCheckRound) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseIntelCheckRound) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.IntelCheckRoundQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckRoundQuery", q)
+}
+
+// The IntelCheckTargetFunc type is an adapter to allow the use of ordinary function as a Querier.
+type IntelCheckTargetFunc func(context.Context, *ent.IntelCheckTargetQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f IntelCheckTargetFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.IntelCheckTargetQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckTargetQuery", q)
+}
+
+// The TraverseIntelCheckTarget type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseIntelCheckTarget func(context.Context, *ent.IntelCheckTargetQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseIntelCheckTarget) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseIntelCheckTarget) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.IntelCheckTargetQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckTargetQuery", q)
+}
+
 // The PaymentAuditLogFunc type is an adapter to allow the use of ordinary function as a Querier.
 type PaymentAuditLogFunc func(context.Context, *ent.PaymentAuditLogQuery) (ent.Value, error)
 
@@ -1200,6 +1312,14 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.IdempotencyRecordQuery, predicate.IdempotencyRecord, idempotencyrecord.OrderOption]{typ: ent.TypeIdempotencyRecord, tq: q}, nil
 	case *ent.IdentityAdoptionDecisionQuery:
 		return &query[*ent.IdentityAdoptionDecisionQuery, predicate.IdentityAdoptionDecision, identityadoptiondecision.OrderOption]{typ: ent.TypeIdentityAdoptionDecision, tq: q}, nil
+	case *ent.IntelCheckQuestionQuery:
+		return &query[*ent.IntelCheckQuestionQuery, predicate.IntelCheckQuestion, intelcheckquestion.OrderOption]{typ: ent.TypeIntelCheckQuestion, tq: q}, nil
+	case *ent.IntelCheckResultQuery:
+		return &query[*ent.IntelCheckResultQuery, predicate.IntelCheckResult, intelcheckresult.OrderOption]{typ: ent.TypeIntelCheckResult, tq: q}, nil
+	case *ent.IntelCheckRoundQuery:
+		return &query[*ent.IntelCheckRoundQuery, predicate.IntelCheckRound, intelcheckround.OrderOption]{typ: ent.TypeIntelCheckRound, tq: q}, nil
+	case *ent.IntelCheckTargetQuery:
+		return &query[*ent.IntelCheckTargetQuery, predicate.IntelCheckTarget, intelchecktarget.OrderOption]{typ: ent.TypeIntelCheckTarget, tq: q}, nil
 	case *ent.PaymentAuditLogQuery:
 		return &query[*ent.PaymentAuditLogQuery, predicate.PaymentAuditLog, paymentauditlog.OrderOption]{typ: ent.TypePaymentAuditLog, tq: q}, nil
 	case *ent.PaymentOrderQuery:

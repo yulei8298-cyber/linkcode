@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>鹈鹕骑自行车 · SVG 2D 动画</title>
+  <style>
+    :root { color-scheme: light; background: #dff2f0; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
+    body { overflow: hidden; background: #dff2f0; }
+    main { width: 100%; height: 100%; display: grid; place-items: center; }
+    svg { width: 100%; height: 100%; display: block; }
+    .ink { stroke: #24383b; stroke-linecap: round; stroke-linejoin: round; }
+    .line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .soft-shadow { filter: url(#shadow); }
+  </style>
+</head>
+<body>
+  <main aria-label="鹈鹕骑自行车的二维 SVG 动画">
+    <svg viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+      <title id="title">鹈鹕骑自行车</title>
+      <desc id="desc">一只戴红围巾的鹈鹕沿着海边骑自行车，车轮旋转，双腿交替踩踏，云朵和路面向后移动。</desc>
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#bfe9ed"/>
+          <stop offset="1" stop-color="#eff8e8"/>
+        </linearGradient>
+        <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8fd0d2"/>
+          <stop offset="1" stop-color="#56abb7"/>
+        </linearGradient>
+        <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+          <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#183c42" flood-opacity=".18"/>
+        </filter>
+        <g id="cloud" fill="#fffdf4" opacity=".9">
+          <path d="M0 35c0-13 11-23 25-23 6-18 33-20 43-3 7-7 18-11 29-7 12 4 18 15 18 28h12c10 0 18 7 18 15H0z"/>
+        </g>
+        <g id="wheel">
+          <circle r="91" fill="#d9eee8" stroke="#263c3e" stroke-width="11"/>
+          <circle r="82" fill="none" stroke="#fffaf0" stroke-width="5"/>
+          <circle r="7" fill="#e8bd63" stroke="#263c3e" stroke-width="4"/>
+          <g class="line" stroke="#789899" stroke-width="2.5">
+            <path d="M0-82V82M-82 0H82M-58-58L58 58M-58 58L58-58M-76-32L76 32M-32-76L32 76M-76 32L76-32M-32 76L32-76"/>
+          </g>
+        </g>
+        <g id="grass" class="line" stroke="#4d8d71" stroke-width="4">
+          <path d="M0 0Q-4-17-16-25M0 0Q3-22 16-32M0 0Q13-13 26-12"/>
+        </g>
+      </defs>
+
+      <rect width="1200" height="760" fill="url(#sky)"/>
+      <circle cx="1000" cy="122" r="53" fill="#f7d77b" opacity=".92"/>
+      <circle cx="981" cy="104" r="6" fill="#ffe9ab" opacity=".75"/>
+
+      <g>
+        <animateTransform attributeName="transform" type="translate" from="0 0" to="-1380 0" dur="54s" repeatCount="indefinite"/>
+        <use href="#cloud" x="80" y="110" transform="scale(1.15)"/>
+        <use href="#cloud" x="445" y="72" transform="scale(.74)"/>
+        <use href="#cloud" x="820" y="180" transform="scale(.9)"/>
+        <use href="#cloud" x="1420" y="105" transform="scale(1.15)"/>
+        <use href="#cloud" x="1810" y="70" transform="scale(.74)"/>
+        <use href="#cloud" x="2180" y="180" transform="scale(.9)"/>
+      </g>
+
+      <path d="M0 390Q160 368 310 391T620 389T930 388T1200 395V586H0Z" fill="url(#sea)"/>
+      <g class="line" stroke="#d8f2ef" stroke-width="4" opacity=".75">
+        <animateTransform attributeName="transform" type="translate" from="0 0" to="-600 0" dur="9s" repeatCount="indefinite"/>
+        <path d="M15 448h100m70-19h55m92 35h90m74-24h120m68 32h72m94-30h102m84 22h90m78-32h112m-1120 92h82m95-20h54m115 28h104m91-24h70m110 26h100m74-22h86m112 21h96m95-30h64"/>
+      </g>
+      <path d="M0 535Q150 514 300 539T600 535T900 531T1200 538V646H0Z" fill="#c0d7a9"/>
+      <path d="M0 594Q162 573 320 598T650 595T965 589T1200 598V663H0Z" fill="#dde6c1"/>
+      <g opacity=".8">
+        <animateTransform attributeName="transform" type="translate" from="0 0" to="-1200 0" dur="7s" repeatCount="indefinite"/>
+        <use href="#grass" x="82" y="626"/>
+        <use href="#grass" x="370" y="620" transform="scale(.8)"/>
+        <use href="#grass" x="730" y="632" transform="scale(.7)"/>
+        <use href="#grass" x="1090" y="620" transform="scale(.85)"/>
+        <use href="#grass" x="1282" y="626"/>
+        <use href="#grass" x="1570" y="620" transform="scale(.8)"/>
+      </g>
+
+      <rect y="646" width="1200" height="114" fill="#f6f1dd"/>
+      <path d="M0 646H1200" stroke="#7fa28f" stroke-width="4"/>
+      <path d="M-100 710H1300" stroke="#c5cbb8" stroke-width="5" stroke-dasharray="46 104" stroke-linecap="round">
+        <animate attributeName="stroke-dashoffset" from="0" to="150" dur=".95s" repeatCount="indefinite"/>
+      </path>
+      <ellipse cx="603" cy="654" rx="210" ry="13" fill="#324e4c" opacity=".14">
+        <animate attributeName="rx" values="210;200;210" dur=".8s" repeatCount="indefinite"/>
+      </ellipse>
+
+      <g id="bike" class="ink soft-shadow">
+        <g transform="translate(433 558)">
+          <use href="#wheel"/>
+          <g>
+            <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="3.35s" repeatCount="indefinite"/>
+            <path class="line" d="M0-82V82M-82 0H82M-58-58L58 58M-58 58L58-58M-76-32L76 32M-32-76L32 76M-76 32L76-32M-32 76L32-76" stroke="#789899" stroke-width="2.5"/>
+          </g>
+        </g>
+        <g transform="translate(744 558)">
+          <use href="#wheel"/>
+          <g>
+            <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="3.35s" repeatCount="indefinite"/>
+            <path class="line" d="M0-82V82M-82 0H82M-58-58L58 58M-58 58L58-58M-76-32L76 32M-32-76L32 76M-76 32L76-32M-32 76L32-76" stroke="#789899" stroke-width="2.5"/>
+          </g>
+        </g>
+        <path d="M433 558L530 466L649 558L433 558M530 466L744 558M649 558L620 425L570 425M620 425L660 406" fill="none" stroke="#2d6d66" stroke-width="10"/>
+        <path d="M610 425l15-48" fill="none" stroke="#2d6d66" stroke-width="8"/>
+        <path d="M598 378h44" fill="none" stroke="#263c3e" stroke-width="8"/>
+        <circle cx="530" cy="466" r="12" fill="#f1c76b" stroke-width="5"/>
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="0 530 466; 180 530 466; 360 530 466" dur="1.15s" repeatCount="indefinite"/>
+          <path d="M530 466L575 491M530 466L493 432" stroke="#263c3e" stroke-width="6"/>
+          <path d="M570 491h30M488 432h-30" stroke="#e6a45b" stroke-width="8"/>
+        </g>
+      </g>
+
+      <g id="pelican" class="ink">
+        <g id="far-leg" fill="none" stroke="#be7544" stroke-width="15">
+          <path d="M558 407L635 467L591 548">
+            <animate attributeName="d" values="M558 407L635 467L591 548;M558 407L574 475L650 526;M558 407L635 467L591 548" dur="1.15s" repeatCount="indefinite"/>
+          </path>
+        </g>
+        <g id="near-leg" fill="none" stroke="#d1864a" stroke-width="16">
+          <path d="M522 409L493 475L560 524">
+            <animate attributeName="d" values="M522 409L493 475L560 524;M522 409L595 455L558 540;M522 409L493 475L560 524" dur="1.15s" repeatCount="indefinite"/>
+          </path>
+        </g>
+        <g fill="#e8a157" stroke-width="4">
+          <path d="M575 543q9-10 20-2l25 9q5 8-7 9h-39q-8-7 1-16Z"/>
+          <path d="M548 532q10-9 19-1l24 10q4 8-7 9h-38q-8-9 2-18Z"/>
+        </g>
+
+        <path d="M506 287Q557 273 590 312L620 383Q624 421 577 438L492 421Q459 390 470 345Z" fill="#fbfaf1" stroke-width="6"/>
+        <path d="M490 360Q544 341 608 371L600 420Q541 436 485 413Z" fill="#f1e9d5" stroke-width="4"/>
+        <path d="M499 315Q515 255 574 247Q629 241 655 285L625 337Q585 319 555 333Z" fill="#fffdf6" stroke-width="6"/>
+        <path d="M572 259Q605 263 635 287Q619 310 596 323Q579 303 556 295Z" fill="#e7e2d2" stroke-width="4"/>
+        <path d="M620 289Q666 288 724 313Q734 322 723 332L626 333Z" fill="#e9a55e" stroke-width="6"/>
+        <path d="M714 313q25 10 32 20q-6 11-23 10l-21-11Z" fill="#d7824d" stroke-width="4"/>
+        <circle cx="638" cy="281" r="9" fill="#263c3e" stroke="none"/>
+        <circle cx="641" cy="278" r="3" fill="#fff" stroke="none"/>
+
+        <path d="M476 340Q438 343 426 379Q446 399 484 382Z" fill="#f7f5eb" stroke-width="5">
+          <animateTransform attributeName="transform" type="rotate" values="0 478 361;-5 478 361;0 478 361" dur="1.7s" repeatCount="indefinite"/>
+        </path>
+        <path d="M480 377Q526 392 579 373" fill="none" stroke="#d94f4d" stroke-width="18">
+          <animateTransform attributeName="transform" type="rotate" values="0 520 375;3 520 375;0 520 375;-3 520 375;0 520 375" dur="1.4s" repeatCount="indefinite"/>
+        </path>
+        <path d="M570 381q18 20 36 16l-7 43q-28 2-45-23Z" fill="#d94f4d" stroke-width="4">
+          <animateTransform attributeName="transform" type="rotate" values="0 590 408;6 590 408;0 590 408" dur="1.4s" repeatCount="indefinite"/>
+        </path>
+
+        <path d="M510 350Q548 366 584 349L590 385Q548 403 511 383Z" fill="#fffdf6" stroke-width="5"/>
+        <path d="M518 351Q542 362 563 353" class="line" stroke="#c1c8b8" stroke-width="4"/>
+        <path d="M529 395L545 445" fill="none" stroke="#263c3e" stroke-width="10"/>
+        <path d="M526 394L489 441" fill="none" stroke="#263c3e" stroke-width="10"/>
+        <path d="M483 440l-25 17M545 444l28 17" fill="none" stroke="#263c3e" stroke-width="7"/>
+      </g>
+
+      <g opacity=".75" class="line" stroke="#fffdf4" stroke-width="4">
+        <path d="M118 294q21-20 42 0q21-20 42 0"/>
+        <path d="M1014 248q17-16 34 0q17-16 34 0"/>
+      </g>
+      <g font-family="PingFang SC, Microsoft YaHei, sans-serif" fill="#356568">
+        <text x="72" y="92" font-size="22" letter-spacing="2">海风骑行</text>
+        <text x="72" y="120" font-size="13" opacity=".72">PELICAN ON TWO WHEELS</text>
+      </g>
+    </svg>
+  </main>
+</body>
+</html>
