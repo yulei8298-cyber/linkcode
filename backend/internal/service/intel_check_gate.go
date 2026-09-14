@@ -86,8 +86,9 @@ type IntelCheckGateResult struct {
 // 分两类检查：
 //   - 固定项：可解析的 <svg>、同时具备 <title> 与 <desc>、命中必需关键词、
 //     至少一种动画机制、体积不超上限；
-//   - 相对项：各结构指标不低于参考稿的 MinRatio 倍。参考稿对应指标为 0 时
-//     （尚未上传参考稿）跳过该项，避免无参考时误杀。
+//   - 相对项：造型数量 / 动画目标数 / 可复用符号数 / 路径数据量不低于参考稿的
+//     MinRatio 倍。参考稿对应指标为 0 时（尚未上传参考稿）跳过该项，
+//     避免无参考时误杀。产物体积**不在相对项之列**，理由见下方循环处的注释。
 //
 // 全部通过才进入第二层源码评审。
 func EvaluateIntelCheckGate(source string, candidate, reference DrawingMetrics, rules IntelCheckDrawingRules) IntelCheckGateResult {
@@ -118,6 +119,16 @@ func EvaluateIntelCheckGate(source string, candidate, reference DrawingMetrics, 
 	add("体积未超上限", candidate.HTMLBytes <= rules.MaxBytes,
 		"html_bytes=%d, max=%d", candidate.HTMLBytes, rules.MaxBytes)
 
+	// 相对项只取「画了多少东西」这类与表达方式无关的指标。
+	//
+	// 刻意**不含产物体积**：字节数量的是代码啰嗦程度，不是画作质量。
+	// 一份压缩过的优秀产物（CSS 压成一行、path 紧凑无空格）体积可能只有
+	// 格式宽松参考稿的三分之一，按比例一律判失败——而压缩恰恰是更熟练的写法。
+	// 体积仍由上面的固定项「体积未超上限」把住，那一条防的是几十 MB 的失控产物，
+	// 与保真无关。
+	//
+	// 路径数据量保留但需知其局限：`M0 0L10 10` 与 `M 0 0 L 10 10` 字节数不同，
+	// 该项对空白写法有轻度敏感，只是远不如整体体积那么失真。
 	for _, metric := range []struct {
 		name      string
 		got, want int
@@ -126,7 +137,6 @@ func EvaluateIntelCheckGate(source string, candidate, reference DrawingMetrics, 
 		{"动画目标数", candidate.AnimatedTargets, reference.AnimatedTargets},
 		{"可复用符号数", candidate.DefsSymbols, reference.DefsSymbols},
 		{"路径数据量", candidate.PathDataBytes, reference.PathDataBytes},
-		{"产物体积", candidate.HTMLBytes, reference.HTMLBytes},
 	} {
 		if metric.want <= 0 {
 			add(metric.name, true, "参考稿未提供该指标，跳过")
