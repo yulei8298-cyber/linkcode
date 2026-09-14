@@ -258,30 +258,67 @@ func TestCallIntelCheckUpstream_非2xx只保留截断预览(t *testing.T) {
 	require.NotContains(t, err.Error(), strings.Repeat("x", intelCheckErrorBodyPreview+1))
 }
 
-func TestCallIntelCheckUpstream_响应体超过2MiB时拒绝解析(t *testing.T) {
-	for _, stream := range []bool{false, true} {
-		name := "同步"
-		if stream {
-			name = "流式"
-		}
-		t.Run(name, func(t *testing.T) {
-			withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
-				func(_ *http.Request) (*http.Response, error) {
-					return intelCheckResponse(http.StatusOK, strings.Repeat("a", intelCheckResponseMaxBytes+1)), nil
-				},
-			)})
+func TestCallIntelCheckUpstream_同步响应体超过2MiB时拒绝解析(t *testing.T) {
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+		func(_ *http.Request) (*http.Response, error) {
+			return intelCheckResponse(http.StatusOK, strings.Repeat("a", intelCheckResponseMaxBytes+1)), nil
+		},
+	)})
 
-			_, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
-				BaseURL: "https://example.test",
-				APIMode: IntelCheckAPIModeResponses,
-				Model:   "gpt-test",
-				Prompt:  "请回答",
-				Stream:  stream,
-			})
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "响应体超过 2097152 字节上限")
-		})
-	}
+	_, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+		BaseURL: "https://example.test",
+		APIMode: IntelCheckAPIModeResponses,
+		Model:   "gpt-test",
+		Prompt:  "请回答",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "响应体超过 2097152 字节上限")
+}
+
+func TestCallIntelCheckUpstream_流式原始响应超过2MiB仍可解析(t *testing.T) {
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+		func(_ *http.Request) (*http.Response, error) {
+			body := "event: response.completed\n" +
+				`data: {"type":"response.completed","reasoning":"` +
+				strings.Repeat("r", intelCheckResponseMaxBytes+1) +
+				`","response":{"output":[{"type":"message","content":[{"type":"output_text","text":"<html>完成</html>"}]}],"usage":{"input_tokens":12,"output_tokens":34}}}` +
+				"\n\n"
+			return intelCheckResponse(http.StatusOK, body), nil
+		},
+	)})
+
+	reply, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+		BaseURL: "https://example.test",
+		APIMode: IntelCheckAPIModeResponses,
+		Model:   "gpt-test",
+		Prompt:  "请绘图",
+		Stream:  true,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "<html>完成</html>", reply.Text)
+	require.Equal(t, 12, *reply.InputTokens)
+	require.Equal(t, 34, *reply.OutputTokens)
+}
+
+func TestCallIntelCheckUpstream_流式最终文本超过2MiB时拒绝解析(t *testing.T) {
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+		func(_ *http.Request) (*http.Response, error) {
+			body := `data: {"type":"response.output_text.delta","delta":"` +
+				strings.Repeat("a", intelCheckResponseMaxBytes+1) + `"}` + "\n\n" +
+				`data: {"type":"response.completed","response":{"status":"completed"}}` + "\n\n"
+			return intelCheckResponse(http.StatusOK, body), nil
+		},
+	)})
+
+	_, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+		BaseURL: "https://example.test",
+		APIMode: IntelCheckAPIModeResponses,
+		Model:   "gpt-test",
+		Prompt:  "请绘图",
+		Stream:  true,
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "流式最终文本超过 2097152 字节上限")
 }
 
 func TestCallIntelCheckUpstream_成功响应回填文本耗时与usage(t *testing.T) {

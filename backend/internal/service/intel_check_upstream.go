@@ -16,11 +16,11 @@ import (
 
 // 智力检测的上游调用参数。
 const (
-	// intelCheckResponseMaxBytes 单次响应体上限。
+	// intelCheckResponseMaxBytes 同步响应体与流式最终文本的上限。
 	//
-	// 取 2 MiB 而非复用 monitorResponseMaxBytes（64 KB）：绘图题的产物是完整
-	// HTML，正常就有几百 KB，用监控那档上限会把合格答卷截成半截 JSON，
-	// 最终以「解析失败」的形式误判成降智。
+	// 流式响应不能拿这个值限制整条 SSE：Responses 会携带 reasoning 等事件，
+	// 原始传输体可能远大于最终 HTML。流式路径在读取时逐事件解析，只把这个
+	// 上限施加到最终要保存的文本上。
 	intelCheckResponseMaxBytes = 2 << 20
 
 	// intelCheckErrorBodyPreview 非 2xx 时保留的响应体片段长度。
@@ -108,19 +108,12 @@ func callIntelCheckUpstream(ctx context.Context, req intelCheckUpstreamRequest) 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, overLimit, err := readIntelCheckBody(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("读取响应失败：%w", err)
-	}
-	latencyMs := int(time.Since(startedAt).Milliseconds())
-
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		body, _, err := readIntelCheckBody(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("读取响应失败：%w", err)
+		}
 		return nil, fmt.Errorf("上游返回 %d：%s", resp.StatusCode, intelCheckBodyPreview(body))
-	}
-	// 超限单独报错而不是硬着头皮解析：截断后的 JSON 会以「解析失败」的面目出现，
-	// 那条错误信息会把排障引向完全错误的方向。
-	if overLimit {
-		return nil, fmt.Errorf("响应体超过 %d 字节上限，无法完整解析", intelCheckResponseMaxBytes)
 	}
 
 	var (
@@ -129,7 +122,7 @@ func callIntelCheckUpstream(ctx context.Context, req intelCheckUpstreamRequest) 
 		outputTokens *int
 	)
 	if req.Stream {
-		streamed, err := parseIntelCheckUpstreamStream(req.APIMode, body)
+		streamed, err := readIntelCheckUpstreamStream(req.APIMode, resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -137,18 +130,27 @@ func callIntelCheckUpstream(ctx context.Context, req intelCheckUpstreamRequest) 
 		inputTokens = streamed.InputTokens
 		outputTokens = streamed.OutputTokens
 	} else {
+		body, overLimit, err := readIntelCheckBody(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("读取响应失败：%w", err)
+		}
+		// 超限单独报错而不是硬着头皮解析：截断后的 JSON 会以「解析失败」的面目出现，
+		// 那条错误信息会把排障引向完全错误的方向。
+		if overLimit {
+			return nil, fmt.Errorf("响应体超过 %d 字节上限，无法完整解析", intelCheckResponseMaxBytes)
+		}
 		text = extractIntelCheckReplyText(req.APIMode, body)
 		if usage, ok := extractOpenAIUsageFromJSONBytes(body); ok {
 			input, output := usage.InputTokens, usage.OutputTokens
 			inputTokens, outputTokens = &input, &output
 		}
-	}
-	if strings.TrimSpace(text) == "" {
-		return nil, fmt.Errorf("上游响应中没有可用的文本内容：%s", intelCheckBodyPreview(body))
+		if strings.TrimSpace(text) == "" {
+			return nil, fmt.Errorf("上游响应中没有可用的文本内容：%s", intelCheckBodyPreview(body))
+		}
 	}
 
 	reply := &intelCheckUpstreamReply{
-		Text: text, LatencyMs: latencyMs,
+		Text: text, LatencyMs: int(time.Since(startedAt).Milliseconds()),
 		InputTokens: inputTokens, OutputTokens: outputTokens,
 	}
 	return reply, nil

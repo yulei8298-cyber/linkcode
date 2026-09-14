@@ -100,6 +100,14 @@ func (s *IntelCheckService) judgeIntelCheckDrawing(
 
 	gate := EvaluateIntelCheckGate(html, candidate, reference, rules)
 
+	// 管理员关掉了源码评审：只按结构门禁判定，压根不发起评审调用。
+	// 在这里就返回而不是把 nil review 交给下游，是为了确保"关闭"真的意味着
+	// 不产生任何评审侧的请求与失败面——否则评审模型挂了还能把本轮染成黄块。
+	if cfg.DrawingJudge.SkipReview {
+		status, detail := DecideIntelCheckDrawingGateOnly(gate)
+		return intelCheckJudgeOutcome{Status: status, HTMLOutput: html, JudgeDetail: detail}
+	}
+
 	var review *IntelCheckReviewResult
 	if gate.Pass {
 		result, err := s.reviewIntelCheckDrawing(ctx, cfg, question, judge, html, reference, candidate)

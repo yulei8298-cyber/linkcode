@@ -32,6 +32,11 @@ export interface IntelCheckDrawingJudge {
   reasoning_effort: string
   /** 评审通过分数线（1-100）。 */
   pass_score: number
+  /**
+   * 关闭第二层源码评审，绘图题只按结构门禁判定。
+   * 开启此项后无需配置评审分组与模型，且每轮省下一次评审调用。
+   */
+  skip_review?: boolean
 }
 
 export interface IntelCheckSettings {

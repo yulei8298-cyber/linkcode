@@ -203,6 +203,8 @@ export default {
       retentionDays: '明细保留天数',
 
       judge: '源码评审',
+      skipReviewHint:
+        '第二层判定：让评审模型读产物源码按清单打分。关闭后绘图题只按结构门禁判定，无需配置评审模型，每轮也省下一次评审调用；代价是放过「结构指标凑够了但实际粗糙」这类退化。',
       judgeTarget: '评审所用分组',
       judgeTargetHint: '复用该分组的上游地址与凭据，不再单独维护一套。',
       judgeModel: '评审模型名',

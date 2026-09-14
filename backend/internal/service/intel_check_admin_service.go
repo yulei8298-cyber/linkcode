@@ -142,8 +142,13 @@ func (s *IntelCheckService) EvaluateDrawingSource(
 		return nil, err
 	}
 
-	judged := s.judgeIntelCheckDrawing(
-		ctx, cfg, question, s.loadIntelCheckJudgeTarget(ctx, cfg), source)
+	// 关闭了评审就不去加载评审分组：那次加载会在未配置时打一条 Warn 日志，
+	// 而"没配"在这个模式下是正常状态，不该被记成异常。
+	var judge *IntelCheckTarget
+	if !cfg.DrawingJudge.SkipReview {
+		judge = s.loadIntelCheckJudgeTarget(ctx, cfg)
+	}
+	judged := s.judgeIntelCheckDrawing(ctx, cfg, question, judge, source)
 
 	return &IntelCheckTrialResult{
 		QuestionID:    question.ID,

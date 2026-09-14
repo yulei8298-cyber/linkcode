@@ -220,6 +220,8 @@ export default {
       retentionDays: 'Result retention (days)',
 
       judge: 'Source review',
+      skipReviewHint:
+        'The second judgment layer: a review model reads the artifact source and scores it against a rubric. Turn it off to judge drawings by the structural gate alone — no review model needed and one fewer upstream call per round, at the cost of missing degradations where the metrics are met but the work is sloppy.',
       judgeTarget: 'Review group',
       judgeTargetHint: 'Reuses that group’s base URL and credential instead of maintaining another one.',
       judgeModel: 'Review model',

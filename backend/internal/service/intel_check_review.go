@@ -196,6 +196,25 @@ func intelCheckSliceBraces(text string) string {
 //
 // 返回的 detail 直接写入 results.judge_detail，前端据此逐条展示判定依据。
 func DecideIntelCheckDrawing(gate IntelCheckGateResult, review *IntelCheckReviewResult, passScore int) (string, map[string]any) {
+	return decideIntelCheckDrawing(gate, review, passScore, false)
+}
+
+// DecideIntelCheckDrawingGateOnly 只按结构门禁判定，不要求评审结果。
+//
+// 供管理端关闭源码评审时使用（设置项 drawing_judge.skip_review）。
+// 设计文档 §5.2 的实测表明第一层门禁已能独立分开好坏样例，评审是用来抓
+// 「指标凑够了但实际粗糙」这类第一层看不出的退化——属于加强项，可以关。
+//
+// 单独开一个导出函数而不是给 DecideIntelCheckDrawing 加参数：后者已被
+// 标定测试与既有用例直接调用，加参数会牵动一批调用点，而两者的判定语义
+// 本就不同（要不要把「没有评审结果」算作失败）。
+func DecideIntelCheckDrawingGateOnly(gate IntelCheckGateResult) (string, map[string]any) {
+	return decideIntelCheckDrawing(gate, nil, 0, true)
+}
+
+func decideIntelCheckDrawing(
+	gate IntelCheckGateResult, review *IntelCheckReviewResult, passScore int, skipReview bool,
+) (string, map[string]any) {
 	if passScore <= 0 || passScore > 100 {
 		passScore = intelCheckDefaultPassScore
 	}
@@ -203,12 +222,26 @@ func DecideIntelCheckDrawing(gate IntelCheckGateResult, review *IntelCheckReview
 	detail := map[string]any{
 		"gate_pass":  gate.Pass,
 		"gate_items": gate.Items,
-		"pass_score": passScore,
+	}
+	// 关闭评审时不写 pass_score：那个数字此刻不参与任何判定，
+	// 摆在详情页上只会让读者以为还有一道分数线没达到。
+	if !skipReview {
+		detail["pass_score"] = passScore
 	}
 
 	if !gate.Pass {
-		detail["reason"] = "结构门禁未通过，未进入源码评审"
+		if skipReview {
+			detail["reason"] = "结构门禁未通过"
+		} else {
+			detail["reason"] = "结构门禁未通过，未进入源码评审"
+		}
 		return IntelCheckStatusFail, detail
+	}
+
+	if skipReview {
+		detail["review_skipped"] = true
+		detail["reason"] = "结构门禁通过（源码评审已关闭）"
+		return IntelCheckStatusPass, detail
 	}
 
 	if review == nil {

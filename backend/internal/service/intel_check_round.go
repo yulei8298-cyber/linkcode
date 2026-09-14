@@ -69,8 +69,10 @@ func (s *IntelCheckService) RunOnce(ctx context.Context, trigger string) (*Intel
 		return round, nil
 	}
 
+	// 有绘图题、且没关掉源码评审时才加载评审分组。
+	// 关掉评审后整轮不会产生任何评审侧调用，也不该为它打「未配置」的告警。
 	var judge *IntelCheckTarget
-	if drawingQ != nil {
+	if drawingQ != nil && !cfg.DrawingJudge.SkipReview {
 		judge = s.loadIntelCheckJudgeTarget(ctx, cfg)
 	}
 

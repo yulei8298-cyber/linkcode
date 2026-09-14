@@ -77,6 +77,18 @@ type IntelCheckDrawingJudge struct {
 	ReasoningEffort string `json:"reasoning_effort"`
 	// PassScore 评审通过分数线（0-100）。
 	PassScore int `json:"pass_score"`
+
+	// SkipReview 关闭第二层源码评审，只按结构门禁判定绘图题。
+	//
+	// 设计文档 §5.2 的实测结论支持这个选项：第一层门禁已能独立分开好坏样例，
+	// 评审是用来抓「指标凑够了但实际粗糙」这类第一层看不出的退化，属于加强项。
+	// 关掉它能省下每轮一次评审调用（绘图题本身已要一两分钟），代价是放过那类退化。
+	//
+	// 用「跳过」这个负向命名而不是 ReviewEnabled，是为了让 bool 零值等于既有行为：
+	// 存量设置 JSON 里没有这个字段，反序列化得到 false，即「照旧评审」。
+	// 若命名为 ReviewEnabled，零值 false 会让所有存量部署在升级后静默关掉评审，
+	// 而 Normalize 无法区分「字段缺失」与「管理员显式设为 false」。
+	SkipReview bool `json:"skip_review"`
 }
 
 // IntelCheckSettings 智力检测的全部可配置项。

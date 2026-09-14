@@ -64,10 +64,21 @@
 
       <!-- 源码评审 -->
       <section class="card space-y-4 p-5">
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-          {{ t('admin.intelCheck.settings.judge') }}
-        </h3>
-        <div class="grid gap-4 sm:grid-cols-2">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.intelCheck.settings.judge') }}
+            </h3>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.intelCheck.settings.skipReviewHint') }}
+            </p>
+          </div>
+          <!-- 开关语义是「启用评审」，存储字段是 skip_review（取反）：
+               字段用负向命名是为了让 JSON 零值等于「照旧评审」，
+               而界面上正向表述更好懂。 -->
+          <Toggle :model-value="!form.drawing_judge.skip_review" @update:model-value="setReviewEnabled" />
+        </div>
+        <div v-if="!form.drawing_judge.skip_review" class="grid gap-4 sm:grid-cols-2">
           <div>
             <label class="label">{{ t('admin.intelCheck.settings.judgeTarget') }}</label>
             <select v-model.number="form.drawing_judge.target_id" class="input">
@@ -179,9 +190,18 @@ const targets = ref<IntelCheckTarget[]>([])
 const loading = ref(false)
 const saving = ref(false)
 
-const judgeConfigured = computed(
-  () => (form.value?.drawing_judge.target_id ?? 0) > 0 && !!form.value?.drawing_judge.model?.trim(),
-)
+// 关闭评审时无需配评审模型，后端 ValidateIntelCheckSettings 同口径放行。
+const judgeConfigured = computed(() => {
+  const judge = form.value?.drawing_judge
+  if (!judge) return false
+  if (judge.skip_review) return true
+  return (judge.target_id ?? 0) > 0 && !!judge.model?.trim()
+})
+
+function setReviewEnabled(enabled: boolean) {
+  if (!form.value) return
+  form.value.drawing_judge.skip_review = !enabled
+}
 
 async function load() {
   loading.value = true
