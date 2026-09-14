@@ -3,13 +3,70 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestProbeIntelCheckOnce_绘图作答流式且评审同步并各用指定模型(t *testing.T) {
+	var requests []map[string]any
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+		func(r *http.Request) (*http.Response, error) {
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			var payload map[string]any
+			require.NoError(t, json.NewDecoder(bytes.NewReader(body)).Decode(&payload))
+			requests = append(requests, payload)
+
+			if len(requests) == 1 {
+				delta, err := json.Marshal(map[string]any{
+					"type": "response.output_text.delta", "delta": intelCheckPassingDrawing,
+				})
+				require.NoError(t, err)
+				stream := "data: " + string(delta) + "\n\n" +
+					`data: {"type":"response.completed","response":{"status":"completed","usage":{"input_tokens":100,"output_tokens":200}}}` + "\n\n"
+				response := intelCheckResponse(http.StatusOK, stream)
+				response.Header.Set("Content-Type", "text/event-stream")
+				return response, nil
+			}
+
+			return intelCheckResponse(http.StatusOK,
+				`{"output":[{"type":"message","content":[{"type":"output_text","text":"{\"score\":85,\"summary\":\"通过\",\"items\":[]}"}]}]}`), nil
+		},
+	)})
+
+	cfg := DefaultIntelCheckSettings()
+	cfg.DrawingJudge.Model = "judge-model"
+	cfg.DrawingJudge.ReasoningEffort = IntelCheckEffortMedium
+	target := &IntelCheckTarget{
+		BaseURL: "https://example.test/v1", APIKey: "target-key",
+		APIMode: IntelCheckAPIModeResponses, Model: "drawing-model",
+		ReasoningEffort: IntelCheckEffortXHigh,
+	}
+	judge := &IntelCheckTarget{
+		BaseURL: "https://example.test/v1", APIKey: "judge-key",
+		APIMode: IntelCheckAPIModeResponses,
+	}
+
+	probe := (&IntelCheckService{}).probeIntelCheckOnce(
+		context.Background(), &cfg, target, intelCheckDrawingQuestion(nil), judge,
+	)
+
+	require.Equal(t, IntelCheckStatusPass, probe.Judged.Status)
+	require.Len(t, requests, 2)
+	require.Equal(t, "drawing-model", requests[0]["model"])
+	require.Equal(t, true, requests[0]["stream"])
+	require.Equal(t, map[string]any{"effort": "xhigh"}, requests[0]["reasoning"])
+	require.Equal(t, "judge-model", requests[1]["model"])
+	require.Equal(t, false, requests[1]["stream"])
+	require.Equal(t, map[string]any{"effort": "medium"}, requests[1]["reasoning"])
+}
 
 // 受检地址刻意用回环地址：safeDialContext 对 IP 字面量走快速路径，
 // 命中私网段即刻返回错误，既不做 DNS 也不发包。这让「上游调用失败」这条分支

@@ -65,6 +65,8 @@ type intelCheckUpstreamRequest struct {
 	Model           string
 	ReasoningEffort string
 	Prompt          string
+	// Stream 只在受检模型作答时开启；源码评审返回短 JSON，继续走同步响应。
+	Stream bool
 }
 
 // intelCheckUpstreamReply 一次上游调用的产物。
@@ -76,7 +78,7 @@ type intelCheckUpstreamReply struct {
 	OutputTokens *int
 }
 
-// callIntelCheckUpstream 向受检分组发起一次非流式请求并取回文本。
+// callIntelCheckUpstream 向受检分组发起请求并取回完整文本。
 //
 // 超时完全由 ctx 决定；返回的 error 一律视为 request_error（黄色块），
 // 其文本只应写入 error_message，不得进入对外公开的 judge_detail。
@@ -92,7 +94,11 @@ func callIntelCheckUpstream(ctx context.Context, req intelCheckUpstreamRequest) 
 		return nil, fmt.Errorf("构造请求失败：%w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/json")
+	if req.Stream {
+		httpReq.Header.Set("Accept", "text/event-stream")
+	} else {
+		httpReq.Header.Set("Accept", "application/json")
+	}
 	httpReq.Header.Set("Authorization", "Bearer "+strings.TrimSpace(req.APIKey))
 
 	startedAt := time.Now()
@@ -117,24 +123,42 @@ func callIntelCheckUpstream(ctx context.Context, req intelCheckUpstreamRequest) 
 		return nil, fmt.Errorf("响应体超过 %d 字节上限，无法完整解析", intelCheckResponseMaxBytes)
 	}
 
-	text := extractIntelCheckReplyText(req.APIMode, body)
+	var (
+		text         string
+		inputTokens  *int
+		outputTokens *int
+	)
+	if req.Stream {
+		streamed, err := parseIntelCheckUpstreamStream(req.APIMode, body)
+		if err != nil {
+			return nil, err
+		}
+		text = streamed.Text
+		inputTokens = streamed.InputTokens
+		outputTokens = streamed.OutputTokens
+	} else {
+		text = extractIntelCheckReplyText(req.APIMode, body)
+		if usage, ok := extractOpenAIUsageFromJSONBytes(body); ok {
+			input, output := usage.InputTokens, usage.OutputTokens
+			inputTokens, outputTokens = &input, &output
+		}
+	}
 	if strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("上游响应中没有可用的文本内容：%s", intelCheckBodyPreview(body))
 	}
 
-	reply := &intelCheckUpstreamReply{Text: text, LatencyMs: latencyMs}
-	if usage, ok := extractOpenAIUsageFromJSONBytes(body); ok {
-		input, output := usage.InputTokens, usage.OutputTokens
-		reply.InputTokens, reply.OutputTokens = &input, &output
+	reply := &intelCheckUpstreamReply{
+		Text: text, LatencyMs: latencyMs,
+		InputTokens: inputTokens, OutputTokens: outputTokens,
 	}
 	return reply, nil
 }
 
-// buildIntelCheckUpstreamBody 按请求风格组装请求体与路径。
+// buildIntelCheckUpstreamBody 按请求风格与调用用途组装请求体与路径。
 //
 // 刻意不带 max_tokens：绘图题的完整 HTML 动辄上万 token，
 // 设上限等于把「答得太认真」变成失败。
-// 也不开 stream：本功能只要最终文本，流式解析在这里纯属额外的失败面。
+// 受检模型作答开启 stream，以复现 Codex CLI 的实际传输路径；评审请求仍为同步。
 func buildIntelCheckUpstreamBody(req intelCheckUpstreamRequest) ([]byte, string, error) {
 	model := strings.TrimSpace(req.Model)
 	if model == "" {
@@ -155,7 +179,10 @@ func buildIntelCheckUpstreamBody(req intelCheckUpstreamRequest) ([]byte, string,
 			"model":            model,
 			"messages":         []map[string]string{{"role": "user", "content": req.Prompt}},
 			"reasoning_effort": effort,
-			"stream":           false,
+			"stream":           req.Stream,
+		}
+		if req.Stream {
+			body["stream_options"] = map[string]bool{"include_usage": true}
 		}
 	} else {
 		path = intelCheckPathResponses
@@ -163,7 +190,7 @@ func buildIntelCheckUpstreamBody(req intelCheckUpstreamRequest) ([]byte, string,
 			"model":     model,
 			"input":     req.Prompt,
 			"reasoning": map[string]string{"effort": effort},
-			"stream":    false,
+			"stream":    req.Stream,
 		}
 	}
 

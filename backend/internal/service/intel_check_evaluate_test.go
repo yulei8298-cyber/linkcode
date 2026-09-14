@@ -88,6 +88,19 @@ func TestJudgeIntelCheckLogic_答错记失败(t *testing.T) {
 	require.Equal(t, false, outcome.JudgeDetail["matched"])
 }
 
+func TestJudgeIntelCheckLogic_盒装结论覆盖加粗反证句(t *testing.T) {
+	question := &IntelCheckQuestion{
+		Kind: IntelCheckKindLogic, ExpectedAnswer: "21", MatchMode: IntelCheckMatchExact,
+	}
+	reply := "**再证明20颗不能保证成功。**\n最终所求为 \\boxed{21\\text{颗}}。"
+
+	outcome := judgeIntelCheckLogic(question, reply)
+
+	require.Equal(t, IntelCheckStatusPass, outcome.Status)
+	require.Equal(t, "21", outcome.ExtractedAnswer)
+	require.Equal(t, true, outcome.JudgeDetail["matched"])
+}
+
 func TestJudgeIntelCheckLogic_非法正则记请求失败而非失败(t *testing.T) {
 	question := &IntelCheckQuestion{
 		Kind: IntelCheckKindLogic, ExpectedAnswer: "答案[", MatchMode: IntelCheckMatchRegex,

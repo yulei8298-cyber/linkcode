@@ -30,6 +30,33 @@ func TestExtractIntelCheckAnswer(t *testing.T) {
 			expected: "21",
 		},
 		{
+			name: "盒装结论优先于前面的加粗反证句",
+			reply: "这颗圆形糖果总能与另一种口味配对，所以 21 颗足够。\n\n" +
+				"**再证明20颗不能保证成功。**\n\n" +
+				"因此，所求最小数目为\n\\[\n\\boxed{21\\text{颗}}。\n\\]",
+			expected: "21",
+		},
+		{
+			name:     "多个盒装结论取最后一个",
+			reply:    `初算为 \boxed{20}，复核后为 \fbox{21}`,
+			expected: "21",
+		},
+		{
+			name:     "盒装文本答案展开嵌套LaTeX样式",
+			reply:    `最终选择 \boxed{\mathbf{\text{蓝色}}}`,
+			expected: "蓝色",
+		},
+		{
+			name:     "代码块里的盒装内容不参与提取",
+			reply:    "```latex\n\\boxed{99}\n```\n最终答案：21",
+			expected: "21",
+		},
+		{
+			name:     "未闭合盒装内容回退到既有规则",
+			reply:    `推理中写了 \boxed{20，最终结论是 **21**`,
+			expected: "21",
+		},
+		{
 			name:     "无作答句式时取最后一处加粗",
 			reply:    "推理过程略。\n结论如下：**42**",
 			expected: "42",

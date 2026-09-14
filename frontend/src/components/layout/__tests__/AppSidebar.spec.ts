@@ -42,7 +42,7 @@ describe('AppSidebar 智力检测入口', () => {
     expect(intelCheckIndex).toBeGreaterThan(modelPlazaIndex)
     expect(intelCheckIndex).toBeLessThan(infiniteCanvasIndex)
     expect(componentSource).toContain(
-      "{ path: '/portal/intel-check', label: t('nav.intelCheck'), icon: SignalIcon, featureFlag: flagIntelCheck }",
+      "{ path: '/portal/intel-check', query: { embedded: '1' }, label: t('nav.intelCheck'), icon: SignalIcon, featureFlag: flagIntelCheck }",
     )
   })
 })

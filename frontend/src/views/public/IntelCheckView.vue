@@ -1,6 +1,15 @@
 <template>
-  <PortalLayout>
-    <section class="lc-page-head">
+  <!--
+    双形态，沿用 ModelPlazaView 的既有模式：
+      ?embedded=1 且已登录 → 套后台布局，用户从控制台侧边栏进来时留在控制台内；
+      否则                  → 独立门户页，未登录访客直达（本功能的主场景）。
+    未登录时即便带了 embedded=1 也降级为门户形态，否则转发出去的链接会渲染出
+    一个没有登录态的空后台骨架。
+  -->
+  <component :is="isEmbedded ? AppLayout : PortalLayout">
+    <!-- 门户形态的大标题。后台形态下不渲染：那句「首页 /」面包屑在控制台里
+         指向站外，而页面标题已由后台布局的页头承担。 -->
+    <section v-if="!isEmbedded" class="lc-page-head">
       <div class="lc-wrap lc-page-head-inner">
         <div class="lc-crumb"><RouterLink to="/home">首页</RouterLink> / 模型智力检测</div>
         <h1 class="lc-page-title">模型<span>智力检测</span></h1>
@@ -8,7 +17,12 @@
       </div>
     </section>
 
-    <div class="lc-wrap">
+    <div class="lc-wrap" :class="{ 'lc-ic-embedded': isEmbedded }">
+      <!-- 后台形态下补一张说明卡，替代上面那段门户大标题 -->
+      <div v-if="isEmbedded" class="lc-card lc-ic-embedded-head">
+        <h1>模型智力检测</h1>
+        <p>{{ introText }}</p>
+      </div>
       <!-- 汇总条：24h 通过率 + 上次/下次检测。数据未加载完时不显示，
            避免先渲染一组 0 再跳到真实值。 -->
       <div v-if="overview" class="lc-card lc-ic-hero">
@@ -74,17 +88,19 @@
     </div>
 
     <IntelCheckResultDialog :show="showDetail" :result-id="detailResultId" @close="closeDetail" />
-  </PortalLayout>
+  </component>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import PortalLayout from './components/PortalLayout.vue'
+import AppLayout from '@/components/layout/AppLayout.vue'
 import IntelCheckGroupCard from './components/IntelCheckGroupCard.vue'
 import IntelCheckResultDialog from './components/IntelCheckResultDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { getIntelCheckOverview, type IntelCheckOverview } from '@/api/intelCheck'
@@ -94,7 +110,14 @@ const DEFAULT_INTRO_TEXT =
   '我们会定期用与 Codex CLI 完全一致的请求方式，向下列分组各发一道逻辑题和一道绘图题，' +
   '并把每一次的原始回复与判定过程如实公开。点击任意色块可查看那一次的完整细节。'
 
+const route = useRoute()
 const appStore = useAppStore()
+const authStore = useAuthStore()
+
+// 与 ModelPlazaView 同一判定：embedded=1 但未登录（例如链接被转发出去）
+// 自动降级为门户形态，不去渲染一个没有登录态的后台骨架。
+const isEmbedded = computed(() => route.query.embedded === '1' && authStore.isAuthenticated)
+
 const overview = ref<IntelCheckOverview | null>(null)
 const loading = ref(false)
 /** 后端返回 404（功能未开启）时置位，与「开着但没有分组」区分开。 */
@@ -182,6 +205,32 @@ onBeforeUnmount(() => abortController?.abort())
 </script>
 
 <style scoped>
+/* 后台形态：lc-wrap 自带门户页的最大宽度与左右留白，嵌进控制台内容区后
+   会在已有的内边距里再缩一层，看着像没对齐。这里让它撑满。 */
+.lc-ic-embedded {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.lc-ic-embedded-head {
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.lc-ic-embedded-head h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.lc-ic-embedded-head p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.72;
+}
+
 .lc-ic-hero {
   display: flex;
   flex-wrap: wrap;

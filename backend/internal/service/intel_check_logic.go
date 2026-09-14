@@ -11,6 +11,13 @@ import (
 var (
 	// 去掉代码块，避免把推理过程里的片段当成答案。
 	intelCheckFenceRe = regexp.MustCompile("(?s)```.*?```")
+	// LaTeX 盒装结论中的常见文本/样式命令。真正的花括号配对由解析器处理，
+	// 这里仅负责把已经取出的内容还原成便于比较的可见文本。
+	intelCheckLatexTextCommandRe = regexp.MustCompile(`\\(?:text|textrm|textnormal|mathrm|mathbf|mathit|operatorname)\s*\{([^{}]*)\}`)
+	intelCheckLatexSpacingRe     = regexp.MustCompile(`\\(?:,|;|:|!|quad|qquad)\s*`)
+	// 盒装结论为「数值 + 单位」时只取数值。盒装本身已经明确标记最终答案，
+	// 单位不应让标准答案 21 与 \boxed{21\text{颗}} 判成不相等。
+	intelCheckBoxedNumberWithUnitRe = regexp.MustCompile(`^(-?\d+(?:\.\d+)?)\s*\p{L}+$`)
 	// 「最终答案：X」这类显式作答句式，信号最强。
 	intelCheckAnswerPhraseRe = regexp.MustCompile(`(?i)(?:最终答案|正确答案|答案是|答案为|答案|final answer|answer)\s*(?:是|为|[:：=])?\s*([^\n。！？；;]{1,200})`)
 	// Markdown 加粗片段，模型常用来强调结论。
@@ -26,14 +33,17 @@ const intelCheckNumericEpsilon = 1e-9
 
 // ExtractIntelCheckAnswer 从模型回复中提取答案。
 //
-// 按信号强度依次尝试：显式作答句式 → 最后一处加粗片段 → 最后一个非空行。
-// 三者都取「最后一次出现」，因为模型常先给推理再复述结论。
+// 按信号强度依次尝试：LaTeX 盒装结论 → 显式作答句式 → 最后一处加粗片段
+// → 最后一个非空行。四者都取「最后一次出现」，因为模型常先给推理再复述结论。
 func ExtractIntelCheckAnswer(reply string) string {
 	text := strings.TrimSpace(intelCheckFenceRe.ReplaceAllString(reply, "\n"))
 	if text == "" {
 		return ""
 	}
 
+	if candidate := intelCheckLastBoxedAnswer(text); candidate != "" {
+		return candidate
+	}
 	if candidate := intelCheckLastCapture(intelCheckAnswerPhraseRe, text); candidate != "" {
 		return candidate
 	}
@@ -48,6 +58,83 @@ func ExtractIntelCheckAnswer(reply string) string {
 		}
 	}
 	return ""
+}
+
+// intelCheckLastBoxedAnswer 提取最后一个有效的 \boxed{...} / \fbox{...}。
+//
+// 不用正则直接匹配内容，因为模型常输出 \boxed{21\text{颗}} 这类嵌套花括号；
+// Go 正则不支持递归匹配，简单的 `[^}]+` 会在 \text 的右括号处提前截断。
+func intelCheckLastBoxedAnswer(text string) string {
+	const maxBoxedAnswerBytes = 1000
+	tokens := []string{`\boxed{`, `\fbox{`}
+	lastStart := -1
+	lastAnswer := ""
+
+	for _, token := range tokens {
+		for offset := 0; offset < len(text); {
+			relative := strings.Index(text[offset:], token)
+			if relative < 0 {
+				break
+			}
+			start := offset + relative
+			contentStart := start + len(token)
+			content, end, ok := intelCheckBalancedBraceContent(text, contentStart, maxBoxedAnswerBytes)
+			if ok {
+				if candidate := normalizeIntelCheckBoxedAnswer(content); candidate != "" && start > lastStart {
+					lastStart = start
+					lastAnswer = candidate
+				}
+				offset = end
+				continue
+			}
+			offset = contentStart
+		}
+	}
+
+	return lastAnswer
+}
+
+// intelCheckBalancedBraceContent 从起始花括号后一字节开始读取，直到与它配对
+// 的右花括号。转义花括号不参与层级计数，避免 `\{` / `\}` 扰乱边界。
+func intelCheckBalancedBraceContent(text string, contentStart, maxBytes int) (string, int, bool) {
+	depth := 1
+	for index := contentStart; index < len(text); index++ {
+		if index-contentStart > maxBytes {
+			return "", contentStart, false
+		}
+		switch text[index] {
+		case '\\':
+			if index+1 < len(text) && (text[index+1] == '{' || text[index+1] == '}') {
+				index++
+			}
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return text[contentStart:index], index + 1, true
+			}
+		}
+	}
+	return "", contentStart, false
+}
+
+func normalizeIntelCheckBoxedAnswer(answer string) string {
+	answer = strings.TrimSpace(answer)
+	// 连续处理几轮，使 \mathbf{\text{蓝色}} 这类简单嵌套样式也能展开。
+	for range 8 {
+		next := intelCheckLatexTextCommandRe.ReplaceAllString(answer, "$1")
+		if next == answer {
+			break
+		}
+		answer = next
+	}
+	answer = intelCheckLatexSpacingRe.ReplaceAllString(answer, " ")
+	answer = strings.Trim(answer, intelCheckTrimCutset)
+	if match := intelCheckBoxedNumberWithUnitRe.FindStringSubmatch(answer); len(match) == 2 {
+		return match[1]
+	}
+	return answer
 }
 
 // MatchIntelCheckAnswer 按匹配模式判定答案是否正确。

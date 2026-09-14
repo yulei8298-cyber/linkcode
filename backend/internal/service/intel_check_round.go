@@ -298,6 +298,9 @@ func (s *IntelCheckService) probeIntelCheckOnce(
 		Model:           target.Model,
 		ReasoningEffort: target.ReasoningEffort,
 		Prompt:          question.Prompt,
+		// 逻辑题与绘图题都在验证受检模型，使用与 Codex CLI 一致的流式路径。
+		// 必须等完整终止事件后再判题，解析器不会把半截输出当结论。
+		Stream: true,
 	})
 	if err != nil {
 		return intelCheckProbe{Judged: intelCheckJudgeOutcome{

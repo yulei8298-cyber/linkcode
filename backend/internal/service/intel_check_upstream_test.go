@@ -38,6 +38,7 @@ func TestBuildIntelCheckUpstreamBody_按协议生成请求体(t *testing.T) {
 	tests := []struct {
 		name      string
 		mode      string
+		stream    bool
 		wantPath  string
 		checkBody func(t *testing.T, body map[string]any)
 	}{
@@ -73,6 +74,26 @@ func TestBuildIntelCheckUpstreamBody_按协议生成请求体(t *testing.T) {
 				require.NotContains(t, body, "input")
 			},
 		},
+		{
+			name:     "responses stream",
+			mode:     IntelCheckAPIModeResponses,
+			stream:   true,
+			wantPath: intelCheckPathResponses,
+			checkBody: func(t *testing.T, body map[string]any) {
+				require.Equal(t, true, body["stream"])
+				require.NotContains(t, body, "stream_options")
+			},
+		},
+		{
+			name:     "chat completions stream",
+			mode:     IntelCheckAPIModeChatCompletions,
+			stream:   true,
+			wantPath: intelCheckPathChatCompletions,
+			checkBody: func(t *testing.T, body map[string]any) {
+				require.Equal(t, true, body["stream"])
+				require.Equal(t, map[string]any{"include_usage": true}, body["stream_options"])
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -82,6 +103,7 @@ func TestBuildIntelCheckUpstreamBody_按协议生成请求体(t *testing.T) {
 				Model:           " gpt-test ",
 				ReasoningEffort: "xhigh",
 				Prompt:          "请回答",
+				Stream:          tt.stream,
 			})
 			require.NoError(t, err)
 			require.Equal(t, tt.wantPath, path)
@@ -89,6 +111,129 @@ func TestBuildIntelCheckUpstreamBody_按协议生成请求体(t *testing.T) {
 			var body map[string]any
 			require.NoError(t, json.Unmarshal(payload, &body))
 			tt.checkBody(t, body)
+		})
+	}
+}
+
+func TestCallIntelCheckUpstream_Responses流式兼容Event类型与Done文本(t *testing.T) {
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+		func(_ *http.Request) (*http.Response, error) {
+			body := "event: response.output_text.done\n" +
+				`data: {"text":"最终答案：21"}` + "\n\n" +
+				"event: response.completed\n" +
+				`data: {"response":{"status":"completed"}}` + "\n\n"
+			return intelCheckResponse(http.StatusOK, body), nil
+		},
+	)})
+
+	reply, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+		BaseURL: "https://example.test/v1", APIMode: IntelCheckAPIModeResponses,
+		Model: "gpt-test", Prompt: "请回答", Stream: true,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "最终答案：21", reply.Text)
+}
+
+func TestCallIntelCheckUpstream_流内错误事件拒绝部分文本(t *testing.T) {
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+		func(_ *http.Request) (*http.Response, error) {
+			body := `data: {"type":"response.output_text.delta","delta":"21"}` + "\n\n" +
+				"event: error\n" + `data: {"message":"upstream interrupted"}` + "\n\n"
+			return intelCheckResponse(http.StatusOK, body), nil
+		},
+	)})
+
+	_, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+		BaseURL: "https://example.test/v1", APIMode: IntelCheckAPIModeResponses,
+		Model: "gpt-test", Prompt: "请回答", Stream: true,
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "upstream interrupted")
+}
+
+func TestCallIntelCheckUpstream_Responses流式拼接文本并回填Usage(t *testing.T) {
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+		func(r *http.Request) (*http.Response, error) {
+			require.Equal(t, "text/event-stream", r.Header.Get("Accept"))
+			body := strings.Join([]string{
+				"event: response.output_text.delta\n" +
+					`data: {"type":"response.output_text.delta","delta":"最终答案："}`,
+				`data: {"type":"response.output_text.delta","delta":"21"}`,
+				"event: response.completed\n" +
+					`data: {"type":"response.completed","response":{"status":"completed","usage":{"input_tokens":12,"output_tokens":34}}}`,
+				`data: [DONE]`,
+			}, "\n\n") + "\n\n"
+			response := intelCheckResponse(http.StatusOK, body)
+			response.Header.Set("Content-Type", "text/event-stream")
+			return response, nil
+		},
+	)})
+
+	reply, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+		BaseURL: "https://example.test/v1", APIMode: IntelCheckAPIModeResponses,
+		Model: "gpt-test", Prompt: "请回答", Stream: true,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "最终答案：21", reply.Text)
+	require.Equal(t, 12, *reply.InputTokens)
+	require.Equal(t, 34, *reply.OutputTokens)
+}
+
+func TestCallIntelCheckUpstream_Chat流式拼接文本并回填Usage(t *testing.T) {
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+		func(r *http.Request) (*http.Response, error) {
+			body := strings.Join([]string{
+				`data: {"choices":[{"delta":{"content":"答案是 "}}]}`,
+				`data: {"choices":[{"delta":{"content":"蓝色"}}]}`,
+				`data: {"choices":[],"usage":{"prompt_tokens":8,"completion_tokens":3}}`,
+				`data: [DONE]`,
+			}, "\n\n") + "\n\n"
+			response := intelCheckResponse(http.StatusOK, body)
+			response.Header.Set("Content-Type", "text/event-stream")
+			return response, nil
+		},
+	)})
+
+	reply, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+		BaseURL: "https://example.test/v1", APIMode: IntelCheckAPIModeChatCompletions,
+		Model: "gpt-test", Prompt: "请回答", Stream: true,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "答案是 蓝色", reply.Text)
+	require.Equal(t, 8, *reply.InputTokens)
+	require.Equal(t, 3, *reply.OutputTokens)
+}
+
+func TestCallIntelCheckUpstream_流未完整结束时拒绝半截答案(t *testing.T) {
+	tests := []struct {
+		name string
+		mode string
+		body string
+	}{
+		{
+			name: "responses缺completed", mode: IntelCheckAPIModeResponses,
+			body: `data: {"type":"response.output_text.delta","delta":"21"}\n\n`,
+		},
+		{
+			name: "chat缺DONE", mode: IntelCheckAPIModeChatCompletions,
+			body: `data: {"choices":[{"delta":{"content":"21"}}]}\n\n`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+				func(_ *http.Request) (*http.Response, error) {
+					return intelCheckResponse(http.StatusOK, strings.ReplaceAll(tt.body, `\n`, "\n")), nil
+				},
+			)})
+
+			_, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+				BaseURL: "https://example.test/v1", APIMode: tt.mode,
+				Model: "gpt-test", Prompt: "请回答", Stream: true,
+			})
+			require.Error(t, err)
+			require.Contains(t, err.Error(), "结束")
 		})
 	}
 }
@@ -114,20 +259,29 @@ func TestCallIntelCheckUpstream_非2xx只保留截断预览(t *testing.T) {
 }
 
 func TestCallIntelCheckUpstream_响应体超过2MiB时拒绝解析(t *testing.T) {
-	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
-		func(_ *http.Request) (*http.Response, error) {
-			return intelCheckResponse(http.StatusOK, strings.Repeat("a", intelCheckResponseMaxBytes+1)), nil
-		},
-	)})
+	for _, stream := range []bool{false, true} {
+		name := "同步"
+		if stream {
+			name = "流式"
+		}
+		t.Run(name, func(t *testing.T) {
+			withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
+				func(_ *http.Request) (*http.Response, error) {
+					return intelCheckResponse(http.StatusOK, strings.Repeat("a", intelCheckResponseMaxBytes+1)), nil
+				},
+			)})
 
-	_, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
-		BaseURL: "https://example.test",
-		APIMode: IntelCheckAPIModeResponses,
-		Model:   "gpt-test",
-		Prompt:  "请回答",
-	})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "响应体超过 2097152 字节上限")
+			_, err := callIntelCheckUpstream(context.Background(), intelCheckUpstreamRequest{
+				BaseURL: "https://example.test",
+				APIMode: IntelCheckAPIModeResponses,
+				Model:   "gpt-test",
+				Prompt:  "请回答",
+				Stream:  stream,
+			})
+			require.Error(t, err)
+			require.Contains(t, err.Error(), "响应体超过 2097152 字节上限")
+		})
+	}
 }
 
 func TestCallIntelCheckUpstream_成功响应回填文本耗时与usage(t *testing.T) {
