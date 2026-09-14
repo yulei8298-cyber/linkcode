@@ -7,18 +7,17 @@
       等于完全解除沙箱（浏览器会给出与无沙箱一致的权限），届时这段由模型生成、
       我们无法预先审阅的代码就能读取父页面、cookie 与登录态。
 
-      为什么必须允许脚本：产物的动画机制包括 requestAnimationFrame、
-      pauseAnimations() 这类纯 JS 实现，禁用脚本会让一部分合格产物在预览里
-      变成静止图片，而"能不能动"正是判定要点之一。
+      为什么必须允许脚本：产物的动画机制包括 requestAnimationFrame 驱动的
+      逆向运动学（观察到的样例用它实时求解膝关节位置），禁用脚本会让一部分
+      合格产物在预览里变成静止图片，而"能不能动"正是判定要点之一。
 
-      ⚠️ 服务端已不再清洗产物（见后端 SanitizeIntelCheckDrawing 的注释：
-      清洗会改写 SVG 的自闭合写法与属性大小写，让动画悄悄失效，
-      而这张页面的全部价值就在于如实展示模型画了什么）。
+      ⚠️ 服务端已不再清洗产物（见后端 SanitizeIntelCheckDrawing 的注释）。
       因此**这个 sandbox 属性现在是唯一的防护层**，不是"三层之一"。
       任何人想往里加 allow-same-origin，请先去后端那段注释里看清代价。
     -->
     <iframe
       v-if="html"
+      ref="frame"
       :srcdoc="html"
       sandbox="allow-scripts"
       referrerpolicy="no-referrer"
@@ -51,43 +50,45 @@ const props = withDefaults(
 )
 
 /**
- * 产物是一份完整网页，按桌面视口写的（常见 900–1200px 宽，且多半带
- * `min-height:100vh` 与固定 aspect-ratio）。直接塞进一个几百像素的框里，
- * 它会按框的宽度铺开、再按自己的比例算高度，结果高出容器、下半截被裁掉——
- * 表现出来就是"画得不对/动画不对"，而其实产物本身是好的。
+ * 预览用「宽视口 + 等比缩放」呈现，有两处坑是踩过才知道的：
  *
- * 所以按缩略图的通行做法：让 iframe 以固定的逻辑尺寸渲染（等于给它一个
- * 桌面视口），再整体缩放到容器里。这样看到的是完整构图，比例也与
- * 用户自己打开这份 HTML 时一致。
+ * 1. **不能只给 iframe 一个窄宽度**。产物普遍带响应式分支
+ *    （观察到的样例写着 `matchMedia("(max-width: 600px)")`，窄屏时会把
+ *    viewBox 裁成中间特写）。iframe 内部视口若落进窄屏区间，我们看到的
+ *    就不是作品本身，而是它的移动端裁切版。故逻辑宽度固定在桌面区间。
  *
- * 逻辑高度取 720 而非 600：产物常把画面包在标题栏 + 页脚里（观察到的样例
- * 就带页头标题与底部按钮条），600 会把页脚挤出视口。宁可上下留白，
- * 也不要裁掉内容——裁掉的那部分往往正是"有没有做完"的证据。
+ * 2. **不能用 transform: scale() 缩放 iframe**。产物的动画常靠脚本实时改写
+ *    `<defs>` 里 path 的 `d` 属性、再由 `<use>` 引用渲染（逆向运动学求解
+ *    膝关节就是这么做的）。iframe 一旦进入被 scale 的合成层，Chrome 对
+ *    shadow DOM 内 `d` 属性变更的重绘会漏帧——表现为「脚在动、腿不动」，
+ *    也就是"脚不踩单车"。而同一份产物单独打开却完全正常。
+ *
+ * 所以改用 CSS `zoom`：它参与布局而非合成变换，不会把 iframe 推进独立的
+ * 合成层，因此上述重绘问题不出现；视觉效果与 scale 等价。
+ * Chrome/Safari 长期支持，Firefox 126+ 起标准化支持，旧版 Firefox 上退化为
+ * 不缩放（画面被容器裁切，仍可读），不影响判定。
  */
-const LOGICAL_WIDTH = 1000
-const LOGICAL_HEIGHT = 720
+const LOGICAL_WIDTH = 1100
 
 const wrapper = ref<HTMLElement | null>(null)
-const scale = ref(1)
+const zoom = ref(1)
 let observer: ResizeObserver | null = null
 
 function measure() {
   const width = wrapper.value?.clientWidth ?? 0
   if (width <= 0) return
-  // 宽高都要放得下，取较小的那个比例，避免某一边溢出。
-  scale.value = Math.min(width / LOGICAL_WIDTH, props.height / LOGICAL_HEIGHT)
+  // 只按宽度算：高度方向由容器 overflow 裁切。产物的页高不可预知
+  // （有的带页头页脚、有的 100vh），按高度缩放会让不同产物的画面大小不一致，
+  // 横向对比时反而更难看出差别。
+  zoom.value = Math.min(1, width / LOGICAL_WIDTH)
 }
 
 const frameStyle = computed(() => ({
   width: `${LOGICAL_WIDTH}px`,
-  height: `${LOGICAL_HEIGHT}px`,
-  transform: `scale(${scale.value})`,
-  // 缩放后按容器居中：translate 的百分比是相对元素自身的，
-  // 所以先移到中心再缩放（transform 从右往左生效）。
-  left: '50%',
-  top: '50%',
-  marginLeft: `${-LOGICAL_WIDTH / 2}px`,
-  marginTop: `${-LOGICAL_HEIGHT / 2}px`,
+  // 高度按缩放反推，让 iframe 缩放后正好填满容器高度，
+  // 使产物内部的 100vh 布局拿到一个合理的视口高度。
+  height: `${Math.round(props.height / zoom.value)}px`,
+  zoom: zoom.value,
 }))
 
 onMounted(() => {
@@ -115,10 +116,8 @@ onBeforeUnmount(() => {
 }
 
 .ic-artwork-frame {
-  position: absolute;
   display: block;
   border: 0;
-  transform-origin: center center;
 }
 
 .ic-artwork-empty {

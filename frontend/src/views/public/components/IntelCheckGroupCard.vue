@@ -284,6 +284,8 @@ watch(
   white-space: nowrap;
 }
 
+/* overflow:hidden 同时承担两件事：裁掉圆角外的内容，
+   以及裁掉 iframe 超出容器的高度（预览按宽度等比缩放，高度方向靠裁切）。 */
 .ic-frame {
   position: relative;
   border-radius: 16px;
