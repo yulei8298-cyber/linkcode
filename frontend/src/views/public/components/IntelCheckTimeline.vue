@@ -1,33 +1,63 @@
 <template>
-  <div class="lc-ic-timeline-row">
-    <div class="lc-ic-timeline-head">
-      <small>{{ label }}</small>
-      <b>{{ passRate }}</b>
+  <div class="ic-test">
+    <div class="ic-thead">
+      <b>
+        <span class="ic-kind-ico">{{ kind === 'drawing' ? '🎨' : '◻' }}</span>
+        {{ label }}
+      </b>
+      <span v-if="latest" class="ic-last" :class="{ f: latest.status === 'fail' }">
+        ● <b>{{ statusLabel(latest.status) }}</b> · {{ formatRelative(latest.checked_at) }}
+      </span>
     </div>
-    <div class="lc-ic-timeline" role="list" :aria-label="`${label}检测历史`">
-      <button
+
+    <div class="ic-stats">
+      <span class="ic-big" :class="{ f: lowPassRate }">
+        {{ formatPassRate(stats?.pass_rate, stats?.has_data) }}
+      </span>
+      <span v-if="stats?.has_data">
+        {{ stats.pass }}/{{ stats.pass + stats.fail }} {{ kind === 'drawing' ? '画出' : '答对' }}
+      </span>
+      <span v-if="stats?.error" class="ic-warn">{{ stats.error }} 次请求失败</span>
+      <span v-if="avgLatency != null">平均 {{ formatLatency(avgLatency) }}</span>
+    </div>
+
+    <div class="ic-tl" :style="{ gridTemplateColumns: `repeat(${size}, 1fr)` }" role="list">
+      <i
         v-for="(point, index) in cells"
         :key="point ? point.result_id : `empty-${index}`"
-        type="button"
         role="listitem"
-        class="lc-ic-cell"
-        :class="statusClass(point?.status)"
-        :disabled="!point"
+        :class="[statusClass(point?.status), { clickable: !!point }]"
         :title="timelineTitle(point)"
-        :aria-label="timelineTitle(point)"
         @click="point && emit('select', point.result_id)"
-      ></button>
+      ></i>
+    </div>
+
+    <div class="ic-tlax">
+      <span>{{ startLabel || '—' }}</span>
+      <span>现在</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { IntelCheckStats, IntelCheckTimelinePoint } from '@/api/intelCheck'
-import { formatPassRate, padTimeline, statusClass, timelineTitle } from './intelCheckFormat'
+import type { IntelCheckKind, IntelCheckStats, IntelCheckTimelinePoint } from '@/api/intelCheck'
+import {
+  averageLatency,
+  formatLatency,
+  formatPassRate,
+  formatRelative,
+  latestPoint,
+  padTimeline,
+  statusClass,
+  statusLabel,
+  timelineStart,
+  timelineTitle,
+} from './intelCheckFormat'
 
 const props = defineProps<{
   label: string
+  kind: IntelCheckKind
   points: IntelCheckTimelinePoint[]
   /** 固定格数，由后端 timeline_points 决定（默认 48）。 */
   size: number
@@ -40,99 +70,147 @@ const emit = defineEmits<{
 
 // 补齐到固定格数，缺的填在左侧（较旧的一端），保证各分组最右一格是同一时刻。
 const cells = computed(() => padTimeline(props.points, props.size))
-const passRate = computed(() => formatPassRate(props.stats?.pass_rate, props.stats?.has_data))
+const latest = computed(() => latestPoint(props.points))
+const avgLatency = computed(() => averageLatency(props.points))
+const startLabel = computed(() => timelineStart(props.points))
+
+// 低于 60% 时大数字转红：这条线是「一眼看出这组不对劲」的主要依据，
+// 光靠色块密度读者要数半天。
+const lowPassRate = computed(
+  () => !!props.stats?.has_data && (props.stats.pass_rate ?? 1) < 0.6,
+)
 </script>
 
 <style scoped>
-.lc-ic-timeline-row + .lc-ic-timeline-row {
-  margin-top: 14px;
+.ic-test + .ic-test {
+  margin-top: 22px;
 }
 
-.lc-ic-timeline-head {
+.ic-thead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.ic-thead > b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--ic-text);
+}
+
+.ic-kind-ico {
+  font-size: 15px;
+}
+
+.ic-last {
+  font-size: 13px;
+  color: var(--ic-muted);
+  white-space: nowrap;
+}
+
+.ic-last b {
+  color: var(--ic-ok);
+  font-weight: 600;
+}
+
+.ic-last.f b {
+  color: var(--ic-fail);
+}
+
+.ic-stats {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.lc-ic-timeline-head small {
-  font-size: 12px;
-  opacity: 0.72;
-}
-
-.lc-ic-timeline-head b {
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 8px;
   font-size: 13px;
+  color: var(--ic-muted);
+}
+
+.ic-big {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--ic-accent);
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
-.lc-ic-timeline {
-  display: flex;
-  gap: 2px;
-  align-items: stretch;
+.ic-big.f {
+  color: var(--ic-fail);
 }
 
-.lc-ic-cell {
-  flex: 1 1 0;
-  /* 下限 3px：格子数由管理员配置（最多 200），窄屏上不设下限会压成看不见的细线 */
-  min-width: 3px;
-  height: 26px;
-  border: 0;
-  border-radius: 2px;
-  padding: 0;
+.ic-warn {
+  color: var(--ic-warn-text);
+}
+
+/* 等分网格而非 flex：格数由管理员配置（12–200），网格能保证任意格数下
+   总宽度恒等于容器宽度，各分组的色块因此严格上下对齐——
+   「同题同刻横向对比」靠的就是这个对齐。 */
+.ic-tl {
+  display: grid;
+  gap: 4px;
+  height: 38px;
+}
+
+.ic-tl i {
+  border-radius: 5px;
+  background: var(--ic-ok);
+  transition: transform 0.1s ease;
+}
+
+.ic-tl i.clickable {
   cursor: pointer;
-  background: #22c55e;
-  transition: transform 0.12s ease, filter 0.12s ease;
 }
 
-.lc-ic-cell:hover:not(:disabled),
-.lc-ic-cell:focus-visible {
-  transform: scaleY(1.18);
-  filter: brightness(1.12);
-  outline: none;
+.ic-tl i.clickable:hover {
+  transform: scaleY(1.15);
 }
 
-.lc-ic-cell.bad {
-  background: #ef4444;
+.ic-tl i.bad {
+  background: var(--ic-fail);
 }
 
-/* 请求失败用黄色，与红色的「未通过」严格区分：
-   前者是我们这侧的链路问题，后者才是对受检模型的指控。 */
-.lc-ic-cell.degraded {
-  background: #f59e0b;
+/* 请求失败用琥珀色，与红色的「未通过」严格区分：
+   前者是我们这侧的链路故障，后者才是对受检模型的指控。 */
+.ic-tl i.degraded {
+  background: var(--ic-req);
 }
 
-.lc-ic-cell.running {
-  background: #7dd3fc;
-  animation: lc-ic-pulse 1.4s ease-in-out infinite;
+.ic-tl i.running {
+  background: var(--ic-run);
+  animation: ic-pulse 1.4s ease-in-out infinite;
 }
 
-.lc-ic-cell.unknown {
-  background: rgba(148, 163, 184, 0.32);
+.ic-tl i.unknown {
+  background: var(--ic-none);
 }
 
-/* 无数据的占位格不可点，也不做悬浮反馈——它背后没有任何明细可看 */
-.lc-ic-cell:disabled {
-  cursor: default;
-}
-
-@keyframes lc-ic-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
+@keyframes ic-pulse {
   50% {
-    opacity: 0.45;
+    opacity: 0.5;
   }
 }
 
-/* 尊重系统的减少动效偏好：这个脉冲是装饰性的，不承载信息 */
 @media (prefers-reduced-motion: reduce) {
-  .lc-ic-cell.running {
+  .ic-tl i.running {
     animation: none;
   }
-  .lc-ic-cell:hover:not(:disabled),
-  .lc-ic-cell:focus-visible {
+  .ic-tl i.clickable:hover {
     transform: none;
   }
+}
+
+.ic-tlax {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--ic-faint);
 }
 </style>

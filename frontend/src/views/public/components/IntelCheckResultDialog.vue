@@ -344,12 +344,21 @@ watch(
 </script>
 
 <style scoped>
+/*
+ * 背景与文字颜色必须成对写死。
+ *
+ * 之前只设了背景、让文字颜色向上继承，结果在深色主题下继承到白色，
+ * 白字压在浅色底上——题面和源码整块看不见。这类"只定一半"的配色在浅色环境里
+ * 测不出问题，一换主题就瞎。凡是自定义背景的块，颜色都在同一处定死。
+ */
 .lc-ic-pre {
   max-height: 180px;
   overflow: auto;
   border-radius: 10px;
-  background: rgb(249 250 251);
+  background: #f8fafc;
+  color: #334155;
   padding: 10px 12px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: 12px;
   line-height: 1.6;
   /* 模型回复里常有超长的单行（压缩过的 SVG path），不换行会把弹窗撑出横向滚动条 */
@@ -362,6 +371,7 @@ watch(
 }
 
 :global(.dark) .lc-ic-pre {
-  background: rgb(30 41 59 / 0.6);
+  background: rgba(15, 23, 42, 0.55);
+  color: #cbd5e1;
 }
 </style>

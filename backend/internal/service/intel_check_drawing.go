@@ -1,13 +1,10 @@
 package service
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
-
-	"golang.org/x/net/html"
 )
 
 var (
@@ -18,23 +15,9 @@ var (
 	// 裸 SVG 片段，作为最后的兜底。
 	intelCheckSVGRe = regexp.MustCompile(`(?is)<svg[\s>].*?</svg\s*>`)
 
-	// 脚本中一旦出现这些能力，即视为非「纯计算脚本」，整段剔除。
-	intelCheckUnsafeScriptRe = regexp.MustCompile(`(?i)fetch\s*\(|XMLHttpRequest|WebSocket|EventSource|importScripts|\bimport\s*\(|sendBeacon|document\s*\.\s*cookie|localStorage|sessionStorage|indexedDB|postMessage|\bWorker\s*\(|\beval\s*\(|new\s+Function|\blocation\b|\btop\s*\.|\bparent\s*\.`)
-
-	// 整体剔除的元素。
-	intelCheckDropTags = map[string]bool{
-		"iframe": true, "object": true, "embed": true, "applet": true,
-		"frame": true, "frameset": true, "link": true, "base": true,
-		"form": true, "noscript": true,
-	}
-
-	errIntelCheckNoDrawing  = errors.New("intel check: 回复中未找到 HTML 或 SVG 产物")
-	errIntelCheckTooLarge   = errors.New("intel check: 画作体积超过上限")
-	intelCheckExternalRefRe = regexp.MustCompile(`(?i)^\s*(?:https?:)?//|^\s*data:text/html`)
+	errIntelCheckNoDrawing = errors.New("intel check: 回复中未找到 HTML 或 SVG 产物")
+	errIntelCheckTooLarge  = errors.New("intel check: 画作体积超过上限")
 )
-
-// 注入到产物 <head> 的内容安全策略：禁网络、禁外链，只放开内联样式与内联脚本。
-const intelCheckCSP = "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:"
 
 // ExtractIntelCheckDrawing 从模型回复中抽取绘图产物。
 //
@@ -74,112 +57,38 @@ func intelCheckLooksLikeDrawing(text string) bool {
 	return strings.Contains(lower, "<svg") || strings.Contains(lower, "<html") || strings.Contains(lower, "<!doctype html")
 }
 
-// SanitizeIntelCheckDrawing 清洗绘图产物，返回可安全渲染的 HTML。
+// SanitizeIntelCheckDrawing 原样返回模型产出，只做体积检查。
 //
-// 清洗规则：
-//   - 剔除 iframe/object/embed/link/base/form 等具备外联或嵌套文档能力的元素；
-//   - 剔除所有内联事件属性（on*）与指向外部地址的 src/href/xlink:href；
-//   - 脚本按内容取舍：含外联/逃逸 API 的整段剔除，纯计算脚本保留
-//     （参考稿的动画即由 requestAnimationFrame 驱动，一律删脚本会让满血稿失去动画）；
-//   - 在 <head> 注入 CSP meta，使产物无论在何处渲染都无法发起网络请求。
+// ## 为什么不再清洗
+//
+// 早期版本会用 golang.org/x/net/html 解析产物、剔除危险标签与脚本、再序列化回来。
+// 这条路在本功能上是错的，原因不是安全考量不成立，而是**它破坏了本功能唯一要做的事**：
+//
+//   - 这张页面的全部价值在于「我们如实展示模型画出了什么」。任何改写都让展示物
+//     不再等于产出物，判定依据也跟着失真——门禁数的是清洗后的指标，
+//     评审模型读的是清洗后的源码，而用户看到的动画也是清洗后的效果。
+//     三者一起偏离，却没有任何一环会报错。
+//   - HTML 解析器按 HTML 规则处理 SVG，往返一趟就可能动到自闭合写法、
+//     属性大小写（viewBox / attributeName / repeatCount 这些 SVG 必须保留驼峰）
+//     与外来元素的序列化形式。这类改动不会报错，只会让动画悄悄不动。
+//   - 脚本按关键词整段剔除的规则尤其粗暴：动画代码里出现一个名为 location
+//     的局部变量就会让整段动画消失，而表现出来只是「这个模型画不出动画」。
+//
+// ## 那安全靠什么
+//
+// 靠渲染侧的沙箱，而且它本来就是三层里真正起作用的那层：
+// 预览用 <iframe sandbox="allow-scripts"> 且**不给** allow-same-origin，
+// 产物因此运行在不透明源里——拿不到父页面 DOM、cookie、storage，
+// 也不能做顶层导航或弹窗。清洗只是锦上添花的第二层，
+// 而它的代价是让本功能失去可信度，这笔交易不划算。
+//
+// **改动 SvgArtworkPreview.vue 的 sandbox 属性前请先回到这里。**
+// 一旦那里补上 allow-same-origin，沙箱即告失效，而此处已无清洗兜底。
+//
+// 体积上限保留：它与保真无关，是防止一份几十 MB 的产物拖垮页面与数据库。
 func SanitizeIntelCheckDrawing(source string, maxBytes int) (string, error) {
 	if maxBytes > 0 && len(source) > maxBytes {
 		return "", fmt.Errorf("%w: %d > %d", errIntelCheckTooLarge, len(source), maxBytes)
 	}
-
-	doc, err := html.Parse(strings.NewReader(source))
-	if err != nil {
-		return "", fmt.Errorf("intel check: 解析画作失败: %w", err)
-	}
-
-	var doomed []*html.Node
-	var head *html.Node
-	var walk func(node *html.Node)
-	walk = func(node *html.Node) {
-		if node.Type == html.ElementNode {
-			tag := strings.ToLower(node.Data)
-			switch {
-			case intelCheckDropTags[tag]:
-				doomed = append(doomed, node)
-				return
-			case tag == "meta" && intelCheckHasHTTPEquiv(node):
-				doomed = append(doomed, node)
-				return
-			case tag == "script":
-				if intelCheckUnsafeScriptRe.MatchString(drawingNodeText(node)) {
-					doomed = append(doomed, node)
-					return
-				}
-			case tag == "head" && head == nil:
-				head = node
-			}
-			intelCheckStripAttrs(node)
-		}
-		for child := node.FirstChild; child != nil; child = child.NextSibling {
-			walk(child)
-		}
-	}
-	walk(doc)
-
-	for _, node := range doomed {
-		if node.Parent != nil {
-			node.Parent.RemoveChild(node)
-		}
-	}
-	if head != nil {
-		head.InsertBefore(intelCheckCSPNode(), head.FirstChild)
-	}
-
-	var buf bytes.Buffer
-	if err := html.Render(&buf, doc); err != nil {
-		return "", fmt.Errorf("intel check: 序列化画作失败: %w", err)
-	}
-	if maxBytes > 0 && buf.Len() > maxBytes {
-		return "", fmt.Errorf("%w: %d > %d", errIntelCheckTooLarge, buf.Len(), maxBytes)
-	}
-	return buf.String(), nil
-}
-
-// intelCheckStripAttrs 剔除内联事件属性与指向外部地址的引用属性。
-func intelCheckStripAttrs(node *html.Node) {
-	kept := node.Attr[:0]
-	for _, attr := range node.Attr {
-		key := strings.ToLower(attr.Key)
-		if strings.HasPrefix(key, "on") {
-			continue
-		}
-		switch key {
-		case "src", "href", "xlink:href", "srcset", "poster", "formaction", "action":
-			if intelCheckExternalRefRe.MatchString(attr.Val) {
-				continue
-			}
-			if strings.HasPrefix(strings.ToLower(strings.TrimSpace(attr.Val)), "javascript:") {
-				continue
-			}
-		}
-		kept = append(kept, attr)
-	}
-	node.Attr = kept
-}
-
-// intelCheckHasHTTPEquiv 判断 meta 是否带 http-equiv（可用于跳转/刷新）。
-func intelCheckHasHTTPEquiv(node *html.Node) bool {
-	for _, attr := range node.Attr {
-		if strings.EqualFold(attr.Key, "http-equiv") {
-			return true
-		}
-	}
-	return false
-}
-
-// intelCheckCSPNode 构造注入用的 CSP meta 节点。
-func intelCheckCSPNode() *html.Node {
-	return &html.Node{
-		Type: html.ElementNode,
-		Data: "meta",
-		Attr: []html.Attribute{
-			{Key: "http-equiv", Val: "Content-Security-Policy"},
-			{Key: "content", Val: intelCheckCSP},
-		},
-	}
+	return source, nil
 }

@@ -37,6 +37,14 @@
  * `backend/internal/handler/dto/public_settings_injection_schema_test.go`
  * catches omissions.
  *
+ * 注入是第一道保障，但它会因为「后端二进制比前端旧、结构里还没有新字段」
+ * 「纯静态部署根本没有注入」「注入被中间层缓存成旧版本」等原因失效，
+ * 每失效一次，opt-in 菜单就会在刷新时闪一下——上面那起"可用渠道"事故当时是靠
+ * 补注入字段修的，没有解决"注入一失效就复发"这个根因。
+ * 因此 `isFeatureFlagEnabled` 另外把上次解析成功的值记在 localStorage 里，
+ * 在未知窗口期拿它兜底（见下方 FEATURE_FLAG_MEMORY_KEY 处的说明）。
+ * 两层互补：注入让首次访问就正确，记忆让后续刷新不再受注入失效影响。
+ *
  * ## Adding a new flag
  *
  *   1. Backend `service/domain_constants.go`  → `SettingKey<Name>Enabled`
@@ -142,18 +150,81 @@ export const FeatureFlags = {
 export type RegisteredFeatureFlag = keyof typeof FeatureFlags
 
 /**
+ * 上一次解析成功的开关值，跨刷新记在 localStorage 里。
+ *
+ * ## 为什么需要这一层
+ *
+ * SSR 注入（`window.__APP_CONFIG__`）本应消除"设置未加载"的窗口期，但它有几种
+ * 失效方式：前端不由 Go 后端托管（纯静态部署 / dev server）、后端二进制比前端旧
+ * 因而注入结构里还没有新字段、注入被中间层缓存成了旧版本。任何一种发生时，
+ * opt-in 的菜单会在每次刷新时先消失一下再出现——本文件开头记的"可用渠道"事故
+ * 就是这么来的，而那次是靠补注入字段修的，没有解决"注入失效就复发"这个根因。
+ *
+ * 记住上次的结果，是对未知窗口期远好于 mode 默认值的猜测：用户上次看到菜单，
+ * 这次大概率还该看到。真值一旦到达就立即覆盖（通常在几百毫秒内），
+ * 所以管理员关掉功能后最多短暂多显示一次，不会长期错。
+ *
+ * localStorage 不可用（隐私模式、被禁用）时整层静默退化为 mode 默认值。
+ */
+const FEATURE_FLAG_MEMORY_KEY = 'sub2api:feature-flag-memory'
+
+/** 模块级缓存：isFeatureFlagEnabled 会在 computed 里被高频调用，不能每次都读存储解析 JSON。 */
+let flagMemoryCache: Record<string, boolean> | null = null
+
+function flagMemory(): Record<string, boolean> {
+  if (flagMemoryCache) return flagMemoryCache
+  flagMemoryCache = {}
+  try {
+    const raw = globalThis.localStorage?.getItem(FEATURE_FLAG_MEMORY_KEY)
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw)
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+          if (typeof value === 'boolean') flagMemoryCache[key] = value
+        }
+      }
+    }
+  } catch {
+    // 存储不可用或内容损坏：当作没有记忆，退回 mode 默认值。
+  }
+  return flagMemoryCache
+}
+
+function rememberFlag(key: string, value: boolean): void {
+  const memory = flagMemory()
+  // 值没变就不写：本函数在 computed 求值路径上，无谓的写入会拖慢侧边栏渲染。
+  if (memory[key] === value) return
+  memory[key] = value
+  try {
+    globalThis.localStorage?.setItem(FEATURE_FLAG_MEMORY_KEY, JSON.stringify(memory))
+  } catch {
+    // 写不进去不影响本次渲染，内存里的那份仍然生效。
+  }
+}
+
+/**
  * Read the current value of a flag, honoring the mode's fallback.
  * `true`  → the feature is enabled (menu/route should render).
  * `false` → the feature is disabled (menu/route should hide).
+ *
+ * 优先级：已加载的真值 > 上次记住的值 > mode 声明的默认值。
  */
 export function isFeatureFlagEnabled(flag: FeatureFlagDefinition): boolean {
   const appStore = useAppStore()
   const raw = appStore.cachedPublicSettings?.[flag.key] as
     | boolean
     | undefined
-  if (typeof raw === 'boolean') return raw
-  // Settings not yet loaded → fall back to the flag's declared mode:
-  //   opt-out → visible by default, opt-in → hidden by default.
+  if (typeof raw === 'boolean') {
+    rememberFlag(flag.key, raw)
+    return raw
+  }
+
+  // 设置尚未加载：先用上次记住的值，避免菜单在每次刷新时闪一下。
+  const remembered = flagMemory()[flag.key]
+  if (typeof remembered === 'boolean') return remembered
+
+  // 从未成功加载过（首次访问）→ 回落到 flag 声明的模式：
+  //   opt-out → 默认可见，opt-in → 默认隐藏。
   return flag.mode === 'opt-out'
 }
 

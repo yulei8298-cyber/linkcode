@@ -102,8 +102,8 @@ func TestIntelCheckDrawingCalibration(t *testing.T) {
 	}
 }
 
-// TestIntelCheckDrawingCalibrationSanitize 确认清洗不会破坏真实样例的动画。
-// 参考稿依赖脚本驱动动画，若清洗后动画机制消失，公开页就播不出动画了。
+// TestIntelCheckDrawingCalibrationSanitize 确认真实样例经过处理后仍原样保留。
+// 参考稿依赖脚本驱动动画，任何改写都可能让公开页展示内容偏离模型原产物。
 func TestIntelCheckDrawingCalibrationSanitize(t *testing.T) {
 	source := readIntelCheckFixture(t, "reference.html")
 
@@ -116,8 +116,8 @@ func TestIntelCheckDrawingCalibrationSanitize(t *testing.T) {
 	after, err := ComputeDrawingMetrics(sanitized)
 	require.NoError(t, err)
 
-	require.NotEmptyf(t, after.Mechanisms, "清洗后参考稿失去全部动画机制（清洗前为 %v）", before.Mechanisms)
+	require.NotEmptyf(t, after.Mechanisms, "处理后参考稿失去全部动画机制（处理前为 %v）", before.Mechanisms)
 	require.Equalf(t, before.AnimatedTargets, after.AnimatedTargets,
-		"清洗改变了动画目标数：%d -> %d", before.AnimatedTargets, after.AnimatedTargets)
-	require.Contains(t, sanitized, "Content-Security-Policy")
+		"处理改变了动画目标数：%d -> %d", before.AnimatedTargets, after.AnimatedTargets)
+	require.Equal(t, source, sanitized)
 }

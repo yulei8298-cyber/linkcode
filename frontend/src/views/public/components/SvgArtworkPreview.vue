@@ -1,5 +1,5 @@
 <template>
-  <div class="lc-ic-artwork" :style="{ height: `${height}px` }">
+  <div ref="wrapper" class="ic-artwork" :style="{ height: `${height}px` }">
     <!--
       安全边界，改动前务必读完这段。
 
@@ -7,36 +7,37 @@
       等于完全解除沙箱（浏览器会给出与无沙箱一致的权限），届时这段由模型生成、
       我们无法预先审阅的代码就能读取父页面、cookie 与登录态。
 
-      为什么必须允许脚本：参考稿与候选稿的动画机制包括 requestAnimationFrame 这类
-      纯 JS 实现（见设计文档 §5.2 的实测——三份样例分别用了 script / smil / css），
-      禁用脚本会让一部分合格产物在预览里变成静止图片，而"能不能动"正是判定要点之一。
+      为什么必须允许脚本：产物的动画机制包括 requestAnimationFrame、
+      pauseAnimations() 这类纯 JS 实现，禁用脚本会让一部分合格产物在预览里
+      变成静止图片，而"能不能动"正是判定要点之一。
 
-      不给同源权限后，脚本跑在一个不透明源里：DOM 隔离、无 cookie、无 storage。
-      再叠加服务端清洗（剔除外链与逃逸 API）与 srcdoc 里注入的 CSP
-      (default-src 'none')，共三层。三层缺一层都不要放行这个组件。
-
-      referrerpolicy 与 loading 不是安全措施，只是避免预览把 referer 带出去、
-      以及列表里多个预览同时抢带宽。
+      ⚠️ 服务端已不再清洗产物（见后端 SanitizeIntelCheckDrawing 的注释：
+      清洗会改写 SVG 的自闭合写法与属性大小写，让动画悄悄失效，
+      而这张页面的全部价值就在于如实展示模型画了什么）。
+      因此**这个 sandbox 属性现在是唯一的防护层**，不是"三层之一"。
+      任何人想往里加 allow-same-origin，请先去后端那段注释里看清代价。
     -->
     <iframe
       v-if="html"
       :srcdoc="html"
       sandbox="allow-scripts"
       referrerpolicy="no-referrer"
-      loading="lazy"
-      class="lc-ic-artwork-frame"
+      class="ic-artwork-frame"
+      :style="frameStyle"
       :title="title"
     ></iframe>
-    <div v-else class="lc-ic-artwork-empty">
+    <div v-else class="ic-artwork-empty">
       <span>{{ emptyText }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+
+const props = withDefaults(
   defineProps<{
-    /** 服务端已清洗的完整 HTML 文档（含 CSP meta）。空串表示本次没有产出。 */
+    /** 模型产出的完整 HTML 文档（未经改写）。空串表示本次没有产出。 */
     html: string
     title?: string
     height?: number
@@ -44,43 +45,84 @@ withDefaults(
   }>(),
   {
     title: '模型绘图产物预览',
-    height: 260,
+    height: 240,
     emptyText: '本次没有产出可展示的画作',
   },
 )
+
+/**
+ * 产物是一份完整网页，按桌面视口写的（常见 900–1200px 宽，且多半带
+ * `min-height:100vh` 与固定 aspect-ratio）。直接塞进一个几百像素的框里，
+ * 它会按框的宽度铺开、再按自己的比例算高度，结果高出容器、下半截被裁掉——
+ * 表现出来就是"画得不对/动画不对"，而其实产物本身是好的。
+ *
+ * 所以按缩略图的通行做法：让 iframe 以固定的逻辑尺寸渲染（等于给它一个
+ * 桌面视口），再整体缩放到容器里。这样看到的是完整构图，比例也与
+ * 用户自己打开这份 HTML 时一致。
+ */
+const LOGICAL_WIDTH = 900
+const LOGICAL_HEIGHT = 600
+
+const wrapper = ref<HTMLElement | null>(null)
+const scale = ref(1)
+let observer: ResizeObserver | null = null
+
+function measure() {
+  const width = wrapper.value?.clientWidth ?? 0
+  if (width <= 0) return
+  // 宽高都要放得下，取较小的那个比例，避免某一边溢出。
+  scale.value = Math.min(width / LOGICAL_WIDTH, props.height / LOGICAL_HEIGHT)
+}
+
+const frameStyle = computed(() => ({
+  width: `${LOGICAL_WIDTH}px`,
+  height: `${LOGICAL_HEIGHT}px`,
+  transform: `scale(${scale.value})`,
+  // 缩放后按容器居中：translate 的百分比是相对元素自身的，
+  // 所以先移到中心再缩放（transform 从右往左生效）。
+  left: '50%',
+  top: '50%',
+  marginLeft: `${-LOGICAL_WIDTH / 2}px`,
+  marginTop: `${-LOGICAL_HEIGHT / 2}px`,
+}))
+
+onMounted(() => {
+  measure()
+  if (typeof ResizeObserver !== 'undefined' && wrapper.value) {
+    observer = new ResizeObserver(() => measure())
+    observer.observe(wrapper.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  observer = null
+})
 </script>
 
 <style scoped>
-.lc-ic-artwork {
+.ic-artwork {
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  /* 浅色棋盘底：模型产出的 SVG 常带透明背景，纯白底会让白色造型整个消失 */
-  background-color: #fbfcfe;
-  background-image:
-    linear-gradient(45deg, rgba(148, 163, 184, 0.09) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(148, 163, 184, 0.09) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.09) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.09) 75%);
-  background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  /* 天空渐变底：模型产出常带透明背景，纯白底会让白色造型整个消失，
+     纯深色底又会吃掉深色线条。 */
+  background: linear-gradient(180deg, #e0f2fe, #fef3c7);
 }
 
-.lc-ic-artwork-frame {
+.ic-artwork-frame {
+  position: absolute;
   display: block;
-  width: 100%;
-  height: 100%;
   border: 0;
+  transform-origin: center center;
 }
 
-.lc-ic-artwork-empty {
+.ic-artwork-empty {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
   font-size: 13px;
-  opacity: 0.6;
+  color: #64748b;
 }
 </style>

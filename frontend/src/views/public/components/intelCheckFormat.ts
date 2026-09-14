@@ -162,6 +162,39 @@ export function formatCountdown(nextCheckAt?: string | null): string {
   return `约 ${hours} 小时 ${minutes % 60} 分钟后`
 }
 
+/**
+ * 时间线上有耗时记录的那些格子的平均耗时。
+ *
+ * 客户端算而不是让后端给：概览接口本就把每格的 latency_ms 传过来了，
+ * 再加一个聚合字段等于同一份数据传两遍。running 与请求失败的格子没有耗时，
+ * 自然被排除在外——它们本来也不该拉低"正常作答要多久"这个观感。
+ */
+export function averageLatency(points?: IntelCheckTimelinePoint[]): number | null {
+  const values = (points || [])
+    .map((point) => point?.latency_ms)
+    .filter((value): value is number => typeof value === 'number' && value > 0)
+  if (values.length === 0) return null
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+/** 时间线最早一格的时刻，用作时间轴左端刻度。 */
+export function timelineStart(points?: IntelCheckTimelinePoint[]): string {
+  const first = (points || [])[0]
+  if (!first) return ''
+  const date = new Date(first.checked_at)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+/** 最近一格（用于「● 通过 · 17 分钟前」）。 */
+export function latestPoint(
+  points?: IntelCheckTimelinePoint[],
+): IntelCheckTimelinePoint | null {
+  const list = points || []
+  return list.length ? list[list.length - 1] : null
+}
+
 /** 色块的悬浮提示：时刻 · 状态 · 耗时。 */
 export function timelineTitle(point: IntelCheckTimelinePoint | null): string {
   if (!point) return '暂无数据'
