@@ -123,6 +123,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   height: 100%;
   font-size: 13px;
+  /* 底色是浅色天空渐变，文字色必须跟着定死为深色——
+     若留给继承，深色主题下会变成浅字压浅底。 */
   color: #64748b;
 }
 </style>

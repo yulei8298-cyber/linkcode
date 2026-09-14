@@ -271,9 +271,13 @@ onBeforeUnmount(() => abortController?.abort())
   padding: 24px 0 40px;
 }
 
-/* 门户是深色霓虹主题（portal-neon.css）。布局与信息结构完全不变，
-   只把表面色与文字色换成深色版，避免一块白卡片砸在深色页面上。 */
-.lc-shell .ic-root {
+/* 深色环境有两处，必须一起覆盖，漏掉任何一处都会出现「深色字压深色底」：
+     .lc-shell —— 门户的霓虹主题（portal-neon.css）
+     .dark     —— 后台控制台的深色模式（类挂在 html 上）
+   顶栏标题位于卡片之外、直接压在页面背景上，是最先暴露问题的地方。
+   布局与信息结构完全不变，只换表面色与文字色。 */
+.lc-shell .ic-root,
+.dark .ic-root {
   --ic-surface: rgba(19, 19, 22, 0.94);
   --ic-text: #f8fafc;
   --ic-text-soft: #e2e8f0;

@@ -18,8 +18,10 @@ describe('IntelCheckView 内嵌形态', () => {
     expect(source).toContain('</component>')
   })
 
-  it('门户标题和控制台标题按形态互斥显示', () => {
-    expect(source).toContain('<section v-if="!isEmbedded" class="lc-page-head">')
-    expect(source).toContain('<div v-if="isEmbedded" class="lc-card lc-ic-embedded-head">')
+  it('两种布局共用状态页内容，并分别应用门户留白与深色变量', () => {
+    expect(source).toContain('<div class="ic-root" :class="{ \'ic-portal\': !isEmbedded }">')
+    expect(source).toContain('<div class="ic-topbar">')
+    expect(source).toContain('.lc-shell .ic-root,')
+    expect(source).toContain('.dark .ic-root {')
   })
 })

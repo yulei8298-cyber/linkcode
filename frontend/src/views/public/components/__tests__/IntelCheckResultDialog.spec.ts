@@ -85,9 +85,11 @@ describe('IntelCheckResultDialog', () => {
     await flushPromises()
 
     expect(getIntelCheckResult).toHaveBeenCalledOnce()
-    expect(wrapper.text()).toContain('标准答案（数值比较）')
+    expect(wrapper.text()).toContain('期望答案')
+    expect(wrapper.text()).toContain('提取到的答案 · 数值比较')
     expect(wrapper.text()).toContain('答案是 2')
     expect(wrapper.text()).toContain('答案匹配')
+    expect(wrapper.find('.ic-dlg-ans .got').text()).toContain('2')
     expect(wrapper.find('[data-test="artwork-preview"]').exists()).toBe(false)
     wrapper.unmount()
   })

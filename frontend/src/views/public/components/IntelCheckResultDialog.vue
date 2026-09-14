@@ -1,67 +1,57 @@
 <template>
   <BaseDialog :show="show" :title="dialogTitle" width="wide" @close="emit('close')">
-    <div v-if="loading" class="py-10 text-center text-sm text-gray-500">加载中…</div>
-    <div v-else-if="!detail" class="py-10 text-center text-sm text-gray-500">
-      未能加载这次检测的详情，请稍后重试。
-    </div>
+    <div v-if="loading" class="ic-dlg-hint">加载中…</div>
+    <div v-else-if="!detail" class="ic-dlg-hint">未能加载这次检测的详情，请稍后重试。</div>
 
-    <div v-else class="space-y-4">
-      <!-- 判定结论 -->
-      <div class="flex flex-wrap items-center gap-2">
-        <span
-          class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-          :class="statusBadgeClass(detail.status)"
-        >
-          {{ statusLabel(detail.status) }}
+    <div v-else class="ic-dlg">
+      <!-- 结论 + 上下文。刻意不含上游地址、HTTP 状态码与任何凭据片段 -->
+      <div class="ic-dlg-head">
+        <span class="ic-dlg-pill" :class="statusPillClass">
+          <i></i>{{ statusLabel(detail.status) }}
         </span>
-        <span class="text-xs text-gray-500 dark:text-gray-400">{{ detail.status_note }}</span>
+        <span class="ic-dlg-note">{{ detail.status_note }}</span>
+        <span class="ic-dlg-meta">
+          <b>{{ detail.model }}</b> · 推理 {{ detail.reasoning_effort }} ·
+          耗时 {{ formatLatency(detail.latency_ms) }} · {{ formatDateTime(detail.checked_at) }}
+        </span>
       </div>
 
-      <!-- 本次检测的上下文。刻意不含上游地址、HTTP 状态码与任何凭据片段 -->
-      <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
-        <div v-for="item in metaItems" :key="item.label">
-          <dt class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</dt>
-          <dd class="mt-0.5 break-all font-medium text-gray-900 dark:text-gray-100">
-            {{ item.value }}
-          </dd>
-        </div>
-      </dl>
+      <!-- 逻辑题：左右两栏，左边看题与判定，右边看模型怎么想的 -->
+      <div v-if="detail.kind === 'logic'" class="ic-dlg-cols">
+        <section class="ic-dlg-col">
+          <h4>题目{{ detail.question_title ? ` · ${detail.question_title}` : '' }}</h4>
+          <div class="ic-dlg-q">{{ detail.prompt_snapshot || '--' }}</div>
 
-      <!-- 题面 -->
-      <section>
-        <h4 class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-          题目{{ detail.question_title ? ` · ${detail.question_title}` : '' }}
-        </h4>
-        <pre class="lc-ic-pre">{{ detail.prompt_snapshot || '--' }}</pre>
-      </section>
+          <h4>答案判定</h4>
+          <div class="ic-dlg-ans">
+            <div class="exp">
+              <b>期望答案</b>
+              {{ detail.expected_answer || '--' }}
+            </div>
+            <div :class="answerMatched ? 'got' : 'miss'">
+              <b>提取到的答案 · {{ matchModeLabel(detail.match_mode) }}</b>
+              {{ detail.extracted_answer || '（未提取到）' }}
+            </div>
+          </div>
+        </section>
 
-      <!-- 逻辑题：期望 / 提取 左右两栏，让读者自己核对判定 -->
-      <section v-if="detail.kind === 'logic'" class="grid gap-3 sm:grid-cols-2">
-        <div>
-          <h4 class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-            标准答案（{{ matchModeLabel(detail.match_mode) }}）
-          </h4>
-          <pre class="lc-ic-pre">{{ detail.expected_answer || '--' }}</pre>
-        </div>
-        <div>
-          <h4 class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">提取到的答案</h4>
-          <pre class="lc-ic-pre">{{ detail.extracted_answer || '--' }}</pre>
-        </div>
-      </section>
+        <section class="ic-dlg-col">
+          <h4>模型原始回复</h4>
+          <pre class="ic-dlg-pre tall">{{ detail.raw_reply || '--' }}</pre>
+        </section>
+      </div>
 
       <!-- 绘图题：预览 / 源码 / 原始回复 三页签 -->
-      <section v-else>
-        <div class="mb-2 flex gap-1.5">
+      <section v-else class="ic-dlg-block">
+        <h4>题目{{ detail.question_title ? ` · ${detail.question_title}` : '' }}</h4>
+        <div class="ic-dlg-q">{{ detail.prompt_snapshot || '--' }}</div>
+
+        <div class="ic-dlg-tabs">
           <button
             v-for="tab in drawingTabs"
             :key="tab.value"
             type="button"
-            class="rounded-lg px-2.5 py-1 text-xs transition-colors"
-            :class="
-              activeTab === tab.value
-                ? 'bg-teal-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-800 dark:text-gray-300 dark:hover:bg-dark-700'
-            "
+            :class="{ active: activeTab === tab.value }"
             @click="activeTab = tab.value"
           >
             {{ tab.label }}
@@ -74,74 +64,44 @@
           :height="360"
           :title="`${detail.target_name} 的绘图产物`"
         />
-        <pre v-if="activeTab === 'source'" class="lc-ic-pre lc-ic-pre-tall">{{
+        <pre v-if="activeTab === 'source'" class="ic-dlg-pre tall">{{
           detail.html_output || '本次没有产出可展示的画作'
         }}</pre>
-        <pre v-if="activeTab === 'raw'" class="lc-ic-pre lc-ic-pre-tall">{{
-          detail.raw_reply || '--'
-        }}</pre>
+        <pre v-if="activeTab === 'raw'" class="ic-dlg-pre tall">{{ detail.raw_reply || '--' }}</pre>
       </section>
 
-      <!-- 逻辑题的原始回复单独列出；绘图题的已在上面的页签里 -->
-      <section v-if="detail.kind === 'logic'">
-        <h4 class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">模型原始回复</h4>
-        <pre class="lc-ic-pre lc-ic-pre-tall">{{ detail.raw_reply || '--' }}</pre>
-      </section>
-
-      <!-- 判定明细：门禁逐项结果与评审得分。它是这张页面「可复核」的落点 -->
-      <section v-if="judgeItems.length">
-        <h4 class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">判定明细</h4>
-        <div class="space-y-1.5">
-          <div
-            v-for="item in judgeItems"
-            :key="item.label"
-            class="flex items-start justify-between gap-3 rounded-lg bg-gray-50 px-2.5 py-1.5 text-xs dark:bg-dark-800"
-          >
-            <span class="text-gray-500 dark:text-gray-400">{{ item.label }}</span>
-            <span class="text-right font-medium text-gray-900 dark:text-gray-100">
-              {{ item.value }}
-            </span>
+      <!-- 判定明细：门禁结论与评审得分。这是本页「可复核」的落点 -->
+      <section v-if="judgeItems.length" class="ic-dlg-block">
+        <h4>判定明细</h4>
+        <div class="ic-dlg-kv">
+          <div v-for="item in judgeItems" :key="item.label">
+            <span>{{ item.label }}</span>
+            <b>{{ item.value }}</b>
           </div>
         </div>
       </section>
 
       <!-- 门禁逐项：每项是否达标 + 实测值，阈值定得合不合理靠它自证 -->
-      <section v-if="gateItems.length">
-        <h4 class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">结构门禁逐项</h4>
-        <div class="space-y-1">
-          <div
-            v-for="(item, index) in gateItems"
-            :key="index"
-            class="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs"
-            :class="item.pass ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-red-50 dark:bg-red-950/30'"
-          >
-            <span :class="item.pass ? 'text-emerald-600' : 'text-red-600'">
-              {{ item.pass ? '✓' : '✗' }}
-            </span>
-            <span class="flex-1 text-gray-700 dark:text-gray-300">{{ item.item }}</span>
-            <span class="text-gray-500 dark:text-gray-400">{{ item.detail }}</span>
+      <section v-if="gateItems.length" class="ic-dlg-block">
+        <h4>结构门禁逐项</h4>
+        <div class="ic-dlg-gate">
+          <div v-for="(item, index) in gateItems" :key="index" :class="item.pass ? 'ok' : 'bad'">
+            <i>{{ item.pass ? '✓' : '✗' }}</i>
+            <span>{{ item.item }}</span>
+            <em>{{ item.detail }}</em>
           </div>
         </div>
       </section>
 
-      <!-- 源码评审逐项得分 -->
-      <section v-if="reviewItems.length">
-        <h4 class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">源码评审逐项</h4>
-        <div class="space-y-1">
-          <div
-            v-for="(item, index) in reviewItems"
-            :key="index"
-            class="rounded-lg bg-gray-50 px-2.5 py-1.5 text-xs dark:bg-dark-800"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <span class="font-medium text-gray-800 dark:text-gray-200">{{ item.item }}</span>
-              <span class="shrink-0 text-gray-600 dark:text-gray-300">
-                {{ item.score }} / {{ item.max_score }}
-              </span>
+      <section v-if="reviewItems.length" class="ic-dlg-block">
+        <h4>源码评审逐项</h4>
+        <div class="ic-dlg-review">
+          <div v-for="(item, index) in reviewItems" :key="index">
+            <div class="row">
+              <b>{{ item.item }}</b>
+              <span>{{ item.score }} / {{ item.max_score }}</span>
             </div>
-            <p v-if="item.comment" class="mt-0.5 text-gray-500 dark:text-gray-400">
-              {{ item.comment }}
-            </p>
+            <p v-if="item.comment">{{ item.comment }}</p>
           </div>
         </div>
       </section>
@@ -186,7 +146,6 @@ const drawingTabs: { value: DrawingTab; label: string }[] = [
 
 const detail = ref<IntelCheckResult | null>(null)
 const loading = ref(false)
-const loadError = ref('')
 const activeTab = ref<DrawingTab>('preview')
 let abortController: AbortController | null = null
 
@@ -195,18 +154,22 @@ const dialogTitle = computed(() => {
   return `${detail.value.target_name} · ${kindLabel(detail.value.kind)} · 第 ${detail.value.round_seq} 轮`
 })
 
-const metaItems = computed(() => {
-  const value = detail.value
-  if (!value) return []
-  return [
-    { label: '模型', value: value.model || '--' },
-    { label: '推理等级', value: value.reasoning_effort || '--' },
-    { label: '耗时', value: formatLatency(value.latency_ms) },
-    { label: '检测时刻', value: formatDateTime(value.checked_at) },
-  ]
+const statusPillClass = computed(() => {
+  switch (detail.value?.status) {
+    case 'pass':
+      return 'ok'
+    case 'fail':
+      return 'bad'
+    case 'request_error':
+      return 'warn'
+    default:
+      return 'run'
+  }
 })
 
-/** judge_detail 是后端直接透出的 map，按已知键挑出可读项。 */
+/** 答案框是否按「匹配」着色。以判定结果为准，不在前端重新比一次字符串。 */
+const answerMatched = computed(() => detail.value?.judge_detail?.matched === true)
+
 function detailValue(key: string): unknown {
   return detail.value?.judge_detail?.[key]
 }
@@ -219,13 +182,7 @@ const judgeItems = computed(() => {
   const reason = raw.reason
   if (typeof reason === 'string' && reason) items.push({ label: '判定说明', value: reason })
 
-  if (detail.value?.kind === 'logic') {
-    const matched = raw.matched
-    if (typeof matched === 'boolean') {
-      items.push({ label: '是否匹配', value: matched ? '匹配' : '不匹配' })
-    }
-    return items
-  }
+  if (detail.value?.kind === 'logic') return items
 
   const gatePass = raw.gate_pass
   if (typeof gatePass === 'boolean') {
@@ -288,36 +245,18 @@ const reviewItems = computed<ReviewItemView[]>(() => {
   })
 })
 
-function statusBadgeClass(status: string): string {
-  switch (status) {
-    case 'pass':
-      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-    case 'fail':
-      return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-    case 'request_error':
-      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-    default:
-      return 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'
-  }
-}
-
 async function load(id: number) {
   abortController?.abort()
   const controller = new AbortController()
   abortController = controller
 
   detail.value = null
-  loadError.value = ''
   loading.value = true
   try {
     const result = await getIntelCheckResult(id, { signal: controller.signal })
     if (!controller.signal.aborted) detail.value = result
-  } catch (error: unknown) {
-    const reason = error as { name?: string; code?: string }
-    // 用户快速连点不同色块时旧请求会被取消，那不是错误，不应清掉刚到的新数据
-    if (reason.name !== 'AbortError' && reason.code !== 'ERR_CANCELED') {
-      loadError.value = '加载失败'
-    }
+  } catch {
+    // 用户快速连点不同色块时旧请求会被取消，那不是错误，不应清掉刚到的新数据。
   } finally {
     if (abortController === controller) {
       loading.value = false
@@ -335,7 +274,7 @@ watch(
       detail.value = null
       return
     }
-    // 每次打开都回到预览页签：上一次停在「源码」不该影响下一次打开的第一印象
+    // 每次打开都回到预览页签：上一次停在「源码」不该影响下一次打开的第一印象。
     activeTab.value = 'preview'
     if (id != null) void load(id)
   },
@@ -345,33 +284,380 @@ watch(
 
 <style scoped>
 /*
- * 背景与文字颜色必须成对写死。
+ * 配色与主页面同一套路：变量定义在根节点上，深色环境整体替换。
  *
- * 之前只设了背景、让文字颜色向上继承，结果在深色主题下继承到白色，
- * 白字压在浅色底上——题面和源码整块看不见。这类"只定一半"的配色在浅色环境里
- * 测不出问题，一换主题就瞎。凡是自定义背景的块，颜色都在同一处定死。
+ * 两处深色环境都要覆盖（门户 .lc-shell / 后台 .dark），漏一处就会出现
+ * 「浅色框砸在深色弹窗里」。凡是自定义背景的块，背景与文字色必须成对定死——
+ * 只设背景、让文字色向上继承，在浅色环境下测不出问题，一换主题就瞎。
  */
-.lc-ic-pre {
-  max-height: 180px;
-  overflow: auto;
-  border-radius: 10px;
-  background: #f8fafc;
-  color: #334155;
-  padding: 10px 12px;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
+.ic-dlg {
+  --d-text: #0f172a;
+  --d-soft: #334155;
+  --d-muted: #64748b;
+  --d-line: #e2e8f0;
+  --d-surface: #f8fafc;
+  --d-ok-bg: #ecfdf5;
+  --d-ok-text: #065f46;
+  --d-ok-line: #a7f3d0;
+  --d-bad-bg: #fef2f2;
+  --d-bad-text: #b91c1c;
+  --d-bad-line: #fecaca;
+  --d-warn-bg: #fffbeb;
+  --d-warn-text: #b45309;
+  --d-accent: #0d9488;
+
+  color: var(--d-text);
+}
+
+.lc-shell .ic-dlg,
+.dark .ic-dlg {
+  --d-text: #f1f5f9;
+  --d-soft: #cbd5e1;
+  --d-muted: #94a3b8;
+  --d-line: rgba(148, 163, 184, 0.22);
+  --d-surface: rgba(15, 23, 42, 0.55);
+  --d-ok-bg: rgba(16, 185, 129, 0.14);
+  --d-ok-text: #6ee7b7;
+  --d-ok-line: rgba(16, 185, 129, 0.35);
+  --d-bad-bg: rgba(239, 68, 68, 0.14);
+  --d-bad-text: #fca5a5;
+  --d-bad-line: rgba(239, 68, 68, 0.35);
+  --d-warn-bg: rgba(245, 158, 11, 0.14);
+  --d-warn-text: #fbbf24;
+  --d-accent: #2dd4bf;
+}
+
+.ic-dlg-hint {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ---------- 结论行 ---------- */
+
+.ic-dlg-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--d-line);
+}
+
+.ic-dlg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 99px;
   font-size: 12px;
-  line-height: 1.6;
-  /* 模型回复里常有超长的单行（压缩过的 SVG path），不换行会把弹窗撑出横向滚动条 */
+  font-weight: 700;
+}
+
+.ic-dlg-pill i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ic-dlg-pill.ok {
+  background: var(--d-ok-bg);
+  color: var(--d-ok-text);
+  outline: 1px solid var(--d-ok-line);
+}
+
+.ic-dlg-pill.bad {
+  background: var(--d-bad-bg);
+  color: var(--d-bad-text);
+  outline: 1px solid var(--d-bad-line);
+}
+
+.ic-dlg-pill.warn {
+  background: var(--d-warn-bg);
+  color: var(--d-warn-text);
+}
+
+.ic-dlg-pill.run {
+  background: var(--d-surface);
+  color: var(--d-muted);
+}
+
+.ic-dlg-note {
+  font-size: 12px;
+  color: var(--d-muted);
+}
+
+.ic-dlg-meta {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--d-muted);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.ic-dlg-meta b {
+  color: var(--d-soft);
+  font-weight: 600;
+}
+
+/* ---------- 两栏 ---------- */
+
+.ic-dlg-cols {
+  display: grid;
+  gap: 20px;
+}
+
+/* 两栏在窄屏折叠成上下：左右并排本是为了「题目与回复对照着看」，
+   折叠后顺序仍是题目在前，阅读逻辑不变。 */
+@media (min-width: 860px) {
+  .ic-dlg-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ic-dlg-cols .ic-dlg-col + .ic-dlg-col {
+    padding-left: 20px;
+    border-left: 1px solid var(--d-line);
+  }
+}
+
+.ic-dlg h4 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--d-muted);
+}
+
+.ic-dlg-col h4:not(:first-child) {
+  margin-top: 16px;
+}
+
+.ic-dlg-block {
+  margin-top: 18px;
+}
+
+.ic-dlg-q {
+  border-radius: 12px;
+  background: var(--d-surface);
+  color: var(--d-soft);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.lc-ic-pre-tall {
+/* ---------- 答案对照 ---------- */
+
+.ic-dlg-ans {
+  display: flex;
+  gap: 10px;
+}
+
+.ic-dlg-ans > div {
+  flex: 1;
+  min-width: 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.ic-dlg-ans b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ic-dlg-ans .exp {
+  background: var(--d-surface);
+  color: var(--d-soft);
+}
+
+.ic-dlg-ans .exp b {
+  color: var(--d-muted);
+}
+
+/* 提取到的答案按判定结果着色：绿=匹配、红=不匹配。
+   这一格是整个弹窗里最该被一眼看到的——读者核对判定就靠它。 */
+.ic-dlg-ans .got {
+  background: var(--d-ok-bg);
+  color: var(--d-ok-text);
+  outline: 1px solid var(--d-ok-line);
+}
+
+.ic-dlg-ans .miss {
+  background: var(--d-bad-bg);
+  color: var(--d-bad-text);
+  outline: 1px solid var(--d-bad-line);
+}
+
+.ic-dlg-ans .got b,
+.ic-dlg-ans .miss b {
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* ---------- 代码块 ---------- */
+
+.ic-dlg-pre {
+  max-height: 200px;
+  overflow: auto;
+  margin: 0;
+  border-radius: 12px;
+  background: var(--d-surface);
+  color: var(--d-soft);
+  padding: 12px 14px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  /* 模型回复里常有超长单行（压缩过的 SVG path），不换行会撑出横向滚动条 */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ic-dlg-pre.tall {
   max-height: 320px;
 }
 
-:global(.dark) .lc-ic-pre {
-  background: rgba(15, 23, 42, 0.55);
-  color: #cbd5e1;
+/* ---------- 页签 ---------- */
+
+.ic-dlg-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0 10px;
+}
+
+.ic-dlg-tabs button {
+  border: 1px solid var(--d-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--d-muted);
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.ic-dlg-tabs button:hover {
+  color: var(--d-accent);
+}
+
+.ic-dlg-tabs button.active {
+  background: var(--d-accent);
+  border-color: var(--d-accent);
+  color: #fff;
+}
+
+/* ---------- 判定明细 ---------- */
+
+.ic-dlg-kv > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--d-surface);
+  font-size: 12px;
+}
+
+.ic-dlg-kv > div + div {
+  margin-top: 6px;
+}
+
+.ic-dlg-kv span {
+  color: var(--d-muted);
+  flex-shrink: 0;
+}
+
+.ic-dlg-kv b {
+  color: var(--d-text);
+  font-weight: 600;
+  text-align: right;
+}
+
+.ic-dlg-gate > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.ic-dlg-gate > div + div {
+  margin-top: 4px;
+}
+
+.ic-dlg-gate .ok {
+  background: var(--d-ok-bg);
+}
+
+.ic-dlg-gate .bad {
+  background: var(--d-bad-bg);
+}
+
+.ic-dlg-gate i {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ic-dlg-gate .ok i {
+  color: var(--d-ok-text);
+}
+
+.ic-dlg-gate .bad i {
+  color: var(--d-bad-text);
+}
+
+.ic-dlg-gate span {
+  flex: 1;
+  color: var(--d-soft);
+}
+
+.ic-dlg-gate em {
+  font-style: normal;
+  color: var(--d-muted);
+  text-align: right;
+}
+
+.ic-dlg-review > div {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--d-surface);
+  font-size: 12px;
+}
+
+.ic-dlg-review > div + div {
+  margin-top: 4px;
+}
+
+.ic-dlg-review .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ic-dlg-review b {
+  color: var(--d-text);
+  font-weight: 600;
+}
+
+.ic-dlg-review .row span {
+  flex-shrink: 0;
+  color: var(--d-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.ic-dlg-review p {
+  margin: 3px 0 0;
+  color: var(--d-muted);
+  line-height: 1.6;
 }
 </style>
