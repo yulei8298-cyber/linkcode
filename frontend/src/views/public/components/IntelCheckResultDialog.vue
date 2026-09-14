@@ -58,8 +58,12 @@
           </button>
         </div>
 
+        <!-- v-if 而非 v-show：iframe 若在隐藏容器里创建，产物脚本读到的
+             document.hidden 为 true，那类「隐藏时不启动 rAF 循环」的省电写法
+             就永远不会启动动画（且只在 visibilitychange 里重试，而该事件在
+             iframe 内未必触发）。必须等真正可见时才挂载。 -->
         <SvgArtworkPreview
-          v-show="activeTab === 'preview'"
+          v-if="activeTab === 'preview'"
           :html="detail.html_output"
           :height="360"
           :title="`${detail.target_name} 的绘图产物`"

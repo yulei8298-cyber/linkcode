@@ -59,9 +59,13 @@ const props = withDefaults(
  * 所以按缩略图的通行做法：让 iframe 以固定的逻辑尺寸渲染（等于给它一个
  * 桌面视口），再整体缩放到容器里。这样看到的是完整构图，比例也与
  * 用户自己打开这份 HTML 时一致。
+ *
+ * 逻辑高度取 720 而非 600：产物常把画面包在标题栏 + 页脚里（观察到的样例
+ * 就带页头标题与底部按钮条），600 会把页脚挤出视口。宁可上下留白，
+ * 也不要裁掉内容——裁掉的那部分往往正是"有没有做完"的证据。
  */
-const LOGICAL_WIDTH = 900
-const LOGICAL_HEIGHT = 600
+const LOGICAL_WIDTH = 1000
+const LOGICAL_HEIGHT = 720
 
 const wrapper = ref<HTMLElement | null>(null)
 const scale = ref(1)
