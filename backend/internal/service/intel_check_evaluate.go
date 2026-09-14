@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
+	"math"
 )
 
 // intelCheckJudgeOutcome 一次判定的产物，由 runner 搬进 IntelCheckResultOutcome。
@@ -55,16 +55,13 @@ func judgeIntelCheckLogic(question *IntelCheckQuestion, reply string) intelCheck
 	}
 }
 
-// judgeIntelCheckDrawing 判定绘图题：结构门禁 + 源码评审，两层都过才算通过。
-//
-// 分层的意义在于省钱也在于可解释：门禁只做相对参考稿的结构比对，不花 token；
-// 只有结构达标的产物才值得送去评审模型打分。门禁没过就短路，
-// DecideIntelCheckDrawing 接受 review 为 nil 正是为此。
+// judgeIntelCheckDrawing 执行确定性结构验收。保留调用签名，但不使用评审配置或凭据。
+// 新结果标记算法版本和覆盖范围，不能把结构通过解释成运动学或视觉质量通过。
 func (s *IntelCheckService) judgeIntelCheckDrawing(
-	ctx context.Context,
-	cfg *IntelCheckSettings,
+	_ context.Context,
+	_ *IntelCheckSettings,
 	question *IntelCheckQuestion,
-	judge *IntelCheckTarget,
+	_ *IntelCheckTarget,
 	reply string,
 ) intelCheckJudgeOutcome {
 	rules, err := DecodeIntelCheckDrawingRules(question.DrawingRules)
@@ -72,6 +69,7 @@ func (s *IntelCheckService) judgeIntelCheckDrawing(
 		return intelCheckJudgeError("", "题目的绘图判定规则无法解析，本次不计入判定",
 			fmt.Errorf("decode drawing rules: %w", err))
 	}
+	rules.Normalize()
 
 	source, err := ExtractIntelCheckDrawing(reply)
 	if err != nil {
@@ -81,7 +79,7 @@ func (s *IntelCheckService) judgeIntelCheckDrawing(
 
 	html, err := SanitizeIntelCheckDrawing(source, rules.MaxBytes)
 	if err != nil {
-		reason := "产物清洗失败，无法安全展示"
+		reason := "产物无法展示"
 		if errors.Is(err, errIntelCheckTooLarge) {
 			reason = fmt.Sprintf("产物体积超过 %d 字节上限", rules.MaxBytes)
 		}
@@ -92,76 +90,42 @@ func (s *IntelCheckService) judgeIntelCheckDrawing(
 	if err != nil {
 		return intelCheckDrawingFail(html, "产物中没有可解析的 SVG 内容")
 	}
-	reference, err := DecodeDrawingMetrics(question.ReferenceMetrics)
+	baseline, count, err := intelCheckStructureBaseline(question.ReferenceHTML, rules.StandardSources)
 	if err != nil {
-		return intelCheckJudgeError(html, "题目的参考稿指标无法解析，本次不计入判定",
-			fmt.Errorf("decode reference metrics: %w", err))
+		return intelCheckJudgeError(html, "题目的标准样本尚未配置或无法解析，本次不计入判定", err)
 	}
-
-	gate := EvaluateIntelCheckGate(html, candidate, reference, rules)
-
-	// 管理员关掉了源码评审：只按结构门禁判定，压根不发起评审调用。
-	// 在这里就返回而不是把 nil review 交给下游，是为了确保"关闭"真的意味着
-	// 不产生任何评审侧的请求与失败面——否则评审模型挂了还能把本轮染成黄块。
-	if cfg.DrawingJudge.SkipReview {
-		status, detail := DecideIntelCheckDrawingGateOnly(gate)
-		return intelCheckJudgeOutcome{Status: status, HTMLOutput: html, JudgeDetail: detail}
+	structure, err := ComputeIntelCheckStructureMetrics(html)
+	if err != nil {
+		return intelCheckDrawingFail(html, "产物的本地 SVG 引用无效或结构展开超过上限")
 	}
-
-	var review *IntelCheckReviewResult
-	if gate.Pass {
-		result, err := s.reviewIntelCheckDrawing(ctx, cfg, question, judge, html, reference, candidate)
-		if err != nil {
-			// 评审模型自己挂了，责任不在受检模型：记 request_error（黄色），
-			// 不能让评审侧的抖动在受检分组的时间线上留下红块。
-			return intelCheckJudgeError(html, "评审链路未能完成，本次不计入判定", err)
-		}
-		review = result
+	if structure.Shapes == 0 && candidate.HasMechanism(DrawingMechanismScript) {
+		return intelCheckJudgeError(html, "未检测到可统计的静态图元，需人工核验动态绘图",
+			fmt.Errorf("静态结构验收无法验证脚本生成的几何"))
 	}
-
-	status, detail := DecideIntelCheckDrawing(gate, review, cfg.DrawingJudge.PassScore)
-	return intelCheckJudgeOutcome{Status: status, HTMLOutput: html, JudgeDetail: detail}
-}
-
-// reviewIntelCheckDrawing 调用管理员指定的评审模型，对源码打分。
-//
-// 评审走的是「评审分组的地址与凭据 + 设置里指定的模型与推理等级」：
-// 评审模型未必是受检模型，把它绑死在某个受检分组的模型上会让打分随受检对象漂移。
-func (s *IntelCheckService) reviewIntelCheckDrawing(
-	ctx context.Context,
-	cfg *IntelCheckSettings,
-	question *IntelCheckQuestion,
-	judge *IntelCheckTarget,
-	html string,
-	reference, candidate DrawingMetrics,
-) (*IntelCheckReviewResult, error) {
-	if judge == nil {
-		return nil, fmt.Errorf("评审分组不可用（未配置、已删除或凭据无法解密）")
-	}
-
-	prompt := BuildIntelCheckReviewPrompt(
-		question.Prompt, question.ReferenceHTML, html, question.ReviewRubric, reference, candidate)
-
-	callCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.RequestTimeoutSeconds)*time.Second)
-	defer cancel()
-
-	reply, err := callIntelCheckUpstream(callCtx, intelCheckUpstreamRequest{
-		BaseURL:         judge.BaseURL,
-		APIKey:          judge.APIKey,
-		APIMode:         judge.APIMode,
-		Model:           cfg.DrawingJudge.Model,
-		ReasoningEffort: cfg.DrawingJudge.ReasoningEffort,
-		Prompt:          prompt,
+	gate := evaluateIntelCheckFixedGate(html, candidate, rules)
+	score := math.Round(intelCheckStructureScore(structure, baseline)*100) / 100
+	threshold := rules.MinRatio * 100
+	gate.Items = append(gate.Items, IntelCheckGateItem{
+		Item: "结构综合分", Pass: score >= threshold,
+		Detail: fmt.Sprintf("%.2f / 100（要求 ≥ %.2f）；图元 %d / 基准 %d，几何参数 %d / 基准 %d；%d 份标准取中位数",
+			score, threshold, structure.Shapes, baseline.Shapes, structure.GeometryValues, baseline.GeometryValues, count),
 	})
-	if err != nil {
-		return nil, fmt.Errorf("评审模型调用失败：%w", err)
+	gate.Pass = gate.Pass && score >= threshold
+	status, reason := IntelCheckStatusPass, "结构基准通过"
+	if !gate.Pass {
+		status, reason = IntelCheckStatusFail, "结构基准未通过"
 	}
-
-	result, err := ParseIntelCheckReviewResult(reply.Text)
-	if err != nil {
-		return nil, fmt.Errorf("评审模型输出无法解析：%w", err)
+	return intelCheckJudgeOutcome{
+		Status: status, HTMLOutput: html,
+		JudgeDetail: map[string]any{
+			"judge_method": intelCheckStructureVersion, "gate_pass": gate.Pass, "gate_items": gate.Items,
+			"structure_score": score, "structure_threshold": threshold,
+			"reference_count": count, "candidate_structure": structure, "baseline_structure": baseline,
+			"standard_digest": intelCheckStandardDigest(question.ReferenceHTML, rules.StandardSources),
+			"review_skipped":  true, "kinematics_verified": false, "reason": reason,
+			"scope_note": "仅检查静态结构和动画声明，未验证视觉质量、轮心稳定或脚踏联动；结构达标不等于画作质量达标。",
+		},
 	}
-	return &result, nil
 }
 
 // intelCheckDrawingFail 构造一条绘图题失败判定。

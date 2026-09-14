@@ -2,7 +2,7 @@ export default {
   intelCheck: {
     title: '模型智力检测',
     description:
-      '定期用与 Codex CLI 一致的请求方式，向受检分组各发一道逻辑题和一道绘图题，并把原始回复与判定过程公开在门户页上。开启前请先配好受检分组、题库与源码评审模型。',
+      '定期用与 Codex CLI 一致的请求方式，向受检分组各发一道逻辑题和一道绘图题，并把原始回复与判定过程公开在门户页上。绘图题使用多份标准样本做确定性结构验收。',
     tabs: { overview: '概览', targets: '受检分组', questions: '题库', settings: '设置' },
 
     common: {
@@ -123,13 +123,13 @@ export default {
         kind: '题型',
         answer: '标准答案',
         reference: '参考稿',
-        rubric: '评审清单',
+        rubric: '标准数量',
       },
       empty: '题库是空的',
       emptyHint: '至少录入一道逻辑题；绘图题需要同时提供参考稿，它是结构门禁的标尺。',
       deleteConfirm: '确定删除题目「{title}」吗？历史明细不受影响（题面已快照保存）。',
       hasRubric: '已配置',
-      noRubric: '用内置默认清单',
+      noRubric: '未配置',
       noReference: '未上传',
       form: {
         kind: '题型',
@@ -141,21 +141,28 @@ export default {
         expectedAnswer: '标准答案',
         expectedAnswerHint: '正则模式下必须填合法正则，保存时会校验。',
         matchMode: '匹配方式',
-        referenceHtml: '参考稿 HTML',
+        standardFiles: '导入标准正样本',
+        standardFilesHint: '所选文件将替换当前标准集。最多 8 份，每份 512 KiB。负样本只用于标定，不应导入这里。',
+        standardFilesLimit: '最多选择 8 份标准，每份不得超过 512 KiB。',
+        additionalStandard: '标准样本 {n}',
+        referenceHtml: '标准样本 1（HTML / SVG）',
         referenceHtmlHint:
-          '满血产出的样例。系统会从中算出结构指标作为门禁的分母；留空则跳过全部相对项，等于关掉半层门禁。',
-        referenceMetrics: '参考稿指标（服务端算出）',
+          '服务端计算多份标准的中位结构基准。至少需要一份有效标准，缺少标准时检测记为配置不足。',
+        referenceMetrics: '标准指标（保存时由服务端计算）',
         reviewRubric: '源码评审清单',
         reviewRubricPlaceholder: '留空则使用内置默认清单（主体完整度/结构合理度/动画质量/细节丰富度/代码工程性）',
         drawingRules: '门禁规则',
-        minRatio: '最低比例',
-        minRatioHint: '每项指标须 ≥ 参考稿 × 该比例。默认 0.7，来自实测标定，不建议随意调高。',
+        minRatio: '结构最低分比例',
+        minRatioHint: '0.7 表示结构综合分至少 70。图元数和几何参数数各占一半，单项封顶，不再要求旧指标逐项达到 70%。',
         maxBytes: '产物体积上限（字节）',
         requiredKeywords: '必需关键词',
         requiredKeywordsHint: '逗号分隔，留空表示不检查。',
         enabled: '参与抽题',
       },
       metrics: {
+        structure_shapes: '展开后的图元基准',
+        geometry_values: '几何参数基准',
+        standard_count: '去重标准数量',
         shape_count: '造型数量',
         animated_targets: '动画目标数',
         defs_symbols: '可复用符号数',
@@ -170,7 +177,7 @@ export default {
       evaluate: '阈值标定',
       evaluateTitle: '粘贴产物跑判定',
       evaluateHint:
-        '只跑结构门禁与源码评审，不向受检分组发绘图请求。用已知好坏的样例反复跑，直到判定结论与你的判断一致。',
+        '本地确定性结构判定，不调用评审模型。对照已标注的正负样本检查误判；结构达标不能证明视觉质量或脚踏联动正确。',
       sourceLabel: '产物 HTML / SVG',
       sourcePlaceholder: '粘贴一份完整的 HTML 或 SVG',
       run: '开始判定',
@@ -191,8 +198,10 @@ export default {
 
     // ---------- 设置 ----------
     settings: {
+      structureJudge: '绘图判定：确定性结构验收',
+      structureJudgeHint: '绘图检测不使用模型评审。标准样本和结构通过线在题库中配置；结果只代表结构验收，未验证运动学或视觉质量。',
       enabled: '启用智力检测',
-      enabledHint: '关闭后公开页返回 404，管理端仍可配置。开启前必须已指定源码评审所用的分组与模型。',
+      enabledHint: '关闭后公开页返回 404，管理端仍可配置。开启前请先配置受检分组与题库。',
       schedule: '调度',
       intervalMinutes: '检测周期（分钟）',
       intervalHint: '5 至 1440。周期同时是单轮的硬上限（下限保底为单次超时 + 1 分钟）。',
@@ -202,20 +211,19 @@ export default {
       concurrencyHint: '1 至 32。同一分组的两道题始终串行，避免给自己制造限流。',
       retentionDays: '明细保留天数',
 
-      judge: '源码评审',
-      skipReviewHint:
-        '第二层判定：让评审模型读产物源码按清单打分。关闭后绘图题只按结构门禁判定，无需配置评审模型，每轮也省下一次评审调用；代价是放过「结构指标凑够了但实际粗糙」这类退化。',
-      judgeTarget: '评审所用分组',
-      judgeTargetHint: '复用该分组的上游地址与凭据，不再单独维护一套。',
-      judgeModel: '评审模型名',
-      judgeEffort: '评审推理等级',
-      passScore: '评审及格线',
-      passScoreHint: '1 至 100，默认 80。结构门禁与源码评审两层都过才算通过。',
+      judge: '源码评审（已停用）',
+      skipReviewHint: '新版绘图题只做确定性结构验收，不调用模型评审。配置多份标准正样本后，服务端取结构指标中位数作为基准。',
+      judgeTarget: '评审所用分组（兼容旧配置）',
+      judgeTargetHint: '仅保留旧配置展示，不参与新版绘图判定。',
+      judgeModel: '评审模型名（兼容旧配置）',
+      judgeEffort: '评审推理等级（兼容旧配置）',
+      passScore: '评审及格线（兼容旧配置）',
+      passScoreHint: '仅用于兼容历史配置，新版绘图判定不读取此项。',
 
       degraded: '降智判定',
       failStreak: '连续未通过判为疑似降智',
       recoverStreak: '连续通过恢复为正常',
-      degradedHint: '只看逻辑题：绘图题含评审打分，波动天然更大，纳入会频繁误报。',
+      degradedHint: '只看逻辑题：绘图题的结构验收不代表视觉或运动学质量，纳入会混淆降智状态。',
 
       display: '公开页展示',
       timelinePoints: '时间线格数',
@@ -223,7 +231,7 @@ export default {
       introTitle: '页面标题',
       introText: '页面说明',
 
-      requireJudge: '开启前请先指定源码评审所使用的分组与模型',
+      requireJudge: '请先配置受检分组与题库',
     },
   },
 }

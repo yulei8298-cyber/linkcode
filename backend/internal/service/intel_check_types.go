@@ -69,8 +69,7 @@ type IntelCheckDegradedRule struct {
 	RecoverStreak int `json:"recover_streak"`
 }
 
-// IntelCheckDrawingJudge 绘图题源码评审所用的模型配置。
-// TargetID 复用受检分组的 base_url 与 api_key，避免再维护一套凭据。
+// IntelCheckDrawingJudge 兼容旧版配置的字段，新版不再调用评审模型。
 type IntelCheckDrawingJudge struct {
 	TargetID        int64  `json:"target_id"`
 	Model           string `json:"model"`
@@ -78,16 +77,7 @@ type IntelCheckDrawingJudge struct {
 	// PassScore 评审通过分数线（0-100）。
 	PassScore int `json:"pass_score"`
 
-	// SkipReview 关闭第二层源码评审，只按结构门禁判定绘图题。
-	//
-	// 设计文档 §5.2 的实测结论支持这个选项：第一层门禁已能独立分开好坏样例，
-	// 评审是用来抓「指标凑够了但实际粗糙」这类第一层看不出的退化，属于加强项。
-	// 关掉它能省下每轮一次评审调用（绘图题本身已要一两分钟），代价是放过那类退化。
-	//
-	// 用「跳过」这个负向命名而不是 ReviewEnabled，是为了让 bool 零值等于既有行为：
-	// 存量设置 JSON 里没有这个字段，反序列化得到 false，即「照旧评审」。
-	// 若命名为 ReviewEnabled，零值 false 会让所有存量部署在升级后静默关掉评审，
-	// 而 Normalize 无法区分「字段缺失」与「管理员显式设为 false」。
+	// SkipReview 归一化后固定为 true；旧客户端即使提交 false 也不会触发评审。
 	SkipReview bool `json:"skip_review"`
 }
 
@@ -157,6 +147,7 @@ func DefaultIntelCheckSettings() IntelCheckSettings {
 			// 猜错会让评审悄悄用错模型，打出的分数无从解释。
 			ReasoningEffort: IntelCheckEffortHigh,
 			PassScore:       intelCheckDefaultPassScore,
+			SkipReview:      true,
 		},
 		TimelinePoints: intelCheckDefaultTimelinePoints,
 		RetentionDays:  intelCheckDefaultRetentionDays,
@@ -176,6 +167,8 @@ func DefaultIntelCheckSettings() IntelCheckSettings {
 //     管理员关掉的开关会在下一次读取时自己打开。
 //   - 非空文案原样保留，只去首尾空白；仅在为空时回落默认文案。
 func (s *IntelCheckSettings) Normalize() {
+	// 旧字段仅为读写兼容保留；新版绘图验收始终不调用模型评审。
+	s.DrawingJudge.SkipReview = true
 	s.IntervalMinutes = clampIntelCheckInt(s.IntervalMinutes, intelCheckMinIntervalMinutes, intelCheckMaxIntervalMinutes, intelCheckDefaultIntervalMinutes)
 	s.RequestTimeoutSeconds = clampIntelCheckInt(s.RequestTimeoutSeconds, intelCheckMinTimeoutSeconds, intelCheckMaxTimeoutSeconds, intelCheckDefaultTimeoutSeconds)
 	s.Concurrency = clampIntelCheckInt(s.Concurrency, 1, intelCheckMaxConcurrency, intelCheckDefaultConcurrency)

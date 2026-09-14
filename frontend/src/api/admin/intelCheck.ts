@@ -25,17 +25,14 @@ export interface IntelCheckDegradedRule {
   recover_streak: number
 }
 
-/** 绘图题源码评审所用的模型。target_id 复用受检分组的地址与凭据。 */
+/** 兼容旧版源码评审设置；新版在线判定不读取模型与凭据配置。 */
 export interface IntelCheckDrawingJudge {
   target_id: number
   model: string
   reasoning_effort: string
   /** 评审通过分数线（1-100）。 */
   pass_score: number
-  /**
-   * 关闭第二层源码评审，绘图题只按结构门禁判定。
-   * 开启此项后无需配置评审分组与模型，且每轮省下一次评审调用。
-   */
+  /** 兼容旧配置，新版归一化后固定为 true，不调用模型评审。 */
   skip_review?: boolean
 }
 
@@ -94,6 +91,8 @@ export interface IntelCheckTargetParams {
 
 /** 参考稿的结构指标快照，由服务端从 reference_html 现算，不接受传入。 */
 export interface IntelCheckReferenceMetrics {
+  structure_baseline?: { shapes: number; geometry_values: number }
+  standard_count?: number
   shape_count?: number
   animated_targets?: number
   defs_symbols?: number
@@ -105,14 +104,16 @@ export interface IntelCheckReferenceMetrics {
   has_desc?: boolean
 }
 
-/** 结构门禁规则。min_ratio 默认 0.7，来源见设计文档 §5.2 的实测推导。 */
+/** 确定性结构验收；min_ratio × 100 为结构综合分的通过线。 */
 export interface IntelCheckDrawingRules {
   min_ratio?: number
   required_keywords?: string[]
   max_bytes?: number
+  /** 额外标准正样本原文，仅题目详情返回，指标由服务端计算。 */
+  standard_sources?: string[]
 }
 
-/** 题库列表行：不含参考稿与评审清单正文，只给体积与有无。 */
+/** 题库列表行：不含标准样本正文，只给体积、结构基准和标准数量。 */
 export interface IntelCheckQuestionListItem {
   id: number
   kind: IntelCheckKind
@@ -123,6 +124,7 @@ export interface IntelCheckQuestionListItem {
   reference_html_bytes: number
   reference_metrics: IntelCheckReferenceMetrics | null
   drawing_rules: IntelCheckDrawingRules | null
+  /** 兼容旧接口字段；新版结构验收不使用源码评审。 */
   has_review_rubric: boolean
   enabled: boolean
   created_at: string

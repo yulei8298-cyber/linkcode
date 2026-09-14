@@ -49,20 +49,19 @@
           <div :class="row.reference_html_bytes > 0 ? 'text-gray-700 dark:text-gray-200' : 'text-amber-600 dark:text-amber-400'">
             {{ row.reference_html_bytes > 0 ? t('admin.intelCheck.common.bytes', { n: row.reference_html_bytes }) : t('admin.intelCheck.questions.noReference') }}
           </div>
-          <div v-if="row.reference_metrics" class="text-gray-500 dark:text-gray-400">
-            {{ row.reference_metrics.shape_count ?? 0 }} {{ t('admin.intelCheck.questions.metrics.shape_count') }}
+          <div v-if="row.reference_metrics?.structure_baseline" class="text-gray-500 dark:text-gray-400">
+            {{ row.reference_metrics.structure_baseline.shapes }} {{ t('admin.intelCheck.questions.metrics.structure_shapes') }}
           </div>
         </div>
         <span v-else class="text-sm text-gray-400 dark:text-gray-500">--</span>
       </template>
 
-      <template #cell-rubric="{ row }">
+      <template #cell-standards="{ row }">
         <span
           v-if="row.kind === 'drawing'"
-          class="text-xs"
-          :class="row.has_review_rubric ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'"
+          class="text-xs text-gray-700 dark:text-gray-200"
         >
-          {{ row.has_review_rubric ? t('admin.intelCheck.questions.hasRubric') : t('admin.intelCheck.questions.noRubric') }}
+          {{ row.reference_metrics?.standard_count ?? (row.reference_html_bytes > 0 ? 1 : 0) }}
         </span>
         <span v-else class="text-sm text-gray-400 dark:text-gray-500">--</span>
       </template>
@@ -179,7 +178,7 @@ const columns = computed<Column[]>(() => [
   { key: 'kind', label: t('admin.intelCheck.questions.columns.kind') },
   { key: 'answer', label: t('admin.intelCheck.questions.columns.answer') },
   { key: 'reference', label: t('admin.intelCheck.questions.columns.reference') },
-  { key: 'rubric', label: t('admin.intelCheck.questions.columns.rubric') },
+  { key: 'standards', label: t('admin.intelCheck.questions.metrics.standard_count') },
   { key: 'enabled', label: t('admin.intelCheck.common.enabled') },
   { key: 'actions', label: t('admin.intelCheck.common.actions') },
 ])

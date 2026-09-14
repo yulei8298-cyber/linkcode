@@ -24,6 +24,8 @@ func RegisterIntelCheckPublicRoutes(
 	intelCheck := v1.Group("/public/intel-check")
 	intelCheck.Use(panelRateLimiter.PublicIP())
 	{
+		// 无数据的静态预览外壳也供开关关闭时的管理端标定使用。
+		intelCheck.GET("/preview", h.IntelCheck.Preview)
 		intelCheck.GET("/overview", h.IntelCheck.Overview)
 		intelCheck.GET("/results/:id", h.IntelCheck.ResultDetail)
 	}

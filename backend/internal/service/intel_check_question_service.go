@@ -8,8 +8,7 @@ import (
 )
 
 // 题库字段上限。前两项与迁移 238 的列宽一致；后三项落在 TEXT 列上，
-// 是防御性上限——prompt、review_rubric 与 reference_html 都会进入发往上游的
-// 提示词，不设限意味着单次评审请求的体积不可控。
+// 是存储与解析的防御性上限。新版仅将题面发往受检模型，标准原文不发上游。
 const (
 	maxIntelCheckQuestionTitleRunes  = 100
 	maxIntelCheckQuestionAnswerRunes = 500
@@ -18,8 +17,7 @@ const (
 	maxIntelCheckReviewRubricRunes   = 20000
 
 	// maxIntelCheckReferenceHTMLBytes 取候选稿门禁上限（256 KiB）的两倍。
-	// 参考稿由管理员上传、可信度高于模型产出，但它与候选稿一同送入源码评审，
-	// 两边都放开会让评审提示词直接翻倍。
+	// 标准由管理员上传，但仍需限制存储体积与静态解析的资源开销。
 	maxIntelCheckReferenceHTMLBytes = 512 * 1024
 )
 
@@ -178,6 +176,17 @@ func applyIntelCheckDrawingFields(q *IntelCheckQuestion, p IntelCheckQuestionPar
 	rules, err := DecodeIntelCheckDrawingRules(p.DrawingRules)
 	if err != nil {
 		return err
+	}
+	if reference != "" || len(rules.StandardSources) > 0 {
+		baseline, count, err := intelCheckStructureBaseline(reference, rules.StandardSources)
+		if err != nil {
+			return err
+		}
+		if metrics == nil {
+			metrics = make(map[string]any)
+		}
+		metrics["structure_baseline"] = baseline
+		metrics["standard_count"] = count
 	}
 	// 落库前就归一化，使管理端读回的规则与判定时实际生效的规则完全一致。
 	rules.Normalize()

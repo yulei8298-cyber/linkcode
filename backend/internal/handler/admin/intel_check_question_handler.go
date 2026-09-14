@@ -69,6 +69,16 @@ type intelCheckEvaluateRequest struct {
 }
 
 func intelCheckQuestionToListItem(q *service.IntelCheckQuestion) intelCheckQuestionListItem {
+	// 标准原文仅随题目详情返回，避免分页列表携带多份大体积 HTML。
+	var rules map[string]any
+	if q.DrawingRules != nil {
+		rules = make(map[string]any, len(q.DrawingRules))
+		for key, value := range q.DrawingRules {
+			if key != "standard_sources" {
+				rules[key] = value
+			}
+		}
+	}
 	return intelCheckQuestionListItem{
 		ID:                 q.ID,
 		Kind:               q.Kind,
@@ -78,7 +88,7 @@ func intelCheckQuestionToListItem(q *service.IntelCheckQuestion) intelCheckQuest
 		MatchMode:          q.MatchMode,
 		ReferenceHTMLBytes: len(q.ReferenceHTML),
 		ReferenceMetrics:   q.ReferenceMetrics,
-		DrawingRules:       q.DrawingRules,
+		DrawingRules:       rules,
 		HasReviewRubric:    strings.TrimSpace(q.ReviewRubric) != "",
 		Enabled:            q.Enabled,
 		CreatedAt:          q.CreatedAt.UTC().Format(time.RFC3339),
@@ -207,7 +217,7 @@ func (h *IntelCheckHandler) DeleteQuestion(c *gin.Context) {
 
 // EvaluateQuestion POST /api/v1/admin/intel-check/questions/:id/evaluate
 //
-// 只对粘贴进来的产物跑判定（结构门禁 + 源码评审），不向受检分组发绘图请求。
+// 只对粘贴进来的产物做确定性结构验收，不调用任何上游模型。
 // 用于标定 min_ratio 与 pass_score：拿几份已知好坏的样例反复跑，
 // 直到门禁与评审的结论与人的判断一致。
 func (h *IntelCheckHandler) EvaluateQuestion(c *gin.Context) {

@@ -46,6 +46,8 @@
         <h4>题目{{ detail.question_title ? ` · ${detail.question_title}` : '' }}</h4>
         <div class="ic-dlg-q">{{ detail.prompt_snapshot || '--' }}</div>
 
+        <p v-if="typeof detail.judge_detail?.scope_note === 'string'" class="ic-dlg-note">{{ detail.judge_detail.scope_note }}</p>
+
         <div class="ic-dlg-tabs">
           <button
             v-for="tab in drawingTabs"
@@ -187,6 +189,13 @@ const judgeItems = computed(() => {
   if (typeof reason === 'string' && reason) items.push({ label: '判定说明', value: reason })
 
   if (detail.value?.kind === 'logic') return items
+
+  if (raw.judge_method === 'structure_v2') {
+    items.push({ label: '判定方式', value: '确定性结构验收 v2' })
+    items.push({ label: '结构综合分', value: `${raw.structure_score} / 100（通过线 ${raw.structure_threshold}）` })
+    items.push({ label: '标准样本数', value: String(raw.reference_count) })
+    items.push({ label: '运动学验证', value: '未验证' })
+  }
 
   const gatePass = raw.gate_pass
   if (typeof gatePass === 'boolean') {

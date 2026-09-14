@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>绘图预览</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; color: #1f2937; }
+    iframe { display: block; width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
+<body>
+  <!-- 双方均为不透明源；产物只能在内层运行，不能改写外壳或访问父页面。 -->
+  <iframe id="artwork" sandbox="allow-scripts" referrerpolicy="no-referrer" title="模型绘图产物"></iframe>
+  <script>
+    (() => {
+      const artwork = document.getElementById('artwork');
+      let currentHTML = null;
+      window.addEventListener('message', (event) => {
+        // 不以 origin=null 判断可信度，必须是直接父窗口发来的指定消息。
+        if (event.source !== window.parent || window.parent === window) return;
+        const data = event.data;
+        if (!data || data.type !== 'intel-check-preview' || typeof data.html !== 'string') return;
+        if (data.html.length > 2 * 1024 * 1024) return;
+        artwork.title = typeof data.title === 'string' ? data.title : '模型绘图产物';
+        // 不重复装载同一产物，避免标题更新或父页面轮询重启动画。
+        if (data.html === currentHTML) return;
+        currentHTML = data.html;
+        artwork.srcdoc = data.html;
+      });
+    })();
+  </script>
+</body>
+</html>

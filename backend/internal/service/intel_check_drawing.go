@@ -82,6 +82,8 @@ func intelCheckLooksLikeDrawing(text string) bool {
 // 也不能做顶层导航或弹窗。清洗只是锦上添花的第二层，
 // 而它的代价是让本功能失去可信度，这笔交易不划算。
 //
+// 预览通过独立 HTTP 外壳加载，以免继承主站 nonce CSP 而阻止内联动画。
+// 外壳的响应头及内外两层 iframe 都不允许 allow-same-origin，且不改写产物。
 // **改动 SvgArtworkPreview.vue 的 sandbox 属性前请先回到这里。**
 // 一旦那里补上 allow-same-origin，沙箱即告失效，而此处已无清洗兜底。
 //

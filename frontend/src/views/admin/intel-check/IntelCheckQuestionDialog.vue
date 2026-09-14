@@ -66,6 +66,11 @@
 
       <section v-else class="space-y-4 border-t border-gray-100 pt-4 dark:border-dark-700">
         <div>
+          <label class="label" for="intel-check-standard-files">{{ t('admin.intelCheck.questions.form.standardFiles') }}</label>
+          <input id="intel-check-standard-files" type="file" accept=".html,.htm,.svg" multiple :disabled="importing" @change="importStandards" />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.intelCheck.questions.form.standardFilesHint') }}</p>
+        </div>
+        <div>
           <label class="label">{{ t('admin.intelCheck.questions.form.referenceHtml') }}</label>
           <textarea
             v-model="form.reference_html"
@@ -76,6 +81,14 @@
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {{ t('admin.intelCheck.questions.form.referenceHtmlHint') }}
           </p>
+        </div>
+
+        <div v-for="(_, index) in form.drawing_rules.standard_sources" :key="index">
+          <div class="mb-1 flex items-center justify-between">
+            <label class="label">{{ t('admin.intelCheck.questions.form.additionalStandard', { n: index + 2 }) }}</label>
+            <button type="button" class="btn btn-secondary" @click="form.drawing_rules.standard_sources.splice(index, 1)">{{ t('common.delete') }}</button>
+          </div>
+          <textarea v-model="form.drawing_rules.standard_sources[index]" rows="4" class="input font-mono text-xs"></textarea>
         </div>
 
         <div v-if="referenceMetrics" class="rounded-lg bg-gray-50 p-3 dark:bg-dark-800">
@@ -122,15 +135,6 @@
           </p>
         </div>
 
-        <div>
-          <label class="label">{{ t('admin.intelCheck.questions.form.reviewRubric') }}</label>
-          <textarea
-            v-model="form.review_rubric"
-            rows="7"
-            class="input"
-            :placeholder="t('admin.intelCheck.questions.form.reviewRubricPlaceholder')"
-          ></textarea>
-        </div>
       </section>
 
       <div class="flex items-center gap-3 border-t border-gray-100 pt-4 dark:border-dark-700">
@@ -151,7 +155,7 @@
         <button type="button" class="btn btn-secondary" @click="emit('close')">
           {{ t('common.close') }}
         </button>
-        <button type="button" class="btn btn-primary" :disabled="saving || detailLoading" @click="save">
+        <button type="button" class="btn btn-primary" :disabled="saving || detailLoading || importing" @click="save">
           {{ saving ? t('common.saving') : t('common.save') }}
         </button>
       </div>
@@ -192,10 +196,12 @@ const { t } = useI18n()
 const appStore = useAppStore()
 const matchModes: IntelCheckMatchMode[] = ['exact', 'numeric', 'contains', 'regex']
 const saving = ref(false)
+const importing = ref(false)
 const detailLoading = ref(false)
 const detailQuestion = ref<IntelCheckQuestion | null>(null)
 const savedMetrics = ref<IntelCheckReferenceMetrics | null>(null)
 let abortController: AbortController | null = null
+let importVersion = 0
 
 interface QuestionForm {
   kind: IntelCheckKind
@@ -209,6 +215,7 @@ interface QuestionForm {
   drawing_rules: {
     min_ratio: number
     max_bytes: number
+    standard_sources: string[]
   }
   enabled: boolean
 }
@@ -226,6 +233,7 @@ function emptyForm(): QuestionForm {
     drawing_rules: {
       min_ratio: 0.7,
       max_bytes: 262144,
+      standard_sources: [],
     },
     enabled: true,
   }
@@ -241,16 +249,15 @@ const metricItems = computed(() => {
   const metrics = referenceMetrics.value
   if (!metrics) return []
   return [
-    { key: 'shape_count', value: metrics.shape_count ?? '--' },
-    { key: 'animated_targets', value: metrics.animated_targets ?? '--' },
-    { key: 'defs_symbols', value: metrics.defs_symbols ?? '--' },
-    { key: 'path_data_bytes', value: metrics.path_data_bytes ?? '--' },
-    { key: 'html_bytes', value: metrics.html_bytes ?? '--' },
-    { key: 'mechanisms', value: metrics.mechanisms?.join(', ') || '--' },
+    { key: 'structure_shapes', value: metrics.structure_baseline?.shapes ?? '--' },
+    { key: 'geometry_values', value: metrics.structure_baseline?.geometry_values ?? '--' },
+    { key: 'standard_count', value: metrics.standard_count ?? '--' },
   ]
 })
 
 function resetForm() {
+  importVersion++
+  importing.value = false
   Object.assign(form, emptyForm())
   detailQuestion.value = null
   savedMetrics.value = null
@@ -272,6 +279,7 @@ function applyQuestion(question: IntelCheckQuestion) {
     drawing_rules: {
       min_ratio: typeof drawingRules.min_ratio === 'number' ? drawingRules.min_ratio : 0.7,
       max_bytes: typeof drawingRules.max_bytes === 'number' ? drawingRules.max_bytes : 262144,
+      standard_sources: Array.isArray(drawingRules.standard_sources) ? [...drawingRules.standard_sources] : [],
     },
     enabled: question.enabled,
   })
@@ -300,10 +308,15 @@ async function loadDetail(id: number) {
 }
 
 function handleKindChange() {
+  importVersion++
+  importing.value = false
+  savedMetrics.value = null
+  detailQuestion.value = null
   if (form.kind === 'logic') {
     form.reference_html = ''
     form.required_keywords = ''
     form.review_rubric = ''
+    form.drawing_rules.standard_sources = []
   } else {
     form.expected_answer = ''
     form.match_mode = 'exact'
@@ -325,6 +338,7 @@ function buildPayload(): IntelCheckQuestionParams {
     const rules: IntelCheckDrawingRules = {
       min_ratio: form.drawing_rules.min_ratio,
       max_bytes: form.drawing_rules.max_bytes,
+      standard_sources: [...form.drawing_rules.standard_sources],
       required_keywords: form.required_keywords
         .split(',')
         .map((keyword) => keyword.trim())
@@ -339,7 +353,7 @@ function buildPayload(): IntelCheckQuestionParams {
 }
 
 async function save() {
-  if (saving.value || detailLoading.value) return
+  if (saving.value || detailLoading.value || importing.value) return
   saving.value = true
   try {
     const payload = buildPayload()
@@ -359,10 +373,40 @@ async function save() {
   }
 }
 
+async function importStandards(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  if (!files.length) return
+  if (files.length > 8 || files.some((file) => file.size > 512 * 1024)) {
+    appStore.showError(t('admin.intelCheck.questions.form.standardFilesLimit'))
+    input.value = ''
+    return
+  }
+  importing.value = true
+  const version = ++importVersion
+  try {
+    const sources = await Promise.all(files.map((file) => file.text()))
+    if (version !== importVersion || !props.show) return
+    form.reference_html = sources[0] ?? ''
+    form.drawing_rules.standard_sources = sources.slice(1)
+    savedMetrics.value = null
+    detailQuestion.value = null
+  } catch {
+    if (version === importVersion && props.show) {
+      appStore.showError(t('admin.intelCheck.common.loadError'))
+    }
+  } finally {
+    if (version === importVersion) importing.value = false
+    input.value = ''
+  }
+}
+
 watch(
   () => [props.show, props.question] as const,
   ([show, question]) => {
     if (!show) {
+      importVersion++
+      importing.value = false
       abortController?.abort()
       abortController = null
       return

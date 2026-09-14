@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import IntelCheckResultDialog from '../IntelCheckResultDialog.vue'
+import type { IntelCheckResult } from '@/api/intelCheck'
 
 const { getIntelCheckResult } = vi.hoisted(() => ({
   getIntelCheckResult: vi.fn(),
@@ -62,7 +63,7 @@ const drawingResult = {
   },
 }
 
-function mountDialog(result: typeof logicResult) {
+function mountDialog(result: IntelCheckResult) {
   getIntelCheckResult.mockResolvedValue(result)
   return mount(IntelCheckResultDialog, {
     props: { show: true, resultId: result.id },
@@ -107,6 +108,26 @@ describe('IntelCheckResultDialog', () => {
     expect(sourceTab).toBeDefined()
     await sourceTab!.trigger('click')
     expect(wrapper.text()).toContain('<html><svg><title>bird</title></svg></html>')
+    wrapper.unmount()
+  })
+
+  it('展示新版结构分与验证范围且不显示历史评审', async () => {
+    const wrapper = mountDialog({
+      ...drawingResult,
+      status: 'pass',
+      judge_detail: {
+        judge_method: 'structure_v2', gate_pass: true, structure_score: 85.65,
+        structure_threshold: 70, reference_count: 3, kinematics_verified: false,
+        scope_note: '仅检查静态结构和动画声明，未验证视觉质量、轮心稳定或脚踏联动。',
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('确定性结构验收 v2')
+    expect(wrapper.text()).toContain('85.65 / 100（通过线 70）')
+    expect(wrapper.text()).toContain('标准样本数3')
+    expect(wrapper.text()).toContain('运动学验证未验证')
+    expect(wrapper.text()).toContain('未验证视觉质量、轮心稳定或脚踏联动')
+    expect(wrapper.text()).not.toContain('源码评审逐项')
     wrapper.unmount()
   })
 })

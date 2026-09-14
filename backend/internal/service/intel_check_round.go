@@ -69,20 +69,13 @@ func (s *IntelCheckService) RunOnce(ctx context.Context, trigger string) (*Intel
 		return round, nil
 	}
 
-	// 有绘图题、且没关掉源码评审时才加载评审分组。
-	// 关掉评审后整轮不会产生任何评审侧调用，也不该为它打「未配置」的告警。
-	var judge *IntelCheckTarget
-	if drawingQ != nil && !cfg.DrawingJudge.SkipReview {
-		judge = s.loadIntelCheckJudgeTarget(ctx, cfg)
-	}
-
 	drafts := buildIntelCheckDrafts(round, targets, logicQ, drawingQ)
 	if err := s.repo.CreateRunningResults(ctx, drafts); err != nil {
 		s.finishIntelCheckRound(ctx, round.ID)
 		return nil, fmt.Errorf("create intel check running results: %w", err)
 	}
 
-	s.runIntelCheckTargets(ctx, cfg, round, targets, logicQ, drawingQ, judge)
+	s.runIntelCheckTargets(ctx, cfg, round, targets, logicQ, drawingQ, nil)
 	s.finishIntelCheckRound(ctx, round.ID)
 	return round, nil
 }
@@ -138,28 +131,6 @@ func filterIntelCheckRunnableTargets(targets []*IntelCheckTarget) []*IntelCheckT
 		runnable = append(runnable, target)
 	}
 	return runnable
-}
-
-// loadIntelCheckJudgeTarget 取评审调用所用的分组（提供地址与凭据）。
-// 取不到返回 nil：绘图题届时会记 request_error，而不是让整轮失败。
-func (s *IntelCheckService) loadIntelCheckJudgeTarget(
-	ctx context.Context, cfg *IntelCheckSettings,
-) *IntelCheckTarget {
-	if cfg.DrawingJudge.TargetID <= 0 {
-		slog.Warn("intel_check: 未配置评审分组，绘图题将无法完成评审")
-		return nil
-	}
-	target, err := s.GetTarget(ctx, cfg.DrawingJudge.TargetID)
-	if err != nil {
-		slog.Error("intel_check: 评审分组加载失败",
-			"target_id", cfg.DrawingJudge.TargetID, "error", err)
-		return nil
-	}
-	if target.APIKeyDecryptFailed {
-		slog.Error("intel_check: 评审分组凭据解密失败", "target_id", target.ID)
-		return nil
-	}
-	return target
 }
 
 // buildIntelCheckDrafts 为每个（分组 × 题型）建一条 running 占位行。

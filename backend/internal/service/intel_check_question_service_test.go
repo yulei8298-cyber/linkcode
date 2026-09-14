@@ -215,7 +215,7 @@ func TestBuildIntelCheckQuestion_绘图题(t *testing.T) {
 	})
 
 	t.Run("未上传参考稿是合法状态", func(t *testing.T) {
-		// 管理员通常先建题、再补参考稿；此时门禁只跑固定项。
+		// 管理员可以先建题再补标准；未补齐前在线判定记配置不足，不放行。
 		p := base
 		p.ReferenceHTML = "   "
 		q := &IntelCheckQuestion{}
@@ -283,12 +283,14 @@ func TestIntelCheckDrawingRules编解码(t *testing.T) {
 			MinRatio:         0.75,
 			RequiredKeywords: []string{"轮廓", "阴影"},
 			MaxBytes:         2048,
+			StandardSources:  []string{referenceHTMLFixture},
 		}
 		encoded, err := EncodeIntelCheckDrawingRules(want)
 		require.NoError(t, err)
 		require.Contains(t, encoded, "min_ratio")
 		require.Contains(t, encoded, "required_keywords")
 		require.Contains(t, encoded, "max_bytes")
+		require.Contains(t, encoded, "standard_sources")
 
 		got, err := DecodeIntelCheckDrawingRules(encoded)
 		require.NoError(t, err)

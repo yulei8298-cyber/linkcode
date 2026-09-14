@@ -243,6 +243,14 @@ func (s *IntelCheckService) PublicResultDetail(ctx context.Context, id int64) (*
 		StatusNote:  intelCheckStatusNote(result.Status),
 		CheckedAt:   result.CheckedAt,
 	}
+	if result.Kind == IntelCheckKindDrawing && result.JudgeDetail["judge_method"] == intelCheckStructureVersion {
+		switch result.Status {
+		case IntelCheckStatusPass:
+			out.StatusNote = "结构基准通过；运动学与视觉质量未验证"
+		case IntelCheckStatusFail:
+			out.StatusNote = "结构基准未通过，不代表已证明模型降智"
+		}
+	}
 	s.decoratePublicResult(ctx, out, result)
 	return out, nil
 }

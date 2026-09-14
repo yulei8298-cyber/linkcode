@@ -50,16 +50,16 @@ func TestValidateIntelCheckSettings(t *testing.T) {
 		require.Error(t, ValidateIntelCheckSettings(nil))
 	})
 
-	t.Run("开启但未指定评审分组", func(t *testing.T) {
+	t.Run("开启不再要求评审分组", func(t *testing.T) {
 		s := valid()
 		s.DrawingJudge.TargetID = 0
-		require.Error(t, ValidateIntelCheckSettings(s))
+		require.NoError(t, ValidateIntelCheckSettings(s))
 	})
 
-	t.Run("开启但未填评审模型", func(t *testing.T) {
+	t.Run("开启不再要求评审模型", func(t *testing.T) {
 		s := valid()
 		s.DrawingJudge.Model = "   "
-		require.Error(t, ValidateIntelCheckSettings(s))
+		require.NoError(t, ValidateIntelCheckSettings(s))
 	})
 
 	t.Run("未开启时允许评审配置缺失", func(t *testing.T) {

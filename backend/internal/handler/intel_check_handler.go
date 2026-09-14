@@ -19,8 +19,9 @@ import (
 // 这里的职责就是不要绕过它——一旦有人为了省事在这里直接序列化领域模型，
 // 上游地址与凭据片段就随公开接口泄了。
 //
-// 开关关闭时两个接口都返回 404（ErrIntelCheckDisabled 是 infraerrors.NotFound），
+// 开关关闭时两个数据接口都返回 404（ErrIntelCheckDisabled 是 infraerrors.NotFound），
 // 不返回空数据：空数据会渲染出一个「一切正常但没有分组」的页面，比 404 更误导。
+// Preview 是不读取数据的固定外壳，管理端在功能开启前也要使用它。
 type IntelCheckHandler struct {
 	intelCheckService *service.IntelCheckService
 }

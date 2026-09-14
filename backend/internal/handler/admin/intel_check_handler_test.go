@@ -115,7 +115,7 @@ func TestIntelCheckQuestionToListItem_不带参考稿正文(t *testing.T) {
 		ID: 22, Kind: service.IntelCheckKindDrawing, Title: "鹈鹕骑车",
 		ReferenceHTML: "<svg></svg>",
 		ReviewRubric:  "1. 主体完整度",
-		DrawingRules:  map[string]any{"min_ratio": 0.7},
+		DrawingRules:  map[string]any{"min_ratio": 0.7, "standard_sources": []string{"标准大正文"}},
 	}))
 
 	// 参考稿上限 512 KiB，清单上限 20000 字，题库列表带上正文就是几 MB 一页。
@@ -125,6 +125,9 @@ func TestIntelCheckQuestionToListItem_不带参考稿正文(t *testing.T) {
 	require.Equal(t, true, fields["has_review_rubric"])
 	// 门禁规则要带上：管理员在列表页就要能看出这道题的阈值配没配。
 	require.NotNil(t, fields["drawing_rules"])
+	rules := fields["drawing_rules"].(map[string]any)
+	require.NotContains(t, rules, "standard_sources")
+	require.Equal(t, 0.7, rules["min_ratio"])
 }
 
 func TestIntelCheckQuestionToListItem_空评审清单标记为false(t *testing.T) {

@@ -111,13 +111,8 @@ func (s *IntelCheckService) ListResults(
 
 // EvaluateDrawingSource 只对一份现成产物跑判定，不向受检分组发绘图请求。
 //
-// 用途是标定阈值：管理员把一份已知好坏的 HTML 粘进来，立刻看到结构门禁的逐项
-// 结果与源码评审得分，据此调 min_ratio 与 pass_score（设计文档 §5.2）。
-// 省掉绘图那次请求，标定一次的成本从几分钟降到一次评审调用。
-//
-// 刻意不检查总开关：ValidateIntelCheckSettings 要求开启前必须先配好评审模型，
-// 而配之前恰恰需要这个工具验证阈值合不合适——加开关检查会把标定卡在开启之前，
-// 逼管理员先带着未验证的阈值上线。
+// 管理员粘贴已知好坏的 HTML 检查结构综合分，全程不调用模型。
+// 刻意不检查总开关：标准集与阈值需要在开启检测之前完成校准。
 func (s *IntelCheckService) EvaluateDrawingSource(
 	ctx context.Context, questionID int64, source string,
 ) (*IntelCheckTrialResult, error) {
@@ -142,21 +137,14 @@ func (s *IntelCheckService) EvaluateDrawingSource(
 		return nil, err
 	}
 
-	// 关闭了评审就不去加载评审分组：那次加载会在未配置时打一条 Warn 日志，
-	// 而"没配"在这个模式下是正常状态，不该被记成异常。
-	var judge *IntelCheckTarget
-	if !cfg.DrawingJudge.SkipReview {
-		judge = s.loadIntelCheckJudgeTarget(ctx, cfg)
-	}
-	judged := s.judgeIntelCheckDrawing(ctx, cfg, question, judge, source)
+	judged := s.judgeIntelCheckDrawing(ctx, cfg, question, nil, source)
 
 	return &IntelCheckTrialResult{
 		QuestionID:    question.ID,
 		QuestionKind:  question.Kind,
 		QuestionTitle: question.Title,
 		Status:        judged.Status,
-		// 原样回显提交内容：与 HTMLOutput（清洗后）并排看，
-		// 管理员才能判断某项门禁是败在模型产出还是败在清洗环节。
+		// 原样回显提交内容，可与抽取的 HTMLOutput 核对。
 		RawReply:     source,
 		HTMLOutput:   judged.HTMLOutput,
 		JudgeDetail:  judged.JudgeDetail,
@@ -195,14 +183,9 @@ func (s *IntelCheckService) DryRunTarget(
 		return nil, err
 	}
 
-	var judge *IntelCheckTarget
-	if question.Kind == IntelCheckKindDrawing {
-		judge = s.loadIntelCheckJudgeTarget(ctx, cfg)
-	}
-
 	// 与真实轮次共用 probeIntelCheckOnce：试跑的结论必须与线上判定一致，
 	// 否则这个接口就是个会骗人的工具。
-	probe := s.probeIntelCheckOnce(ctx, cfg, target, question, judge)
+	probe := s.probeIntelCheckOnce(ctx, cfg, target, question, nil)
 
 	out := &IntelCheckTrialResult{
 		QuestionID:      question.ID,

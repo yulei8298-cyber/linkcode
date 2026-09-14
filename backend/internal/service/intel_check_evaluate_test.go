@@ -5,6 +5,8 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,7 +50,7 @@ func intelCheckDrawingQuestion(mutate func(q *IntelCheckQuestion)) *IntelCheckQu
 	question := &IntelCheckQuestion{
 		ID:     22,
 		Kind:   IntelCheckKindDrawing,
-		Prompt: "画一只鹈鹕骑自行车，要有持续动画",
+		Prompt: "画一只鹈鹕骑自行车，要有持续动画", ReferenceHTML: intelCheckPassingDrawing,
 	}
 	if mutate != nil {
 		mutate(question)
@@ -184,7 +186,7 @@ func TestJudgeIntelCheckDrawing_产物中没有SVG记失败但保留产物(t *te
 		"产物已清洗完毕，要留给详情页展示——判失败也得让人看见失败在哪")
 }
 
-func TestJudgeIntelCheckDrawing_参考指标损坏记请求失败(t *testing.T) {
+func TestJudgeIntelCheckDrawing_不采用旧参考指标缓存(t *testing.T) {
 	svc := &IntelCheckService{}
 	cfg := DefaultIntelCheckSettings()
 	question := intelCheckDrawingQuestion(func(q *IntelCheckQuestion) {
@@ -194,45 +196,49 @@ func TestJudgeIntelCheckDrawing_参考指标损坏记请求失败(t *testing.T) 
 	outcome := svc.judgeIntelCheckDrawing(
 		context.Background(), &cfg, question, nil, intelCheckPassingDrawing)
 
-	// 没有标尺就没法比对，此时判失败等于凭空冤枉；只能记成本次不计入。
+	require.Equal(t, IntelCheckStatusPass, outcome.Status)
+	require.Equal(t, float64(100), outcome.JudgeDetail["structure_score"])
+
+	question.ReferenceHTML = ""
+	outcome = svc.judgeIntelCheckDrawing(context.Background(), &cfg, question, nil, intelCheckPassingDrawing)
 	require.Equal(t, IntelCheckStatusRequestError, outcome.Status)
-	require.Equal(t, "题目的参考稿指标无法解析，本次不计入判定", outcome.JudgeDetail["reason"])
+	require.Equal(t, "题目的标准样本尚未配置或无法解析，本次不计入判定", outcome.JudgeDetail["reason"])
 }
 
 func TestJudgeIntelCheckDrawing_门禁未过时不调用评审模型(t *testing.T) {
 	svc := &IntelCheckService{}
 	cfg := DefaultIntelCheckSettings()
 
-	// judge 传 nil：一旦进了评审分支，reviewIntelCheckDrawing 立刻报
-	// 「评审分组不可用」并转成 request_error。因此这里断言 fail，
-	// 等价于断言「门禁没过就压根没走评审」——既省 token，
-	// 也避免评审模型对着残缺产物打出高分。
 	outcome := svc.judgeIntelCheckDrawing(
 		context.Background(), &cfg, intelCheckDrawingQuestion(nil), nil, intelCheckGatelessDrawing)
 
 	require.Equal(t, IntelCheckStatusFail, outcome.Status)
 	require.Equal(t, false, outcome.JudgeDetail["gate_pass"])
-	require.Equal(t, "结构门禁未通过，未进入源码评审", outcome.JudgeDetail["reason"])
+	require.Equal(t, "结构基准未通过", outcome.JudgeDetail["reason"])
 	require.NotEmpty(t, outcome.JudgeDetail["gate_items"], "逐条门禁结果要落进明细供读者自行复核")
 }
 
-func TestJudgeIntelCheckDrawing_评审分组缺失记请求失败(t *testing.T) {
+func TestJudgeIntelCheckDrawing_无需评审分组(t *testing.T) {
 	svc := &IntelCheckService{}
 	cfg := DefaultIntelCheckSettings()
 
 	outcome := svc.judgeIntelCheckDrawing(
 		context.Background(), &cfg, intelCheckDrawingQuestion(nil), nil, intelCheckPassingDrawing)
 
-	// 评审分组没配、被删或凭据解不开，责任都在我们这侧，不能算受检模型不合格。
-	require.Equal(t, IntelCheckStatusRequestError, outcome.Status)
-	require.Equal(t, "评审链路未能完成，本次不计入判定", outcome.JudgeDetail["reason"])
-	require.Contains(t, outcome.ErrorMessage, "评审分组不可用")
+	require.Equal(t, IntelCheckStatusPass, outcome.Status)
+	require.Equal(t, "结构基准通过", outcome.JudgeDetail["reason"])
+	require.Empty(t, outcome.ErrorMessage)
 	require.NotEmpty(t, outcome.HTMLOutput, "产物本身是好的，仍要留下来展示")
 }
 
-func TestJudgeIntelCheckDrawing_评审上游不可达记请求失败且不泄露地址(t *testing.T) {
+func TestJudgeIntelCheckDrawing_旧配置开启评审也不请求模型(t *testing.T) {
+	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(func(*http.Request) (*http.Response, error) {
+		t.Error("不应调用评审模型")
+		return nil, fmt.Errorf("禁止外部调用")
+	})})
 	svc := &IntelCheckService{}
 	cfg := DefaultIntelCheckSettings()
+	cfg.DrawingJudge.SkipReview = false
 	cfg.DrawingJudge.Model = "gpt-6-astra"
 	judge := &IntelCheckTarget{
 		ID: 9, Name: "评审组", BaseURL: intelCheckLoopbackBaseURL,
@@ -242,12 +248,11 @@ func TestJudgeIntelCheckDrawing_评审上游不可达记请求失败且不泄露
 	outcome := svc.judgeIntelCheckDrawing(
 		context.Background(), &cfg, intelCheckDrawingQuestion(nil), judge, intelCheckPassingDrawing)
 
-	require.Equal(t, IntelCheckStatusRequestError, outcome.Status,
-		"评审侧的抖动不得在受检分组的时间线上留下红块")
+	require.Equal(t, IntelCheckStatusPass, outcome.Status)
 
 	// judge_detail 会被公开详情原样返回；评审分组的地址属于内部拓扑。
 	require.NotContains(t, intelCheckDetailJSON(t, outcome), "127.0.0.1")
-	require.Contains(t, outcome.ErrorMessage, "评审模型调用失败")
+	require.Empty(t, outcome.ErrorMessage)
 }
 
 func TestJudgeIntelCheckDrawing_两层皆过才算通过(t *testing.T) {

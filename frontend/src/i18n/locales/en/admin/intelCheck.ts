@@ -2,7 +2,7 @@ export default {
   intelCheck: {
     title: 'Model Intelligence Check',
     description:
-      'Periodically sends one logic question and one drawing question to each checked group, using the same request shape as Codex CLI, and publishes the raw replies and judgment details on the public portal. Configure groups, questions and the review model before enabling.',
+      'Periodically sends one logic question and one drawing question to each checked group, using the same request shape as Codex CLI, and publishes the raw replies and judgment details on the public portal. Drawings use deterministic structural checks against multiple positive standards.',
     tabs: { overview: 'Overview', targets: 'Groups', questions: 'Questions', settings: 'Settings' },
 
     common: {
@@ -130,7 +130,7 @@ export default {
         kind: 'Kind',
         answer: 'Expected answer',
         reference: 'Reference',
-        rubric: 'Rubric',
+        rubric: 'Standards',
       },
       empty: 'The question bank is empty',
       emptyHint:
@@ -138,7 +138,7 @@ export default {
       deleteConfirm:
         'Delete question "{title}"? Existing results are unaffected (the prompt is already snapshotted).',
       hasRubric: 'Configured',
-      noRubric: 'Using built-in rubric',
+      noRubric: 'Not configured',
       noReference: 'Not uploaded',
       form: {
         kind: 'Kind',
@@ -151,23 +151,30 @@ export default {
         expectedAnswer: 'Expected answer',
         expectedAnswerHint: 'In regex mode this must be a valid regex; it is compiled on save.',
         matchMode: 'Match mode',
-        referenceHtml: 'Reference HTML',
+        standardFiles: 'Import positive standards',
+        standardFilesHint: 'Selected files replace the current standard set. Up to 8 files, 512 KiB each. Negative samples belong in calibration, not this set.',
+        standardFilesLimit: 'Select up to 8 standards, each no larger than 512 KiB.',
+        additionalStandard: 'Standard {n}',
+        referenceHtml: 'Standard 1 (HTML / SVG)',
         referenceHtmlHint:
-          'A full-strength sample. Its structural metrics become the denominator of the gate; leaving it empty skips every relative item, which effectively disables half the gate.',
-        referenceMetrics: 'Reference metrics (computed server-side)',
+          'The server computes median structure metrics across the standards. At least one valid standard is required; missing standards are a configuration error.',
+        referenceMetrics: 'Standard metrics (computed on save)',
         reviewRubric: 'Source review rubric',
         reviewRubricPlaceholder:
           'Leave empty to use the built-in rubric (subject completeness / structure / animation / detail / code quality)',
         drawingRules: 'Gate rules',
-        minRatio: 'Minimum ratio',
+        minRatio: 'Minimum structure score ratio',
         minRatioHint:
-          'Each metric must be ≥ reference × this ratio. Default 0.7, derived from calibration; raising it is not recommended.',
+          '0.7 requires a structure score of 70. Expanded shapes and geometry values each contribute half, capped individually. Legacy metrics no longer each require 70%.',
         maxBytes: 'Max artifact size (bytes)',
         requiredKeywords: 'Required keywords',
         requiredKeywordsHint: 'Comma separated; leave empty to skip this check.',
         enabled: 'Include in rotation',
       },
       metrics: {
+        structure_shapes: 'Expanded shape baseline',
+        geometry_values: 'Geometry value baseline',
+        standard_count: 'Unique standards',
         shape_count: 'Shapes',
         animated_targets: 'Animated targets',
         defs_symbols: 'Reusable symbols',
@@ -182,7 +189,7 @@ export default {
       evaluate: 'Calibrate',
       evaluateTitle: 'Judge a pasted artifact',
       evaluateHint:
-        'Runs only the structural gate and source review — no drawing request is sent. Iterate with known-good and known-bad samples until the verdict matches your own judgment.',
+        'Runs deterministic local structure checks without a review model. Calibrate against labeled positives and negatives. Passing does not verify visual quality or pedal kinematics.',
       sourceLabel: 'Artifact HTML / SVG',
       sourcePlaceholder: 'Paste a complete HTML or SVG document',
       run: 'Run judgment',
@@ -204,9 +211,11 @@ export default {
 
     // ---------- Settings ----------
     settings: {
+      structureJudge: 'Drawing judgment: deterministic structure checks',
+      structureJudgeHint: 'No model is used for drawing review. Configure standards and the structure threshold in the question bank. Results do not verify kinematics or visual quality.',
       enabled: 'Enable intelligence check',
       enabledHint:
-        'When off, the public page returns 404 while admin configuration stays available. A review group and model must be set before enabling.',
+        'When off, the public page returns 404 while admin configuration stays available. Configure checked groups and questions before enabling.',
       schedule: 'Schedule',
       intervalMinutes: 'Interval (minutes)',
       intervalHint:
@@ -219,22 +228,22 @@ export default {
         '1 to 32. The two questions of one group always run serially to avoid self-inflicted rate limiting.',
       retentionDays: 'Result retention (days)',
 
-      judge: 'Source review',
+      judge: 'Source review (legacy)',
       skipReviewHint:
-        'The second judgment layer: a review model reads the artifact source and scores it against a rubric. Turn it off to judge drawings by the structural gate alone — no review model needed and one fewer upstream call per round, at the cost of missing degradations where the metrics are met but the work is sloppy.',
-      judgeTarget: 'Review group',
-      judgeTargetHint: 'Reuses that group’s base URL and credential instead of maintaining another one.',
-      judgeModel: 'Review model',
-      judgeEffort: 'Review reasoning effort',
-      passScore: 'Passing score',
+        'The current drawing check is deterministic and does not call a review model. Configure multiple positive standards; the server uses median structural metrics as the baseline.',
+      judgeTarget: 'Review group (legacy)',
+      judgeTargetHint: 'Shown only for legacy configuration; it is not used by the current drawing judgment.',
+      judgeModel: 'Review model (legacy)',
+      judgeEffort: 'Review reasoning effort (legacy)',
+      passScore: 'Passing score (legacy)',
       passScoreHint:
-        '1 to 100, default 80. Both the structural gate and the source review must pass.',
+        'Kept for compatibility only. The current drawing judgment does not read this value.',
 
       degraded: 'Degradation rule',
       failStreak: 'Consecutive failures to flag as degraded',
       recoverStreak: 'Consecutive passes to recover',
       degradedHint:
-        'Logic questions only: drawing verdicts include a review score and fluctuate more, so including them causes frequent false alarms.',
+        'Logic questions only: drawing structure checks do not verify visual or kinematic quality, so including them would mix different signals.',
 
       display: 'Public page',
       timelinePoints: 'Timeline cells',
@@ -243,7 +252,7 @@ export default {
       introTitle: 'Page title',
       introText: 'Page description',
 
-      requireJudge: 'Set the review group and model before enabling',
+      requireJudge: 'Configure checked groups and questions before enabling',
     },
   },
 }

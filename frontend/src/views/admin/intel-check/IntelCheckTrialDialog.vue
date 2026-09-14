@@ -53,6 +53,7 @@
       </div>
 
       <div v-if="result" class="space-y-4 border-t border-gray-100 pt-4 dark:border-dark-700">
+        <p v-if="typeof result.judge_detail?.scope_note === 'string'" class="text-xs text-gray-600 dark:text-gray-300">{{ result.judge_detail.scope_note }}</p>
         <div class="flex flex-wrap items-center gap-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
             {{ t('admin.intelCheck.trial.result') }}

@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestProbeIntelCheckOnce_绘图作答流式且评审同步并各用指定模型(t *testing.T) {
+func TestProbeIntelCheckOnce_仅请求指定绘图模型且不调用评审模型(t *testing.T) {
 	var requests []map[string]any
 	withIntelCheckHTTPClient(t, &http.Client{Transport: intelCheckRoundTripFunc(
 		func(r *http.Request) (*http.Response, error) {
@@ -42,6 +42,7 @@ func TestProbeIntelCheckOnce_绘图作答流式且评审同步并各用指定模
 	)})
 
 	cfg := DefaultIntelCheckSettings()
+	cfg.DrawingJudge.SkipReview = false
 	cfg.DrawingJudge.Model = "judge-model"
 	cfg.DrawingJudge.ReasoningEffort = IntelCheckEffortMedium
 	target := &IntelCheckTarget{
@@ -59,13 +60,11 @@ func TestProbeIntelCheckOnce_绘图作答流式且评审同步并各用指定模
 	)
 
 	require.Equal(t, IntelCheckStatusPass, probe.Judged.Status)
-	require.Len(t, requests, 2)
+	require.Len(t, requests, 1)
 	require.Equal(t, "drawing-model", requests[0]["model"])
 	require.Equal(t, true, requests[0]["stream"])
 	require.Equal(t, map[string]any{"effort": "xhigh"}, requests[0]["reasoning"])
-	require.Equal(t, "judge-model", requests[1]["model"])
-	require.Equal(t, false, requests[1]["stream"])
-	require.Equal(t, map[string]any{"effort": "medium"}, requests[1]["reasoning"])
+	require.Equal(t, intelCheckStructureVersion, probe.Judged.JudgeDetail["judge_method"])
 }
 
 // 受检地址刻意用回环地址：safeDialContext 对 IP 字面量走快速路径，

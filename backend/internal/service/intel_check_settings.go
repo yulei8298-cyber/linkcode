@@ -47,18 +47,5 @@ func ValidateIntelCheckSettings(s *IntelCheckSettings) error {
 	if n := len([]rune(strings.TrimSpace(s.DrawingJudge.Model))); n > IntelCheckMaxJudgeModelRunes {
 		return fmt.Errorf("评审模型名过长：%d 字，上限 %d 字", n, IntelCheckMaxJudgeModelRunes)
 	}
-	// 开启功能时必须已经配好评审模型，否则绘图题只会持续产出 request_error，
-	// 公开页会挂满黄块——那比不开启更糟，用户会以为是上游在抖。
-	//
-	// 关闭了源码评审（SkipReview）时不作此要求：那种模式下绘图题只走结构门禁，
-	// 压根不会调评审模型，再强求配一个反而会把管理员卡在开启之前。
-	if s.Enabled && !s.DrawingJudge.SkipReview {
-		if s.DrawingJudge.TargetID <= 0 {
-			return fmt.Errorf("开启前请先指定源码评审所使用的受检分组（或关闭源码评审）")
-		}
-		if strings.TrimSpace(s.DrawingJudge.Model) == "" {
-			return fmt.Errorf("开启前请先填写源码评审所使用的模型名（或关闭源码评审）")
-		}
-	}
 	return nil
 }

@@ -12,14 +12,16 @@ const (
 	intelCheckDefaultMaxBytes = 256 * 1024
 )
 
-// IntelCheckDrawingRules 绘图题第一层门禁的配置，存于题目的 drawing_rules 字段。
+// IntelCheckDrawingRules 绘图题结构验收配置，存于题目的 drawing_rules 字段。
 type IntelCheckDrawingRules struct {
-	// MinRatio 各结构指标相对参考稿的最低比例。
+	// MinRatio 结构综合分的最低比例，structure_v2 中乘以 100 得到通过分。
 	MinRatio float64 `json:"min_ratio"`
 	// RequiredKeywords 产物中必须出现的关键词（取自题面要素）。
 	RequiredKeywords []string `json:"required_keywords"`
-	// MaxBytes 清洗后产物的体积上限。
+	// MaxBytes 原始产物的体积上限。
 	MaxBytes int `json:"max_bytes"`
+	// StandardSources 额外的标准正样本原文，与 ReferenceHTML 一起计算中位基准。
+	StandardSources []string `json:"standard_sources,omitempty"`
 }
 
 // Normalize 兜底非法配置。
@@ -81,7 +83,7 @@ type IntelCheckGateResult struct {
 	Items []IntelCheckGateItem `json:"items"`
 }
 
-// EvaluateIntelCheckGate 执行绘图题第一层结构门禁。
+// EvaluateIntelCheckGate 保留旧版相对门禁，仅用于历史标定测试。
 //
 // 分两类检查：
 //   - 固定项：可解析的 <svg>、同时具备 <title> 与 <desc>、命中必需关键词、
@@ -90,10 +92,10 @@ type IntelCheckGateResult struct {
 //     MinRatio 倍。参考稿对应指标为 0 时（尚未上传参考稿）跳过该项，
 //     避免无参考时误杀。产物体积**不在相对项之列**，理由见下方循环处的注释。
 //
-// 全部通过才进入第二层源码评审。
+// 在线判定使用固定项与 structure_v2 综合分，不调用此函数。
 func EvaluateIntelCheckGate(source string, candidate, reference DrawingMetrics, rules IntelCheckDrawingRules) IntelCheckGateResult {
 	rules.Normalize()
-	result := IntelCheckGateResult{Pass: true, Items: make([]IntelCheckGateItem, 0, 12)}
+	result := evaluateIntelCheckFixedGate(source, candidate, rules)
 
 	add := func(item string, pass bool, format string, args ...any) {
 		result.Items = append(result.Items, IntelCheckGateItem{
@@ -105,19 +107,6 @@ func EvaluateIntelCheckGate(source string, candidate, reference DrawingMetrics, 
 			result.Pass = false
 		}
 	}
-
-	add("包含可解析的 SVG", candidate.HasSVG, "has_svg=%v", candidate.HasSVG)
-	add("包含 title 与 desc 说明", candidate.HasTitle && candidate.HasDesc,
-		"has_title=%v, has_desc=%v", candidate.HasTitle, candidate.HasDesc)
-
-	missing := intelCheckMissingKeywords(source, rules.RequiredKeywords)
-	add("命中必需关键词", len(missing) == 0, "缺失: %s", intelCheckJoinOrNone(missing))
-
-	add("存在动画机制", len(candidate.Mechanisms) > 0,
-		"mechanisms=%s", intelCheckJoinOrNone(candidate.Mechanisms))
-
-	add("体积未超上限", candidate.HTMLBytes <= rules.MaxBytes,
-		"html_bytes=%d, max=%d", candidate.HTMLBytes, rules.MaxBytes)
 
 	// 相对项只取「画了多少东西」这类与表达方式无关的指标。
 	//
@@ -149,6 +138,26 @@ func EvaluateIntelCheckGate(source string, candidate, reference DrawingMetrics, 
 			metric.got, metric.want, ratio*100, rules.MinRatio*100)
 	}
 
+	return result
+}
+
+// 新旧算法共用固定项；动画声明不代表动画运行或运动学正确。
+func evaluateIntelCheckFixedGate(source string, candidate DrawingMetrics, rules IntelCheckDrawingRules) IntelCheckGateResult {
+	rules.Normalize()
+	result := IntelCheckGateResult{Pass: true}
+	add := func(item string, pass bool, detail string) {
+		result.Items = append(result.Items, IntelCheckGateItem{Item: item, Pass: pass, Detail: detail})
+		result.Pass = result.Pass && pass
+	}
+	add("包含可解析的 SVG", candidate.HasSVG, fmt.Sprintf("has_svg=%v", candidate.HasSVG))
+	add("包含 title 与 desc 说明", candidate.HasTitle && candidate.HasDesc,
+		fmt.Sprintf("has_title=%v, has_desc=%v", candidate.HasTitle, candidate.HasDesc))
+	missing := intelCheckMissingKeywords(source, rules.RequiredKeywords)
+	add("命中必需关键词", len(missing) == 0, "缺失: "+intelCheckJoinOrNone(missing))
+	add("存在动画机制", len(candidate.Mechanisms) > 0,
+		"声明不等于运动正确："+intelCheckJoinOrNone(candidate.Mechanisms))
+	add("体积未超上限", candidate.HTMLBytes <= rules.MaxBytes,
+		fmt.Sprintf("html_bytes=%d, max=%d", candidate.HTMLBytes, rules.MaxBytes))
 	return result
 }
 

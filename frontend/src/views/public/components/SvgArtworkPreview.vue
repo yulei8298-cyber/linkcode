@@ -12,18 +12,20 @@
       合格产物在预览里变成静止图片，而"能不能动"正是判定要点之一。
 
       ⚠️ 服务端已不再清洗产物（见后端 SanitizeIntelCheckDrawing 的注释）。
-      因此**这个 sandbox 属性现在是唯一的防护层**，不是"三层之一"。
+      外层改为独立 HTTP 预览外壳，避免 srcdoc 继承主站 nonce CSP 把动画拦掉。
+      外壳的响应头与内层 iframe 也施加沙箱，不给任何一层 allow-same-origin。
       任何人想往里加 allow-same-origin，请先去后端那段注释里看清代价。
     -->
     <iframe
       v-if="html"
       ref="frame"
-      :srcdoc="html"
+      :src="previewURL"
       sandbox="allow-scripts"
       referrerpolicy="no-referrer"
       class="ic-artwork-frame"
       :style="frameStyle"
       :title="title"
+      @load="sendArtwork"
     ></iframe>
     <div v-else class="ic-artwork-empty">
       <span>{{ emptyText }}</span>
@@ -32,7 +34,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { buildApiUrl } from '@/api/url'
 
 const props = withDefaults(
   defineProps<{
@@ -69,10 +72,21 @@ const props = withDefaults(
  * 不缩放（画面被容器裁切，仍可读），不影响判定。
  */
 const LOGICAL_WIDTH = 1100
+const previewURL = buildApiUrl('/public/intel-check/preview')
 
 const wrapper = ref<HTMLElement | null>(null)
+const frame = ref<HTMLIFrameElement | null>(null)
 const zoom = ref(1)
 let observer: ResizeObserver | null = null
+
+function sendArtwork() {
+  // 外壳为不透明源，只能用 *；目标窗口来自固定外壳，不广播，不传登录态。
+  frame.value?.contentWindow?.postMessage({
+    type: 'intel-check-preview', html: props.html, title: props.title,
+  }, '*')
+}
+
+watch(() => [props.html, props.title], sendArtwork, { flush: 'post' })
 
 function measure() {
   const width = wrapper.value?.clientWidth ?? 0
