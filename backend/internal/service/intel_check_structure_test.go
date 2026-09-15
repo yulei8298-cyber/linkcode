@@ -32,17 +32,17 @@ func TestIntelCheckStructure七样本标定(t *testing.T) {
 		Kind: IntelCheckKindDrawing, ReferenceHTML: standards[0],
 		DrawingRules: map[string]any{"standard_sources": standards[1:]},
 	}
+	svc := &IntelCheckService{motion: intelCheckPassingMotionEvaluator()}
 	for _, name := range []string{"pass_a.html", "pass_b.html", "pass_c.html", "fail_a.html", "fail_b.html", "fail_c.html", "fail_d.html"} {
 		t.Run(name, func(t *testing.T) {
 			source := readIntelCheckStructureSample(t, name)
-			outcome := (&IntelCheckService{}).judgeIntelCheckDrawing(context.Background(), &IntelCheckSettings{}, question, nil, source)
+			outcome := svc.judgeIntelCheckDrawing(context.Background(), &IntelCheckSettings{}, question, nil, source)
 			want := IntelCheckStatusFail
 			if strings.HasPrefix(name, "pass") {
 				want = IntelCheckStatusPass
 			}
 			require.Equal(t, want, outcome.Status, "%#v", outcome.JudgeDetail)
-			require.Equal(t, intelCheckStructureVersion, outcome.JudgeDetail["judge_method"])
-			require.Equal(t, false, outcome.JudgeDetail["kinematics_verified"])
+			require.Equal(t, intelCheckDrawingJudgeVersion, outcome.JudgeDetail["judge_method"])
 			require.Equal(t, 3, outcome.JudgeDetail["reference_count"])
 			t.Logf("%s：%s，结构分=%v，指标=%+v", name, outcome.Status, outcome.JudgeDetail["structure_score"], outcome.JudgeDetail["candidate_structure"])
 		})

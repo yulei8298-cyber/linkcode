@@ -61,7 +61,7 @@ func intelCheckPublicFixture(t *testing.T, enabled bool) (*IntelCheckService, *i
 				2: {IntelCheckStatusPass: 1, IntelCheckStatusFail: 9},
 			},
 			IntelCheckKindDrawing: {
-				1: {IntelCheckStatusPass: 4, IntelCheckStatusFail: 4},
+				1: {IntelCheckStatusPass: 4, IntelCheckStatusFail: 4, IntelCheckStatusUnverified: 3},
 				2: {IntelCheckStatusFail: 2, IntelCheckStatusRunning: 1},
 			},
 		},
@@ -140,6 +140,7 @@ func TestIntelCheckPublicOverview聚合(t *testing.T) {
 
 	require.EqualValues(t, 10, first.LogicStats24h.Pass)
 	require.EqualValues(t, 2, first.LogicStats24h.Error)
+	require.EqualValues(t, 3, first.DrawingStats24h.Unverified)
 	require.InDelta(t, 1.0, first.LogicStats24h.PassRate, 1e-9)
 	require.True(t, first.LogicStats24h.HasData)
 
@@ -159,6 +160,7 @@ func TestIntelCheckPublicOverview汇总口径(t *testing.T) {
 	require.EqualValues(t, 15, out.Summary.Stats24h.Pass)
 	require.EqualValues(t, 15, out.Summary.Stats24h.Fail)
 	require.EqualValues(t, 2, out.Summary.Stats24h.Error, "request_error 单独计，不进通过率分母")
+	require.EqualValues(t, 3, out.Summary.Stats24h.Unverified, "unverified 单独计，不进通过率分母")
 
 	// 先累加分子分母再相除得 0.5；若改成逐组求平均会得 0.4，
 	// 样本只有 2 条的分组会和样本 12 条的分组等权，这正是要避免的口径。

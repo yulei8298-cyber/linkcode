@@ -13,7 +13,7 @@
 import { apiClient } from '../client'
 
 export type IntelCheckKind = 'logic' | 'drawing'
-export type IntelCheckStatus = 'pass' | 'fail' | 'request_error' | 'running'
+export type IntelCheckStatus = 'pass' | 'fail' | 'request_error' | 'running' | 'unverified'
 export type IntelCheckAPIMode = 'responses' | 'chat_completions'
 export type IntelCheckEffort = 'low' | 'medium' | 'high' | 'xhigh'
 export type IntelCheckMatchMode = 'exact' | 'numeric' | 'contains' | 'regex'

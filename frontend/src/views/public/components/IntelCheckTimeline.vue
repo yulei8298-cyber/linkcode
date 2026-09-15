@@ -5,7 +5,7 @@
         <span class="ic-kind-ico">{{ kind === 'drawing' ? '🎨' : '◻' }}</span>
         {{ label }}
       </b>
-      <span v-if="latest" class="ic-last" :class="{ f: latest.status === 'fail' }">
+      <span v-if="latest" class="ic-last" :class="{ f: latest.status === 'fail', u: latest.status === 'unverified' }">
         ● <b>{{ statusLabel(latest.status) }}</b> · {{ formatRelative(latest.checked_at) }}
       </span>
     </div>
@@ -18,6 +18,7 @@
         {{ stats.pass }}/{{ stats.pass + stats.fail }} {{ kind === 'drawing' ? '画出' : '答对' }}
       </span>
       <span v-if="stats?.error" class="ic-warn">{{ stats.error }} 次请求失败</span>
+      <span v-if="stats?.unverified" class="ic-unverified-text">{{ stats.unverified }} 次未验证</span>
       <span v-if="avgLatency != null">平均 {{ formatLatency(avgLatency) }}</span>
     </div>
 
@@ -122,6 +123,10 @@ const lowPassRate = computed(
   color: var(--ic-fail);
 }
 
+.ic-last.u b {
+  color: var(--ic-unverified);
+}
+
 .ic-stats {
   display: flex;
   align-items: baseline;
@@ -146,6 +151,10 @@ const lowPassRate = computed(
 
 .ic-warn {
   color: var(--ic-warn-text);
+}
+
+.ic-unverified-text {
+  color: var(--ic-unverified);
 }
 
 /* 等分网格而非 flex：格数由管理员配置（12–200），网格能保证任意格数下
@@ -184,6 +193,10 @@ const lowPassRate = computed(
 .ic-tl i.running {
   background: var(--ic-run);
   animation: ic-pulse 1.4s ease-in-out infinite;
+}
+
+.ic-tl i.unverified {
+  background: var(--ic-unverified);
 }
 
 .ic-tl i.unknown {

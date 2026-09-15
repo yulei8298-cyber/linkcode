@@ -1058,8 +1058,13 @@ func ProvideIntelCheckService(
 	repo IntelCheckRepository,
 	settingRepo SettingRepository,
 	encryptor SecretEncryptor,
+	cfg *config.Config,
 ) *IntelCheckService {
-	return NewIntelCheckService(repo, settingRepo, encryptor)
+	svc := NewIntelCheckService(repo, settingRepo, encryptor)
+	if cfg != nil {
+		svc.SetMotionEvaluator(NewIntelCheckMotionEvaluator(cfg.IntelCheckMotion))
+	}
+	return svc
 }
 
 // ProvideIntelCheckRunner 创建并启动智力检测调度器。

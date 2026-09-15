@@ -24,10 +24,12 @@ export default {
       fail: '未通过',
       request_error: '请求失败',
       running: '检测中',
+      unverified: '未验证',
       unknown: '暂无数据',
     },
     statusHint: {
       request_error: '链路故障，不计入连续失败判定——它不是对受检模型的指控。',
+      unverified: '产物存在，但缺少可测量的动作证据，不计为通过或失败。',
     },
 
     effort: { low: '低', medium: '中', high: '高', xhigh: '极高' },
@@ -187,6 +189,7 @@ export default {
       selectTarget: '选择分组',
       result: '判定结果',
       gateItems: '结构门禁逐项',
+      motionItems: '动作轨迹逐项',
       reviewItems: '源码评审逐项',
       preview: '预览',
       source: '源码',

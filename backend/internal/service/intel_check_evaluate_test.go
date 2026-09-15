@@ -187,7 +187,7 @@ func TestJudgeIntelCheckDrawing_产物中没有SVG记失败但保留产物(t *te
 }
 
 func TestJudgeIntelCheckDrawing_不采用旧参考指标缓存(t *testing.T) {
-	svc := &IntelCheckService{}
+	svc := &IntelCheckService{motion: intelCheckPassingMotionEvaluator()}
 	cfg := DefaultIntelCheckSettings()
 	question := intelCheckDrawingQuestion(func(q *IntelCheckQuestion) {
 		q.ReferenceMetrics = map[string]any{"shape_count": "很多"}
@@ -219,14 +219,14 @@ func TestJudgeIntelCheckDrawing_门禁未过时不调用评审模型(t *testing.
 }
 
 func TestJudgeIntelCheckDrawing_无需评审分组(t *testing.T) {
-	svc := &IntelCheckService{}
+	svc := &IntelCheckService{motion: intelCheckPassingMotionEvaluator()}
 	cfg := DefaultIntelCheckSettings()
 
 	outcome := svc.judgeIntelCheckDrawing(
 		context.Background(), &cfg, intelCheckDrawingQuestion(nil), nil, intelCheckPassingDrawing)
 
 	require.Equal(t, IntelCheckStatusPass, outcome.Status)
-	require.Equal(t, "结构基准通过", outcome.JudgeDetail["reason"])
+	require.Equal(t, "结构与动作轨迹均通过", outcome.JudgeDetail["reason"])
 	require.Empty(t, outcome.ErrorMessage)
 	require.NotEmpty(t, outcome.HTMLOutput, "产物本身是好的，仍要留下来展示")
 }
@@ -236,7 +236,7 @@ func TestJudgeIntelCheckDrawing_旧配置开启评审也不请求模型(t *testi
 		t.Error("不应调用评审模型")
 		return nil, fmt.Errorf("禁止外部调用")
 	})})
-	svc := &IntelCheckService{}
+	svc := &IntelCheckService{motion: intelCheckPassingMotionEvaluator()}
 	cfg := DefaultIntelCheckSettings()
 	cfg.DrawingJudge.SkipReview = false
 	cfg.DrawingJudge.Model = "gpt-6-astra"

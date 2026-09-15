@@ -55,7 +55,7 @@ func TestProbeIntelCheckOnce_仅请求指定绘图模型且不调用评审模型
 		APIMode: IntelCheckAPIModeResponses,
 	}
 
-	probe := (&IntelCheckService{}).probeIntelCheckOnce(
+	probe := (&IntelCheckService{motion: intelCheckPassingMotionEvaluator()}).probeIntelCheckOnce(
 		context.Background(), &cfg, target, intelCheckDrawingQuestion(nil), judge,
 	)
 
@@ -64,7 +64,8 @@ func TestProbeIntelCheckOnce_仅请求指定绘图模型且不调用评审模型
 	require.Equal(t, "drawing-model", requests[0]["model"])
 	require.Equal(t, true, requests[0]["stream"])
 	require.Equal(t, map[string]any{"effort": "xhigh"}, requests[0]["reasoning"])
-	require.Equal(t, intelCheckStructureVersion, probe.Judged.JudgeDetail["judge_method"])
+	require.Equal(t, intelCheckDrawingJudgeVersion, probe.Judged.JudgeDetail["judge_method"])
+	require.Contains(t, requests[0]["input"], "data-intel-part")
 }
 
 // 受检地址刻意用回环地址：safeDialContext 对 IP 字面量走快速路径，

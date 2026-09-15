@@ -24,11 +24,14 @@ export default {
       fail: 'Fail',
       request_error: 'Request error',
       running: 'Running',
+      unverified: 'Unverified',
       unknown: 'No data',
     },
     statusHint: {
       request_error:
         'A transport failure on our side. It does not count toward the degradation streak — it is not a claim about the checked model.',
+      unverified:
+        'The artifact exists, but there is not enough measurable motion evidence. It counts as neither pass nor fail.',
     },
 
     effort: { low: 'Low', medium: 'Medium', high: 'High', xhigh: 'Extra high' },
@@ -200,6 +203,7 @@ export default {
       selectTarget: 'Select a group',
       result: 'Verdict',
       gateItems: 'Structural gate items',
+      motionItems: 'Motion trajectory items',
       reviewItems: 'Source review items',
       preview: 'Preview',
       source: 'Source',

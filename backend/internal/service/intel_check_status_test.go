@@ -211,7 +211,7 @@ func TestIntelCheckPassRate(t *testing.T) {
 		expected float64
 		hasData  bool
 	}{
-		{"仅统计 pass 与 fail", []string{"pass", "fail", "pass", "request_error"}, 2.0 / 3.0, true},
+		{"仅统计 pass 与 fail", []string{"pass", "fail", "pass", "request_error", "unverified"}, 2.0 / 3.0, true},
 		{"全部通过", []string{"pass", "pass"}, 1.0, true},
 		{"全部失败", []string{"fail", "fail"}, 0.0, true},
 		{"无有效样本时无数据", []string{"running", "request_error"}, 0.0, false},

@@ -130,4 +130,30 @@ describe('IntelCheckResultDialog', () => {
     expect(wrapper.text()).not.toContain('源码评审逐项')
     wrapper.unmount()
   })
+
+  it('展示动作验收未验证状态与逐项测量', async () => {
+    const wrapper = mountDialog({
+      ...drawingResult,
+      status: 'unverified',
+      status_note: '产物存在，但缺少足够动作证据，未标记为通过',
+      judge_detail: {
+        judge_method: 'structure_motion_v3', gate_pass: true, structure_score: 88,
+        structure_threshold: 70, reference_count: 3, kinematics_verified: true,
+        reason: '动作轨迹验收未通过',
+        motion_evaluation: {
+          version: 'browser_motion_v1', verifiable: true, pass: false,
+          reason: '脚踏脱节',
+          checks: [{ item: 'left 脚跟随踏板', pass: false, detail: '最大距离 80px' }],
+        },
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('未验证')
+    expect(wrapper.text()).toContain('结构 + 浏览器动作验收 v3')
+    expect(wrapper.text()).toContain('动作轨迹验证已执行')
+    expect(wrapper.text()).toContain('动作轨迹逐项')
+    expect(wrapper.text()).toContain('left 脚跟随踏板')
+    expect(wrapper.text()).toContain('最大距离 80px')
+    wrapper.unmount()
+  })
 })

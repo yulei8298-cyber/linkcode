@@ -1245,3 +1245,10 @@ image_storage:
   presign_expiry_hours: 24
   # 当上游返回的是图片 url 时，下载该图片再转存的字节上限（默认 32MB）
   max_download_bytes: 33554432
+
+# 模型智力检测的隔离浏览器动作验收器。生产建议使用 docker-compose 内置 sidecar，
+# 不要把该端口暴露到公网；验收器不应持有数据库、Redis 或上游凭据。
+intel_check_motion:
+  enabled: false
+  evaluator_url: ""
+  timeout_seconds: 8

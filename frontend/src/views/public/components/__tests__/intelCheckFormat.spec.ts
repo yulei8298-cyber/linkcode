@@ -7,6 +7,7 @@ describe('intel check timeline formatting', () => {
     ['fail', 'bad'],
     ['request_error', 'degraded'],
     ['running', 'running'],
+    ['unverified', 'unverified'],
     ['unknown', 'unknown'],
   ])('maps %s to the timeline class %s', (status, expected) => {
     expect(statusClass(status)).toBe(expected)

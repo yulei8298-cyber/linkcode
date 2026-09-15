@@ -172,6 +172,7 @@ func accumulateIntelCheckSummary(summary *IntelCheckPublicSummary, group *IntelC
 		summary.Stats24h.Pass += stats.Pass
 		summary.Stats24h.Fail += stats.Fail
 		summary.Stats24h.Error += stats.Error
+		summary.Stats24h.Unverified += stats.Unverified
 	}
 }
 
@@ -179,9 +180,10 @@ func accumulateIntelCheckSummary(summary *IntelCheckPublicSummary, group *IntelC
 // running 不计入任何一项：它只是尚未出结论的占位行。
 func intelCheckStatsFromCounts(counts map[string]int64) IntelCheckPublicStats {
 	stats := IntelCheckPublicStats{
-		Pass:  counts[IntelCheckStatusPass],
-		Fail:  counts[IntelCheckStatusFail],
-		Error: counts[IntelCheckStatusRequestError],
+		Pass:       counts[IntelCheckStatusPass],
+		Fail:       counts[IntelCheckStatusFail],
+		Error:      counts[IntelCheckStatusRequestError],
+		Unverified: counts[IntelCheckStatusUnverified],
 	}
 	stats.PassRate, stats.HasData = intelCheckPassRate(stats.Pass, stats.Fail)
 	return stats
@@ -243,10 +245,19 @@ func (s *IntelCheckService) PublicResultDetail(ctx context.Context, id int64) (*
 		StatusNote:  intelCheckStatusNote(result.Status),
 		CheckedAt:   result.CheckedAt,
 	}
-	if result.Kind == IntelCheckKindDrawing && result.JudgeDetail["judge_method"] == intelCheckStructureVersion {
+	if result.Kind == IntelCheckKindDrawing && result.JudgeDetail["judge_method"] == intelCheckDrawingJudgeVersion {
 		switch result.Status {
 		case IntelCheckStatusPass:
-			out.StatusNote = "结构基准通过；运动学与视觉质量未验证"
+			out.StatusNote = "结构与动作轨迹验收通过；视觉质量仍需自行查看"
+		case IntelCheckStatusFail:
+			out.StatusNote = "绘图验收未通过，不参与逻辑题降智判定"
+		case IntelCheckStatusUnverified:
+			out.StatusNote = "产物存在，但缺少足够动作证据，未标记为通过"
+		}
+	} else if result.Kind == IntelCheckKindDrawing && result.JudgeDetail["judge_method"] == intelCheckStructureVersion {
+		switch result.Status {
+		case IntelCheckStatusPass:
+			out.StatusNote = "结构基准通过；动作轨迹未验证"
 		case IntelCheckStatusFail:
 			out.StatusNote = "结构基准未通过，不代表已证明模型降智"
 		}
@@ -319,6 +330,8 @@ func intelCheckStatusNote(status string) string {
 		return "本次请求未能完成，未测出结论（不计入连续失败）"
 	case IntelCheckStatusRunning:
 		return "检测中"
+	case IntelCheckStatusUnverified:
+		return "未验证（不计入通过率或连续失败）"
 	default:
 		return ""
 	}

@@ -267,7 +267,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	channelMonitorRequestTemplateService := service.NewChannelMonitorRequestTemplateService(channelMonitorRequestTemplateRepository)
 	channelMonitorRequestTemplateHandler := admin.NewChannelMonitorRequestTemplateHandler(channelMonitorRequestTemplateService)
 	intelCheckRepository := repository.NewIntelCheckRepository(client, db)
-	intelCheckService := service.ProvideIntelCheckService(intelCheckRepository, settingRepository, secretEncryptor)
+	intelCheckService := service.ProvideIntelCheckService(intelCheckRepository, settingRepository, secretEncryptor, configConfig)
 	intelCheckRunner := service.ProvideIntelCheckRunner(intelCheckService, leaderLockCache, db)
 	intelCheckHandler := admin.NewIntelCheckHandler(intelCheckService, intelCheckRunner)
 	contentModerationRepository := repository.NewContentModerationRepository(db)

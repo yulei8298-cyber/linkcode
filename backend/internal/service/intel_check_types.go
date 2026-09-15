@@ -15,6 +15,9 @@ const (
 	IntelCheckStatusFail         = "fail"
 	IntelCheckStatusRequestError = "request_error"
 	IntelCheckStatusRunning      = "running"
+	// Unverified 表示已拿到绘图产物，但缺少足够证据验证动作。
+	// 它既不是通过，也不是对受检模型的失败指控。
+	IntelCheckStatusUnverified = "unverified"
 )
 
 // 模型智力检测：逻辑题答案匹配模式。

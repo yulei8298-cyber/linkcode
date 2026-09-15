@@ -104,7 +104,16 @@ type Config struct {
 	Idempotency             IdempotencyConfig             `mapstructure:"idempotency"`
 	BatchImage              BatchImageConfig              `mapstructure:"batch_image"`
 	ImageStorage            ImageStorageConfig            `mapstructure:"image_storage"`
+	IntelCheckMotion        IntelCheckMotionConfig        `mapstructure:"intel_check_motion"`
 	Plugins                 PluginConfig                  `mapstructure:"plugins"`
+}
+
+// IntelCheckMotionConfig 配置绘图动作验收 sidecar 的内部连接。
+// sidecar 不持有数据库、Redis 或上游凭据，只接收单份 HTML 做隔离浏览器测量。
+type IntelCheckMotionConfig struct {
+	Enabled        bool   `mapstructure:"enabled"`
+	EvaluatorURL   string `mapstructure:"evaluator_url"`
+	TimeoutSeconds int    `mapstructure:"timeout_seconds"`
 }
 
 // PluginConfig 控制管理员手动上传的本地进程插件。
@@ -2240,6 +2249,11 @@ func setDefaults() {
 	viper.SetDefault("batch_image.vertex_output_retention_hours", 72)
 	viper.SetDefault("batch_image.vertex_batch_prediction_base_url", "")
 	viper.SetDefault("batch_image.vertex_gcs_base_url", "")
+
+	// 绘图动作验收默认关闭；部署启用时显式指向内部 sidecar。
+	viper.SetDefault("intel_check_motion.enabled", false)
+	viper.SetDefault("intel_check_motion.evaluator_url", "")
+	viper.SetDefault("intel_check_motion.timeout_seconds", 8)
 
 	// Image storage (async image task result offload to S3-compatible object storage)
 	viper.SetDefault("image_storage.enabled", false)

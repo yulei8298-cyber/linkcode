@@ -23,6 +23,8 @@ export function statusLabel(status?: IntelCheckStatus | string): string {
       return '请求失败'
     case 'running':
       return '检测中'
+    case 'unverified':
+      return '未验证'
     default:
       return '暂无数据'
   }
@@ -36,6 +38,7 @@ export function statusLabel(status?: IntelCheckStatus | string): string {
  *   fail          → bad（红）
  *   request_error → degraded（黄）：链路故障，不是模型不合格，颜色必须与 fail 区分
  *   running       → running（浅蓝，脉冲）
+ *   unverified    → unverified（灰蓝）：产物存在但证据不足，不算通过或失败
  *   无数据        → unknown（灰）
  */
 export function statusClass(status?: IntelCheckStatus | string): string {
@@ -48,6 +51,8 @@ export function statusClass(status?: IntelCheckStatus | string): string {
       return 'degraded'
     case 'running':
       return 'running'
+    case 'unverified':
+      return 'unverified'
     default:
       return 'unknown'
   }

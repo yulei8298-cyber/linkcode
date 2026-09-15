@@ -1145,7 +1145,7 @@ var (
 	IntelCheckResultsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"logic", "drawing"}},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"pass", "fail", "request_error", "running"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pass", "fail", "request_error", "running", "unverified"}},
 		{Name: "latency_ms", Type: field.TypeInt, Nullable: true},
 		{Name: "prompt_snapshot", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
 		{Name: "raw_reply", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},

@@ -149,6 +149,24 @@
           </div>
         </section>
 
+        <section v-if="motionItems.length">
+          <h4 class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+            {{ t('admin.intelCheck.trial.motionItems') }}
+          </h4>
+          <div class="space-y-1">
+            <div
+              v-for="(item, index) in motionItems"
+              :key="index"
+              class="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs"
+              :class="item.pass ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-red-50 dark:bg-red-950/30'"
+            >
+              <span :class="item.pass ? 'text-emerald-600' : 'text-red-600'">{{ item.pass ? '✓' : '✗' }}</span>
+              <span class="flex-1 text-gray-700 dark:text-gray-300">{{ item.item }}</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ item.detail }}</span>
+            </div>
+          </div>
+        </section>
+
         <div v-if="judgeReason" class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300">
           {{ judgeReason }}
         </div>
@@ -230,6 +248,8 @@ function statusClass(status: string): string {
       return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
     case 'request_error':
       return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    case 'unverified':
+      return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
     default:
       return 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'
   }
@@ -249,6 +269,22 @@ const gateItems = computed<GateItemView[]>(() => {
   const raw = rawJudgeValue('gate_items')
   if (!Array.isArray(raw)) return []
   return raw.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return []
+    const row = entry as Record<string, unknown>
+    return [{
+      item: typeof row.item === 'string' ? row.item : '',
+      pass: row.pass === true,
+      detail: typeof row.detail === 'string' ? row.detail : '',
+    }]
+  })
+})
+
+const motionItems = computed<GateItemView[]>(() => {
+  const raw = rawJudgeValue('motion_evaluation')
+  if (!raw || typeof raw !== 'object') return []
+  const checks = (raw as Record<string, unknown>).checks
+  if (!Array.isArray(checks)) return []
+  return checks.flatMap((entry) => {
     if (!entry || typeof entry !== 'object') return []
     const row = entry as Record<string, unknown>
     return [{

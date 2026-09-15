@@ -165,6 +165,7 @@ const legend = [
   { label: '通过', cls: 'ok' },
   { label: '未通过', cls: 'bad' },
   { label: '请求失败', cls: 'degraded' },
+  { label: '未验证', cls: 'unverified' },
   { label: '检测中', cls: 'running' },
   { label: '暂无数据', cls: 'unknown' },
 ]
@@ -255,6 +256,7 @@ onBeforeUnmount(() => abortController?.abort())
   --ic-fail: #ef4444;
   --ic-req: #f59e0b;
   --ic-run: #7dd3fc;
+  --ic-unverified: #64748b;
   --ic-none: #e2e8f0;
 
   --ic-ok-bg: #ecfdf5;
@@ -291,6 +293,7 @@ onBeforeUnmount(() => abortController?.abort())
   --ic-accent: #2dd4bf;
   --ic-accent-strong: #5eead4;
   --ic-none: rgba(148, 163, 184, 0.25);
+  --ic-unverified: #94a3b8;
   --ic-ok-bg: rgba(16, 185, 129, 0.14);
   --ic-ok-text: #6ee7b7;
   --ic-ok-line: rgba(16, 185, 129, 0.35);
@@ -555,6 +558,10 @@ onBeforeUnmount(() => abortController?.abort())
 
 .ic-sq.running {
   background: var(--ic-run);
+}
+
+.ic-sq.unverified {
+  background: var(--ic-unverified);
 }
 
 .ic-sq.unknown {

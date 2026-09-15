@@ -16,7 +16,7 @@ import { apiClient } from './client'
 export type IntelCheckKind = 'logic' | 'drawing'
 
 /** 单次检测状态：通过 / 未通过 / 请求失败（不计入判定）/ 检测中。 */
-export type IntelCheckStatus = 'pass' | 'fail' | 'request_error' | 'running'
+export type IntelCheckStatus = 'pass' | 'fail' | 'request_error' | 'running' | 'unverified'
 
 /** 分组状态：正常 / 疑似降智 / 暂无数据。 */
 export type IntelCheckState = 'normal' | 'degraded' | 'unknown'
@@ -34,6 +34,8 @@ export interface IntelCheckStats {
   pass: number
   fail: number
   error: number
+  /** 绘图产物存在，但缺少可测量动作证据；不进通过率分母。 */
+  unverified: number
   pass_rate: number
   /** false 时应显示「暂无数据」而非 0%，二者含义完全不同。 */
   has_data: boolean

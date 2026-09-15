@@ -150,7 +150,7 @@ func buildIntelCheckDrafts(
 				TargetID: target.ID,
 				Kind:     question.Kind,
 				// 快照题面：题目日后被改或被删，历史详情仍能还原当时问了什么。
-				PromptSnapshot: question.Prompt,
+				PromptSnapshot: intelCheckEffectivePrompt(question),
 				CheckedAt:      now,
 			})
 		}
@@ -270,7 +270,7 @@ func (s *IntelCheckService) probeIntelCheckOnce(
 		APIMode:         target.APIMode,
 		Model:           target.Model,
 		ReasoningEffort: target.ReasoningEffort,
-		Prompt:          question.Prompt,
+		Prompt:          intelCheckEffectivePrompt(question),
 		// 逻辑题与绘图题都在验证受检模型，使用与 Codex CLI 一致的流式路径。
 		// 必须等完整终止事件后再判题，解析器不会把半截输出当结论。
 		Stream: true,

@@ -112,6 +112,8 @@ type IntelCheckPublicStats struct {
 	Fail int64 `json:"fail"`
 	// Error 为 request_error 条数。它不进通过率的分母——上游抖动不是模型能力问题。
 	Error int64 `json:"error"`
+	// Unverified 为产物存在但动作证据不足的条数，同样不进通过率分母。
+	Unverified int64 `json:"unverified"`
 
 	PassRate float64 `json:"pass_rate"`
 	// HasData 为 false 时前端显示「暂无数据」而非 0%，二者含义完全不同。

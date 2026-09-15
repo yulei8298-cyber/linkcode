@@ -99,6 +99,17 @@
         </div>
       </section>
 
+      <section v-if="motionItems.length" class="ic-dlg-block">
+        <h4>动作轨迹逐项</h4>
+        <div class="ic-dlg-gate">
+          <div v-for="(item, index) in motionItems" :key="index" :class="item.pass ? 'ok' : 'bad'">
+            <i>{{ item.pass ? '✓' : '✗' }}</i>
+            <span>{{ item.item }}</span>
+            <em>{{ item.detail }}</em>
+          </div>
+        </div>
+      </section>
+
       <section v-if="reviewItems.length" class="ic-dlg-block">
         <h4>源码评审逐项</h4>
         <div class="ic-dlg-review">
@@ -168,6 +179,8 @@ const statusPillClass = computed(() => {
       return 'bad'
     case 'request_error':
       return 'warn'
+    case 'unverified':
+      return 'neutral'
     default:
       return 'run'
   }
@@ -190,11 +203,14 @@ const judgeItems = computed(() => {
 
   if (detail.value?.kind === 'logic') return items
 
-  if (raw.judge_method === 'structure_v2') {
-    items.push({ label: '判定方式', value: '确定性结构验收 v2' })
+  if (raw.judge_method === 'structure_v2' || raw.judge_method === 'structure_motion_v3') {
+    items.push({ label: '判定方式', value: raw.judge_method === 'structure_motion_v3' ? '结构 + 浏览器动作验收 v3' : '确定性结构验收 v2' })
     items.push({ label: '结构综合分', value: `${raw.structure_score} / 100（通过线 ${raw.structure_threshold}）` })
     items.push({ label: '标准样本数', value: String(raw.reference_count) })
-    items.push({ label: '运动学验证', value: '未验证' })
+    items.push({
+      label: raw.judge_method === 'structure_motion_v3' ? '动作轨迹验证' : '运动学验证',
+      value: raw.kinematics_verified === true ? '已执行' : '未验证',
+    })
   }
 
   const gatePass = raw.gate_pass
@@ -231,6 +247,22 @@ const gateItems = computed<GateItemView[]>(() => {
         detail: typeof row.detail === 'string' ? row.detail : '',
       },
     ]
+  })
+})
+
+const motionItems = computed<GateItemView[]>(() => {
+  const evaluation = detailValue('motion_evaluation')
+  if (!evaluation || typeof evaluation !== 'object') return []
+  const checks = (evaluation as Record<string, unknown>).checks
+  if (!Array.isArray(checks)) return []
+  return checks.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return []
+    const row = entry as Record<string, unknown>
+    return [{
+      item: typeof row.item === 'string' ? row.item : '',
+      pass: row.pass === true,
+      detail: typeof row.detail === 'string' ? row.detail : '',
+    }]
   })
 })
 
@@ -317,6 +349,8 @@ watch(
   --d-bad-line: #fecaca;
   --d-warn-bg: #fffbeb;
   --d-warn-text: #b45309;
+  --d-neutral-bg: #f1f5f9;
+  --d-neutral-text: #475569;
   --d-accent: #0d9488;
 
   color: var(--d-text);
@@ -337,6 +371,8 @@ watch(
   --d-bad-line: rgba(239, 68, 68, 0.35);
   --d-warn-bg: rgba(245, 158, 11, 0.14);
   --d-warn-text: #fbbf24;
+  --d-neutral-bg: rgba(148, 163, 184, 0.14);
+  --d-neutral-text: #cbd5e1;
   --d-accent: #2dd4bf;
 }
 
@@ -396,6 +432,11 @@ watch(
 .ic-dlg-pill.run {
   background: var(--d-surface);
   color: var(--d-muted);
+}
+
+.ic-dlg-pill.neutral {
+  background: var(--d-neutral-bg);
+  color: var(--d-neutral-text);
 }
 
 .ic-dlg-note {

@@ -204,7 +204,7 @@ const filters = reactive<{
   kind: '',
   status: '',
 })
-const statuses: IntelCheckStatus[] = ['pass', 'fail', 'request_error', 'running']
+const statuses: IntelCheckStatus[] = ['pass', 'fail', 'unverified', 'request_error', 'running']
 let roundsAbortController: AbortController | null = null
 let resultsAbortController: AbortController | null = null
 
@@ -264,6 +264,8 @@ function statusClass(status: IntelCheckStatus): string {
       return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
     case 'request_error':
       return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    case 'unverified':
+      return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
     default:
       return 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'
   }

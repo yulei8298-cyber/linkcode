@@ -32,6 +32,7 @@ type IntelCheckService struct {
 	repo        IntelCheckRepository
 	settingRepo intelCheckSettingStore
 	encryptor   SecretEncryptor
+	motion      IntelCheckMotionEvaluator
 
 	// reloader 由 wire 在 runner 构造完成后通过 SetReloader 注入
 	// （runner 依赖本服务读设置，构造参数注入会形成循环）。
@@ -54,6 +55,14 @@ func (s *IntelCheckService) SetReloader(r intelCheckReloader) {
 		return
 	}
 	s.reloader = r
+}
+
+// SetMotionEvaluator 注入独立动作验收器。nil 表示当前环境未配置，绘图结构
+// 达标后会记为 unverified，不能因为基础设施缺失而显示绿色通过。
+func (s *IntelCheckService) SetMotionEvaluator(evaluator IntelCheckMotionEvaluator) {
+	if s != nil {
+		s.motion = evaluator
+	}
 }
 
 // ---------- 设置读写 ----------

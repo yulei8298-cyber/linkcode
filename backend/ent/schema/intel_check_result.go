@@ -31,9 +31,10 @@ func (IntelCheckResult) Fields() []ent.Field {
 		field.Enum("kind").
 			Values("logic", "drawing"),
 		// status: running 为中间态；request_error 表示上游/网络故障，
+		// unverified 表示绘图产物缺少可测量动作证据；
 		// 不计入降智连续计数（见 DeriveIntelCheckState）。
 		field.Enum("status").
-			Values("pass", "fail", "request_error", "running"),
+			Values("pass", "fail", "request_error", "running", "unverified"),
 		field.Int("latency_ms").
 			Optional().
 			Nillable(),
@@ -48,11 +49,11 @@ func (IntelCheckResult) Fields() []ent.Field {
 			Optional().
 			Default("").
 			MaxLen(500),
-		// html_output: 清洗后的绘图产物，仅绘图题有值。
+		// html_output: 原样保留的绘图产物，仅绘图题有值。
 		field.Text("html_output").
 			Optional().
 			Default(""),
-		// judge_detail: 逐项判定结果（门禁各项 + 评审得分与理由）。
+		// judge_detail: 逐项判定结果（结构门禁 + 动作验收依据）。
 		field.JSON("judge_detail", map[string]any{}).
 			Optional(),
 		field.String("error_message").

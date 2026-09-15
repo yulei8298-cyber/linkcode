@@ -58,7 +58,7 @@ func judgeIntelCheckLogic(question *IntelCheckQuestion, reply string) intelCheck
 // judgeIntelCheckDrawing 执行确定性结构验收。保留调用签名，但不使用评审配置或凭据。
 // 新结果标记算法版本和覆盖范围，不能把结构通过解释成运动学或视觉质量通过。
 func (s *IntelCheckService) judgeIntelCheckDrawing(
-	_ context.Context,
+	ctx context.Context,
 	_ *IntelCheckSettings,
 	question *IntelCheckQuestion,
 	_ *IntelCheckTarget,
@@ -111,21 +111,62 @@ func (s *IntelCheckService) judgeIntelCheckDrawing(
 			score, threshold, structure.Shapes, baseline.Shapes, structure.GeometryValues, baseline.GeometryValues, count),
 	})
 	gate.Pass = gate.Pass && score >= threshold
-	status, reason := IntelCheckStatusPass, "结构基准通过"
 	if !gate.Pass {
-		status, reason = IntelCheckStatusFail, "结构基准未通过"
+		return intelCheckDrawingOutcome(IntelCheckStatusFail, html, gate, score, threshold,
+			count, structure, baseline, question, rules, nil,
+			"结构基准未通过", "结构未达标，未执行动作验收")
 	}
-	return intelCheckJudgeOutcome{
-		Status: status, HTMLOutput: html,
-		JudgeDetail: map[string]any{
-			"judge_method": intelCheckStructureVersion, "gate_pass": gate.Pass, "gate_items": gate.Items,
-			"structure_score": score, "structure_threshold": threshold,
-			"reference_count": count, "candidate_structure": structure, "baseline_structure": baseline,
-			"standard_digest": intelCheckStandardDigest(question.ReferenceHTML, rules.StandardSources),
-			"review_skipped":  true, "kinematics_verified": false, "reason": reason,
-			"scope_note": "仅检查静态结构和动画声明，未验证视觉质量、轮心稳定或脚踏联动；结构达标不等于画作质量达标。",
-		},
+	if s == nil || s.motion == nil {
+		return intelCheckDrawingOutcome(IntelCheckStatusUnverified, html, gate, score, threshold,
+			count, structure, baseline, question, rules, nil,
+			"动作验收器未配置，结构达标但动作未验证", "当前环境没有启用隔离浏览器动作验收")
 	}
+	motion, err := s.motion.Evaluate(ctx, html)
+	if err != nil {
+		outcome := intelCheckDrawingOutcome(IntelCheckStatusRequestError, html, gate, score, threshold,
+			count, structure, baseline, question, rules, nil,
+			"动作验收器未能完成，本次未测出完整结论", "动作验收基础设施故障，不计为模型失败")
+		outcome.ErrorMessage = fmt.Sprintf("动作验收失败：%v", err)
+		return outcome
+	}
+	if !motion.Verifiable {
+		return intelCheckDrawingOutcome(IntelCheckStatusUnverified, html, gate, score, threshold,
+			count, structure, baseline, question, rules, motion,
+			"缺少可测量的部件标记，动作未验证", motion.Reason)
+	}
+	if !motion.Pass {
+		return intelCheckDrawingOutcome(IntelCheckStatusFail, html, gate, score, threshold,
+			count, structure, baseline, question, rules, motion,
+			"动作轨迹验收未通过", motion.Reason)
+	}
+	return intelCheckDrawingOutcome(IntelCheckStatusPass, html, gate, score, threshold,
+		count, structure, baseline, question, rules, motion,
+		"结构与动作轨迹均通过", motion.Reason)
+}
+
+func intelCheckDrawingOutcome(
+	status, html string,
+	gate IntelCheckGateResult,
+	score, threshold float64,
+	count int,
+	structure, baseline IntelCheckStructureMetrics,
+	question *IntelCheckQuestion,
+	rules IntelCheckDrawingRules,
+	motion *IntelCheckMotionEvaluation,
+	reason, scope string,
+) intelCheckJudgeOutcome {
+	detail := map[string]any{
+		"judge_method": intelCheckDrawingJudgeVersion, "gate_pass": gate.Pass, "gate_items": gate.Items,
+		"structure_score": score, "structure_threshold": threshold,
+		"reference_count": count, "candidate_structure": structure, "baseline_structure": baseline,
+		"standard_digest": intelCheckStandardDigest(question.ReferenceHTML, rules.StandardSources),
+		"review_skipped":  true, "kinematics_verified": motion != nil && motion.Verifiable,
+		"reason": reason, "scope_note": scope,
+	}
+	if motion != nil {
+		detail["motion_evaluation"] = motion
+	}
+	return intelCheckJudgeOutcome{Status: status, HTMLOutput: html, JudgeDetail: detail}
 }
 
 // intelCheckDrawingFail 构造一条绘图题失败判定。
