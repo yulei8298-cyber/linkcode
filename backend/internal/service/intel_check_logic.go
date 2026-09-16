@@ -15,9 +15,6 @@ var (
 	// 这里仅负责把已经取出的内容还原成便于比较的可见文本。
 	intelCheckLatexTextCommandRe = regexp.MustCompile(`\\(?:text|textrm|textnormal|mathrm|mathbf|mathit|operatorname)\s*\{([^{}]*)\}`)
 	intelCheckLatexSpacingRe     = regexp.MustCompile(`\\(?:,|;|:|!|quad|qquad)\s*`)
-	// 盒装结论为「数值 + 单位」时只取数值。盒装本身已经明确标记最终答案，
-	// 单位不应让标准答案 21 与 \boxed{21\text{颗}} 判成不相等。
-	intelCheckBoxedNumberWithUnitRe = regexp.MustCompile(`^(-?\d+(?:\.\d+)?)\s*\p{L}+$`)
 	// 「最终答案：X」这类显式作答句式，信号最强。
 	intelCheckAnswerPhraseRe = regexp.MustCompile(`(?i)(?:最终答案|正确答案|答案是|答案为|答案|final answer|answer)\s*(?:是|为|[:：=])?\s*([^\n。！？；;]{1,200})`)
 	// Markdown 加粗片段，模型常用来强调结论。
@@ -36,25 +33,31 @@ const intelCheckNumericEpsilon = 1e-9
 // 按信号强度依次尝试：LaTeX 盒装结论 → 显式作答句式 → 最后一处加粗片段
 // → 最后一个非空行。四者都取「最后一次出现」，因为模型常先给推理再复述结论。
 func ExtractIntelCheckAnswer(reply string) string {
+	return extractIntelCheckAnswer(reply, true)
+}
+
+// extractIntelCheckAnswer 的 stripControlledUnit 由题目期望答案决定：
+// 纯数值期望可忽略受控单位；期望本身带单位或是文本时必须保留原答案语义。
+func extractIntelCheckAnswer(reply string, stripControlledUnit bool) string {
 	text := strings.TrimSpace(intelCheckFenceRe.ReplaceAllString(reply, "\n"))
 	if text == "" {
 		return ""
 	}
 
-	if candidate := intelCheckLastBoxedAnswer(text); candidate != "" {
+	if candidate := intelCheckLastBoxedAnswer(text, stripControlledUnit); candidate != "" {
 		return candidate
 	}
-	if candidate := intelCheckLastCapture(intelCheckAnswerPhraseRe, text); candidate != "" {
+	if candidate := intelCheckLastCapture(intelCheckAnswerPhraseRe, text, stripControlledUnit); candidate != "" {
 		return candidate
 	}
-	if candidate := intelCheckLastCapture(intelCheckBoldRe, text); candidate != "" {
+	if candidate := intelCheckLastCapture(intelCheckBoldRe, text, stripControlledUnit); candidate != "" {
 		return candidate
 	}
 
 	lines := strings.Split(text, "\n")
 	for index := len(lines) - 1; index >= 0; index-- {
-		if trimmed := strings.Trim(lines[index], intelCheckTrimCutset); trimmed != "" {
-			return trimmed
+		if candidate := normalizeIntelCheckAnswerCandidate(lines[index], stripControlledUnit); candidate != "" {
+			return candidate
 		}
 	}
 	return ""
@@ -64,7 +67,7 @@ func ExtractIntelCheckAnswer(reply string) string {
 //
 // 不用正则直接匹配内容，因为模型常输出 \boxed{21\text{颗}} 这类嵌套花括号；
 // Go 正则不支持递归匹配，简单的 `[^}]+` 会在 \text 的右括号处提前截断。
-func intelCheckLastBoxedAnswer(text string) string {
+func intelCheckLastBoxedAnswer(text string, stripControlledUnit bool) string {
 	const maxBoxedAnswerBytes = 1000
 	tokens := []string{`\boxed{`, `\fbox{`}
 	lastStart := -1
@@ -80,7 +83,7 @@ func intelCheckLastBoxedAnswer(text string) string {
 			contentStart := start + len(token)
 			content, end, ok := intelCheckBalancedBraceContent(text, contentStart, maxBoxedAnswerBytes)
 			if ok {
-				if candidate := normalizeIntelCheckBoxedAnswer(content); candidate != "" && start > lastStart {
+				if candidate := normalizeIntelCheckBoxedAnswer(content, stripControlledUnit); candidate != "" && start > lastStart {
 					lastStart = start
 					lastAnswer = candidate
 				}
@@ -119,7 +122,7 @@ func intelCheckBalancedBraceContent(text string, contentStart, maxBytes int) (st
 	return "", contentStart, false
 }
 
-func normalizeIntelCheckBoxedAnswer(answer string) string {
+func normalizeIntelCheckBoxedAnswer(answer string, stripControlledUnit bool) string {
 	answer = strings.TrimSpace(answer)
 	// 连续处理几轮，使 \mathbf{\text{蓝色}} 这类简单嵌套样式也能展开。
 	for range 8 {
@@ -130,11 +133,7 @@ func normalizeIntelCheckBoxedAnswer(answer string) string {
 		answer = next
 	}
 	answer = intelCheckLatexSpacingRe.ReplaceAllString(answer, " ")
-	answer = strings.Trim(answer, intelCheckTrimCutset)
-	if match := intelCheckBoxedNumberWithUnitRe.FindStringSubmatch(answer); len(match) == 2 {
-		return match[1]
-	}
-	return answer
+	return normalizeIntelCheckAnswerCandidate(answer, stripControlledUnit)
 }
 
 // MatchIntelCheckAnswer 按匹配模式判定答案是否正确。
@@ -189,12 +188,12 @@ func MatchIntelCheckAnswer(reply, extracted, expected, mode string) (bool, error
 	}
 }
 
-// intelCheckLastCapture 返回正则最后一次匹配的首个捕获组，并剥掉两端装饰字符。
-func intelCheckLastCapture(pattern *regexp.Regexp, text string) string {
+// intelCheckLastCapture 返回正则最后一次匹配的首个捕获组，并统一规范化候选。
+func intelCheckLastCapture(pattern *regexp.Regexp, text string, stripControlledUnit bool) string {
 	matches := pattern.FindAllStringSubmatch(text, -1)
 	for index := len(matches) - 1; index >= 0; index-- {
-		if trimmed := strings.Trim(matches[index][1], intelCheckTrimCutset); trimmed != "" {
-			return trimmed
+		if candidate := normalizeIntelCheckAnswerCandidate(matches[index][1], stripControlledUnit); candidate != "" {
+			return candidate
 		}
 	}
 	return ""

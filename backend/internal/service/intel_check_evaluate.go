@@ -25,7 +25,8 @@ type intelCheckJudgeOutcome struct {
 // 匹配规则本身执行失败（例如管理端填了非法正则）记 request_error 而非 fail：
 // 那是题目配置问题，把它算成模型降智会让公开页出现凭空的红块。
 func judgeIntelCheckLogic(question *IntelCheckQuestion, reply string) intelCheckJudgeOutcome {
-	extracted := ExtractIntelCheckAnswer(reply)
+	extracted := extractIntelCheckAnswer(reply,
+		intelCheckShouldStripControlledUnit(question.ExpectedAnswer, question.MatchMode))
 	matched, err := MatchIntelCheckAnswer(reply, extracted, question.ExpectedAnswer, question.MatchMode)
 	if err != nil {
 		return intelCheckJudgeOutcome{

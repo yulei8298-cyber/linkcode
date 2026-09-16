@@ -25,6 +25,21 @@ func TestExtractIntelCheckAnswer(t *testing.T) {
 			expected: "蓝色",
 		},
 		{
+			name:     "显式作答句式去掉Markdown和受控量词",
+			reply:    "综上，答案：**21颗**",
+			expected: "21",
+		},
+		{
+			name:     "英文作答句式去掉受控单位",
+			reply:    "Therefore, the final answer: 21 items.",
+			expected: "21",
+		},
+		{
+			name:     "显式作答句式去掉中文复合单位",
+			reply:    "换算后，最终答案：21分钟。",
+			expected: "21",
+		},
+		{
 			name:     "同时出现多处时取最后一处",
 			reply:    "初步答案：18\n复核后修正。\n最终答案：21",
 			expected: "21",
@@ -62,9 +77,24 @@ func TestExtractIntelCheckAnswer(t *testing.T) {
 			expected: "42",
 		},
 		{
+			name:     "加粗路径去掉行内代码和受控量词",
+			reply:    "推理过程略。\n结论如下：**`21 个`**",
+			expected: "21",
+		},
+		{
 			name:     "均无时取最后一个非空行",
 			reply:    "第一步推理\n第二步推理\n\n21\n\n",
 			expected: "21",
+		},
+		{
+			name:     "末行路径兼容下划线全角数字量词和标点",
+			reply:    "第一步推理\n第二步推理\n\n__２１颗__。\n",
+			expected: "21",
+		},
+		{
+			name:     "错误数值只去量词不改数值",
+			reply:    "答案：**22颗**",
+			expected: "22",
 		},
 		{
 			name:     "忽略代码块内容避免误取中间变量",
@@ -81,6 +111,24 @@ func TestExtractIntelCheckAnswer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.expected, ExtractIntelCheckAnswer(tt.reply))
+		})
+	}
+}
+
+func TestExtractIntelCheckAnswer_歧义候选不折叠(t *testing.T) {
+	tests := []string{
+		"21个苹果",
+		"大约21颗",
+		"20~21颗",
+		"21颗或22颗",
+		"~21颗",
+		"<21颗",
+		".5颗",
+	}
+
+	for _, candidate := range tests {
+		t.Run(candidate, func(t *testing.T) {
+			require.Equal(t, candidate, ExtractIntelCheckAnswer("答案："+candidate))
 		})
 	}
 }
