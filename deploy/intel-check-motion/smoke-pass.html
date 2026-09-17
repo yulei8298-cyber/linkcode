@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>动作验收正向冒烟</title><style>
+html,body{margin:0;width:100%;height:100%}svg{display:block;width:800px;height:550px}.wheel{fill:none;stroke:#1f2937;stroke-width:5}.marker{fill:#ef4444}.foot{fill:#2563eb}.leg{fill:none;stroke:#111827;stroke-width:7;stroke-linecap:round}
+</style></head>
+<body>
+<svg viewBox="0 0 320 220">
+  <g data-intel-part="wheel-rear"><circle class="wheel" cx="80" cy="150" r="48"/><path d="M80 102V198M32 150H128"/></g>
+  <g data-intel-part="wheel-front"><circle class="wheel" cx="240" cy="150" r="48"/><path d="M240 102V198M192 150H288"/></g>
+  <circle data-intel-part="crank-center" class="marker" cx="160" cy="138" r="7"/>
+  <g data-intel-part="pedal-left"><circle class="marker" r="6"/></g><g data-intel-part="pedal-right"><circle class="marker" r="6"/></g>
+  <g data-intel-part="foot-left"><ellipse class="foot" rx="10" ry="5"/></g><g data-intel-part="foot-right"><ellipse class="foot" rx="10" ry="5"/></g>
+  <path data-intel-part="leg-left" class="leg" d="M145 65L160 138"/><path data-intel-part="leg-right" class="leg" d="M175 65L160 138"/>
+</svg>
+<script>
+const part=n=>document.querySelector(`[data-intel-part="${n}"]`),crank={x:160,y:138,r:30};
+const point=a=>({x:crank.x+Math.cos(a)*crank.r,y:crank.y+Math.sin(a)*crank.r});
+const place=(e,p)=>e.setAttribute('transform',`translate(${p.x} ${p.y})`);
+function animate(now){const a=now/430,d=a*180/Math.PI,l=point(a),r=point(a+Math.PI);part('wheel-rear').setAttribute('transform',`rotate(${d} 80 150)`);part('wheel-front').setAttribute('transform',`rotate(${d} 240 150)`);place(part('pedal-left'),l);place(part('foot-left'),l);place(part('pedal-right'),r);place(part('foot-right'),r);part('leg-left').setAttribute('d',`M145 65L${l.x} ${l.y}`);part('leg-right').setAttribute('d',`M175 65L${r.x} ${r.y}`);requestAnimationFrame(animate)}requestAnimationFrame(animate);
+</script></body></html>
