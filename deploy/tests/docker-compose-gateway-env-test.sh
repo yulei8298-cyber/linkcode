@@ -5,8 +5,9 @@ repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 cd "$repo_root"
 
 gateway_variables=$(mktemp "${TMPDIR:-/tmp}/sub2api-gateway-env.XXXXXX")
+compose_env=$(mktemp "${TMPDIR:-/tmp}/sub2api-compose-env.XXXXXX")
 cleanup() {
-  rm -f "$gateway_variables"
+  rm -f "$gateway_variables" "$compose_env"
 }
 trap cleanup EXIT HUP INT TERM
 
@@ -32,6 +33,7 @@ do
       GATEWAY_MAX_CONNS_PER_HOST) value=1024 ;;
       GATEWAY_MAX_IDLE_CONNS) value=2560 ;;
       GATEWAY_MAX_IDLE_CONNS_PER_HOST) value=120 ;;
+      GATEWAY_MAX_BODY_SIZE) value=268435456 ;;
     esac
 
     expected=$(printf '      - %s=${%s:-%s}' "$key" "$key" "$value")

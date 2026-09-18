@@ -49,7 +49,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       # LobeHub SSO Configuration
       - LOBEHUB_SSO_ENABLED=${LOBEHUB_SSO_ENABLED:-true}
-      - LOBEHUB_SSO_SHARED_SECRET=${LOBEHUB_SSO_SHARED_SECRET:?LOBEHUB_SSO_SHARED_SECRET is required}
+      - LOBEHUB_SSO_SHARED_SECRET=${LOBEHUB_SSO_SHARED_SECRET:-}
       - LOBEHUB_SSO_LOBEHUB_BASE_URL=${LOBEHUB_SSO_LOBEHUB_BASE_URL:-https://ai.linkcode.site}
       - LOBEHUB_SSO_CALLBACK_PATH=${LOBEHUB_SSO_CALLBACK_PATH:-/linkcode/sso/callback}
       - LOBEHUB_SSO_API_BASE_URL=${LOBEHUB_SSO_API_BASE_URL:-https://api.linkcode.site}
@@ -64,7 +64,16 @@ services:
       # Gateway values come from Compose .env or the shell.
       # Fallbacks mirror Sub2API backend defaults so omitted values preserve behavior.
       - GATEWAY_FORCE_CODEX_CLI=${GATEWAY_FORCE_CODEX_CLI:-false}
-      - GATEWAY_OPENAI_COMPACT_MODEL=${GATEWAY_OPENAI_COMPACT_MODEL:-gpt-5.4}
+      - GATEWAY_OPENAI_COMPACT_MODEL=${GATEWAY_OPENAI_COMPACT_MODEL:-gpt-5.5}
+      - GATEWAY_OPENAI_CODEX_TICKET_ENABLED=${GATEWAY_OPENAI_CODEX_TICKET_ENABLED:-false}
+      - GATEWAY_OPENAI_CODEX_TICKET_TARGET_LENGTH=${GATEWAY_OPENAI_CODEX_TICKET_TARGET_LENGTH:-292}
+      - GATEWAY_OPENAI_CODEX_TICKET_TTL_SECONDS=${GATEWAY_OPENAI_CODEX_TICKET_TTL_SECONDS:-3600}
+      - GATEWAY_OPENAI_CODEX_TICKET_REFRESH_BEFORE_SECONDS=${GATEWAY_OPENAI_CODEX_TICKET_REFRESH_BEFORE_SECONDS:-600}
+      - GATEWAY_OPENAI_CODEX_TICKET_HARVEST_PROXY_URL=${GATEWAY_OPENAI_CODEX_TICKET_HARVEST_PROXY_URL:-}
+      - GATEWAY_OPENAI_CODEX_TICKET_HARVEST_PROBE_INTERVAL_SECONDS=${GATEWAY_OPENAI_CODEX_TICKET_HARVEST_PROBE_INTERVAL_SECONDS:-6}
+      - GATEWAY_OPENAI_CODEX_TICKET_HARVEST_ATTEMPT_TIMEOUT_SECONDS=${GATEWAY_OPENAI_CODEX_TICKET_HARVEST_ATTEMPT_TIMEOUT_SECONDS:-25}
+      - GATEWAY_OPENAI_CODEX_TICKET_FAIL_CLOSED=${GATEWAY_OPENAI_CODEX_TICKET_FAIL_CLOSED:-true}
+      - GATEWAY_OPENAI_CODEX_TICKET_MODELS=${GATEWAY_OPENAI_CODEX_TICKET_MODELS:-gpt-6-astra,gpt-5.6-sol}
       - SUB2API_IMAGES_MAIN_MODEL=${SUB2API_IMAGES_MAIN_MODEL:-gpt-5.6-luna}
       - GATEWAY_OPENAI_RESPONSE_HEADER_TIMEOUT=${GATEWAY_OPENAI_RESPONSE_HEADER_TIMEOUT:-0}
       - GATEWAY_OPENAI_WS_FORCE_HTTP=${GATEWAY_OPENAI_WS_FORCE_HTTP:-false}
@@ -112,18 +121,55 @@ services:
       - BATCH_IMAGE_VERTEX_MANAGED_GCS_PREFIX=${BATCH_IMAGE_VERTEX_MANAGED_GCS_PREFIX:-batch-image/prod/{batch_id}}
       - BATCH_IMAGE_VERTEX_INPUT_RETENTION_HOURS=${BATCH_IMAGE_VERTEX_INPUT_RETENTION_HOURS:-24}
       - BATCH_IMAGE_VERTEX_OUTPUT_RETENTION_HOURS=${BATCH_IMAGE_VERTEX_OUTPUT_RETENTION_HOURS:-72}
+      # Intel Check Motion Evaluator
+      - INTEL_CHECK_MOTION_ENABLED=${INTEL_CHECK_MOTION_ENABLED:-true}
+      - INTEL_CHECK_MOTION_EVALUATOR_URL=${INTEL_CHECK_MOTION_EVALUATOR_URL:-http://intel-check-motion:8081}
+      - INTEL_CHECK_MOTION_TIMEOUT_SECONDS=${INTEL_CHECK_MOTION_TIMEOUT_SECONDS:-8}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      intel-check-motion:
+        condition: service_healthy
     networks:
       - sub2api-network
+      - intel-check-motion-network
     healthcheck:
       test: ["CMD", "wget", "-q", "-T", "5", "-O", "/dev/null", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
+
+  intel-check-motion:
+    build:
+      context: ./intel-check-motion
+    image: sub2api-intel-check-motion:local
+    container_name: sub2api-intel-check-motion
+    restart: unless-stopped
+    init: true
+    user: pwuser
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 1g
+    shm_size: 128m
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    environment:
+      - PORT=8081
+      - TZ=${TZ:-Asia/Shanghai}
+    networks:
+      - intel-check-motion-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
       start_period: 30s
 
   postgres:
@@ -179,3 +225,6 @@ services:
 networks:
   sub2api-network:
     driver: bridge
+  intel-check-motion-network:
+    driver: bridge
+    internal: true

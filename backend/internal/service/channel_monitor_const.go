@@ -70,6 +70,9 @@ const (
 	MonitorProviderZhipu       = "zhipu"
 	MonitorProviderDeepseek    = "deepseek"
 	MonitorProviderMiniMax     = "minimax"
+	// MonitorProviderOpenCodeGo 仅支持 quota 模式；Zen/Go 账号的用量端点
+	// 与模型探活协议无关，避免把 adaptive 多协议账号误当成单一 probe adapter。
+	MonitorProviderOpenCodeGo = "opencode_go"
 
 	// MonitorCheckMode 检测模式（channel_monitors.check_mode）。
 	//   probe       - LLM 探活（默认，原有行为）
@@ -185,7 +188,7 @@ var (
 		"CHANNEL_MONITOR_ENDPOINT_SCHEME", "endpoint must use https scheme",
 	)
 	ErrChannelMonitorEndpointPath = infraerrors.BadRequest(
-		"CHANNEL_MONITOR_ENDPOINT_PATH", "endpoint must be base origin only (no path/query/fragment)",
+		"CHANNEL_MONITOR_ENDPOINT_PATH", "endpoint must not contain query parameters or a fragment",
 	)
 	ErrChannelMonitorEndpointPrivate = infraerrors.BadRequest(
 		"CHANNEL_MONITOR_ENDPOINT_PRIVATE", "endpoint must be a public host",

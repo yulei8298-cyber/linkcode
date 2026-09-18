@@ -62,8 +62,8 @@ Sub2API は、AI 製品のサブスクリプションから API クォータを�
 </tr>
 
 <tr>
-<td width="180"><a href="https://apikey.fun/register?aff=SUB2API"><img src="assets/partners/logos/apikey-fun.png" alt="APIKEY.FUN" width="150"></a></td>
-<td>APIKEY.FUN のご支援に感謝します！<a href="https://apikey.fun/register?aff=SUB2API">APIKEY.FUN</a> は sub2api オープンソースプロジェクトのコアコントリビューターの一つであり、オープンで安定した、コストパフォーマンスに優れた AI API アクセスサービスの提供に取り組んでいます。プラットフォームは Claude、OpenAI、Gemini など人気モデルの API 中継サービスをサポートし、価格は公式料金のわずか 7% から。専用リンク <a href="https://apikey.fun/register?aff=SUB2API">APIKEY</a> から登録すると、すべてのチャージで永久 5% 割引をご利用いただけます。</td>
+<td width="180"><a href="https://apikey.fan/register?aff=SUB2API"><img src="assets/partners/logos/apikey-fun.png" alt="APIKEY.FUN" width="150"></a></td>
+<td>APIKEY.FUN のご支援に感謝します！<a href="https://apikey.fan/register?aff=SUB2API">APIKEY.FUN</a> は sub2api オープンソースプロジェクトのコアコントリビューターの一つであり、オープンで安定した、コストパフォーマンスに優れた AI API アクセスサービスの提供に取り組んでいます。プラットフォームは Claude、OpenAI、Gemini など人気モデルの API 中継サービスをサポートし、価格は公式料金のわずか 7% から。専用リンク <a href="https://apikey.fan/register?aff=SUB2API">APIKEY</a> から登録すると、すべてのチャージで永久 5% 割引をご利用いただけます。</td>
 </tr>
 
 <tr>
@@ -143,14 +143,6 @@ Sub2API は、AI 製品のサブスクリプションから API クォータを�
 <tr>
 <td width="180"><a href="https://sub.666api.ai"><img src="assets/partners/logos/666api.jpg" alt="666api" width="150"></a></td>
 <td>666api のご支援に感謝します！<a href="https://sub.666api.ai">sub.666api.ai</a> はオールインワンプラットフォームで、以下を提供しています：⚡ API 中継 — グローバルモデルへの従量課金アクセス、100% 公式ソースから直接供給、公式価格の最大 75% オフ。独占特典：Zhipu GLM 50% オフ・DeepSeek V4-pro 50% オフ・Seedance2.0 8% オフ（ホワイトリスト）・HappyHorse Overseas 30% オフ（ホワイトリスト）🔑 GPT サブスクリプションアカウント — 同源 IP 込み・グローバル住宅 IP 💰 請求書発行対応
-</td>
-</tr>
-
-<tr>
-<td width="180"><a href="http://www.fastaitoken.com/register"><img src="assets/partners/logos/fastaitoken.jpg" alt="fastaitoken" width="150"></a></td>
-<td>🎉 FastAIToken のご支援に感謝します！<a href="http://www.fastaitoken.com/register">FastAIToken</a> は開発者向けの AI API アグリゲーションプラットフォームで、OpenAI、Claude、Gemini などの主要な大規模モデルに対応しています。チャージは 1:1（1 元 = 1 米ドル分の API クレジット）で、開発者がより低コスト・より手軽に世界トップクラスの大規模モデルサービスを利用できます。<br>
-
-🚀 プラットフォームでは多彩なチャネルを自由に選択できます：超低価格の 0.02x OpenAI 特典グループ（期間限定）、最低 0.25x の OpenAI グループ、0.7x Claude（95% 固定キャッシュ）、1.2x Claude Max チャネル。さらに、各グループの可用率・レイテンシ・稼働状況をリアルタイムで表示する公開ステータスページを提供し、透明で信頼できるサービスを実現。7×24 時間の有人テクニカルサポート（ボットではありません）により、開発者のニーズに迅速に対応します。
 </td>
 </tr>
 
