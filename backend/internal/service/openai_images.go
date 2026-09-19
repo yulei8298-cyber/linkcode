@@ -1032,7 +1032,7 @@ func (s *OpenAIGatewayService) handleOpenAIImagesStreamingResponse(
 		}
 		// Native Codex Images SSE is parsed below and emitted once after
 		// normalization. Forwarding the raw line as well duplicates each event.
-		if shouldForwardOpenAIImagesRawSSELine(direct) && !clientDisconnected {
+		if direct != nil && !clientDisconnected {
 			if err := s.writeOpenAIImagesStreamEvent(c, flusher, eventType, dataBytes); err != nil {
 				clientDisconnected = true
 			} else {
@@ -1053,8 +1053,11 @@ func (s *OpenAIGatewayService) handleOpenAIImagesStreamingResponse(
 			ms := int(time.Since(startTime).Milliseconds())
 			firstTokenMs = &ms
 		}
-		downstreamLine := s.rewriteImageSSELineForDelivery(c.Request.Context(), c, line)
-		if !clientDisconnected {
+		// Native Codex Images SSE is normalized and emitted from processSSEData;
+		// forwarding the raw physical line here would duplicate the event and
+		// bypass the image_edit.* event-name normalization.
+		if !clientDisconnected && direct == nil {
+			downstreamLine := s.rewriteImageSSELineForDelivery(c.Request.Context(), c, line)
 			if _, writeErr := c.Writer.Write(downstreamLine); writeErr != nil {
 				clientDisconnected = true
 				logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Images stream client disconnected, continue draining upstream for billing")

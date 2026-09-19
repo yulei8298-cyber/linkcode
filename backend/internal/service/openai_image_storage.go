@@ -29,6 +29,9 @@ func (s *OpenAIGatewayService) rewriteImageResponseForDelivery(
 ) []byte {
 	uploader, enabled := s.resolveImageResultUploader()
 	if !enabled || uploader == nil || len(body) == 0 {
+		if s.imageProxyStore() == nil {
+			return body
+		}
 		return s.rewriteImageResponseURLsFailOpen(ctx, c, body)
 	}
 
@@ -83,6 +86,9 @@ func (s *OpenAIGatewayService) rewriteCompletedImagePayloadForDelivery(
 ) []byte {
 	uploader, enabled := s.resolveImageResultUploader()
 	if !enabled || uploader == nil {
+		if s.imageProxyStore() == nil {
+			return payload
+		}
 		return s.rewriteImageResponseURLsFailOpen(ctx, c, payload)
 	}
 
