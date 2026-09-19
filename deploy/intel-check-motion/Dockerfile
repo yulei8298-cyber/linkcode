@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY motion.mjs server.mjs stdin.mjs worker.mjs ./
+COPY --chown=pwuser:pwuser motion.mjs server.mjs stdin.mjs worker.mjs ./
 
 ENV PORT=8081
 USER pwuser
