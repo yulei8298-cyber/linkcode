@@ -3,11 +3,8 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"io"
-	"mime"
-	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -73,7 +70,7 @@ func grokMediaContentStatusResponse(body string) *http.Response {
 	}
 }
 
-func TestForwardGrokMediaNormalizesJSONContentTypeAndPreservesMultipartBoundary(t *testing.T) {
+func TestForwardGrokMediaNormalizesJSONContentType(t *testing.T) {
 	tests := []struct {
 		name            string
 		body            []byte
@@ -111,23 +108,6 @@ func TestForwardGrokMediaNormalizesJSONContentTypeAndPreservesMultipartBoundary(
 		},
 	}
 
-	var multipartBody bytes.Buffer
-	multipartWriter := multipart.NewWriter(&multipartBody)
-	require.NoError(t, multipartWriter.WriteField("model", "grok-imagine-video-1.5"))
-	require.NoError(t, multipartWriter.WriteField("prompt", "waves"))
-	require.NoError(t, multipartWriter.Close())
-	tests = append(tests, struct {
-		name            string
-		body            []byte
-		contentType     string
-		wantContentType string
-	}{
-		name:            "multipart keeps boundary",
-		body:            multipartBody.Bytes(),
-		contentType:     multipartWriter.FormDataContentType(),
-		wantContentType: multipartWriter.FormDataContentType(),
-	})
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			upstream := &grokMediaContentUpstreamStub{response: &http.Response{
@@ -151,17 +131,6 @@ func TestForwardGrokMediaNormalizesJSONContentTypeAndPreservesMultipartBoundary(
 			require.NoError(t, err)
 			require.Equal(t, tt.body, forwardedBody)
 			require.Equal(t, int64(len(tt.body)), upstream.request.ContentLength)
-
-			if tt.name == "multipart keeps boundary" {
-				mediaType, params, err := mime.ParseMediaType(upstream.request.Header.Get("Content-Type"))
-				require.NoError(t, err)
-				require.Equal(t, "multipart/form-data", mediaType)
-				require.NotEmpty(t, params["boundary"])
-				reader := multipart.NewReader(bytes.NewReader(forwardedBody), params["boundary"])
-				part, err := reader.NextPart()
-				require.NoError(t, err)
-				require.Equal(t, "model", part.FormName())
-			}
 		})
 	}
 }

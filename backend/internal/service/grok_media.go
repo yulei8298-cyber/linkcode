@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -960,6 +961,9 @@ func isGrokCLIProxyTarget(rawURL string) bool {
 }
 
 func prepareGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, contentType string) ([]byte, string, error) {
+	if endpoint == GrokMediaEndpointVideosGenerations {
+		return PrepareGrokVideoGenerationRequest(body, contentType)
+	}
 	if endpoint != GrokMediaEndpointImagesEdits {
 		return body, contentType, nil
 	}
@@ -1033,6 +1037,183 @@ func prepareGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, conten
 		return nil, "", err
 	}
 	return out, "application/json", nil
+}
+
+// PrepareGrokVideoGenerationRequest 将兼容客户端的视频表单转换为 xAI JSON。
+// Handler 在审核和计费参数解析前调用，转发层再次调用以保护直接调用者。
+// 原生 JSON 和其他媒体端点不经过表单适配，避免改变现有协议。
+func PrepareGrokVideoGenerationRequest(body []byte, contentType string) ([]byte, string, error) {
+	if gjson.ValidBytes(body) {
+		return body, contentType, nil
+	}
+	mediaType, params, err := mime.ParseMediaType(strings.TrimSpace(contentType))
+	if err != nil {
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(contentType)), "multipart/") {
+			return nil, "", fmt.Errorf("invalid video multipart Content-Type: %w", err)
+		}
+		return body, contentType, nil
+	}
+	if !strings.EqualFold(mediaType, "multipart/form-data") {
+		return body, contentType, nil
+	}
+	boundary := strings.TrimSpace(params["boundary"])
+	if boundary == "" {
+		return nil, "", fmt.Errorf("video multipart boundary is required")
+	}
+
+	fields := make(map[string]string)
+	imageFields := make(map[string][]map[string]string)
+	reader := multipart.NewReader(bytes.NewReader(body), boundary)
+	for {
+		part, readErr := reader.NextPart()
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return nil, "", fmt.Errorf("invalid video multipart body: %w", readErr)
+		}
+		name := strings.TrimSpace(part.FormName())
+		if name == "" {
+			_ = part.Close()
+			return nil, "", fmt.Errorf("video multipart field name is required")
+		}
+		data, readErr := io.ReadAll(io.LimitReader(part, openAIImageMaxUploadPartSize+1))
+		_ = part.Close()
+		if readErr != nil {
+			return nil, "", fmt.Errorf("invalid video multipart field %q: %w", name, readErr)
+		}
+		if len(data) > openAIImageMaxUploadPartSize {
+			return nil, "", fmt.Errorf("video multipart field %q exceeds the 20 MB limit", name)
+		}
+		imageField := ""
+		switch name {
+		case "image", "image[]":
+			imageField = "image"
+		case "reference_images", "reference_images[]":
+			imageField = "reference_images"
+		case "input_reference", "input_reference[]":
+			imageField = "input_reference"
+		}
+		_, dispositionParams, _ := mime.ParseMediaType(part.Header.Get("Content-Disposition"))
+		_, hasFileName := dispositionParams["filename"]
+		if hasFileName {
+			if imageField == "" {
+				return nil, "", fmt.Errorf("unsupported video upload field %q", name)
+			}
+			// 以文件内容识别类型，拒绝空文件及冒充图片的普通文本。
+			imageType := http.DetectContentType(data)
+			if !strings.HasPrefix(imageType, "image/") {
+				return nil, "", fmt.Errorf("video upload %q must contain an image", name)
+			}
+			imageURL, uploadErr := openAIImageUploadToDataURL(OpenAIImagesUpload{
+				FieldName: name, FileName: part.FileName(), ContentType: imageType, Data: data,
+			})
+			if uploadErr != nil {
+				return nil, "", fmt.Errorf("invalid video upload: %w", uploadErr)
+			}
+			imageFields[imageField] = append(imageFields[imageField], map[string]string{"url": imageURL})
+			continue
+		}
+		value := strings.TrimSpace(string(data))
+		if imageField != "" {
+			if value == "" {
+				return nil, "", fmt.Errorf("video image field %q must not be empty", name)
+			}
+			imageFields[imageField] = append(imageFields[imageField], map[string]string{"url": value})
+			continue
+		}
+		fields[name] = value
+	}
+
+	payload := make(map[string]any)
+	for _, name := range []string{"model", "prompt"} {
+		if value, ok := fields[name]; ok {
+			payload[name] = value
+		}
+	}
+	// 正规字段按是否存在判定优先级；非法正规值不能被别名掩盖。
+	duration, hasDuration := fields["duration"]
+	if !hasDuration {
+		duration, hasDuration = fields["seconds"]
+	}
+	if hasDuration {
+		seconds, parseErr := strconv.Atoi(duration)
+		if parseErr != nil || seconds < VideoBillingMinDurationSeconds || seconds > VideoBillingMaxDurationSeconds {
+			return nil, "", fmt.Errorf("video duration must be an integer between %d and %d seconds", VideoBillingMinDurationSeconds, VideoBillingMaxDurationSeconds)
+		}
+		payload["duration"] = seconds
+	}
+	resolution, hasResolution := fields["resolution"]
+	if !hasResolution {
+		resolution, hasResolution = fields["resolution_name"]
+	}
+	if hasResolution {
+		normalized, ok := LookupVideoBillingResolution(resolution)
+		if !ok {
+			return nil, "", fmt.Errorf("unsupported video resolution %q", resolution)
+		}
+		payload["resolution"] = normalized
+	}
+	if aspectRatio, ok := fields["aspect_ratio"]; ok {
+		payload["aspect_ratio"] = aspectRatio
+	} else if size := fields["size"]; size != "" && size != "auto" {
+		aspectRatio, ratioErr := grokVideoAspectRatioFromSize(size)
+		if ratioErr != nil {
+			return nil, "", ratioErr
+		}
+		payload["aspect_ratio"] = aspectRatio
+	}
+
+	images, hasImage := imageFields["image"]
+	references, hasReferences := imageFields["reference_images"]
+	if !hasImage && !hasReferences {
+		compatImages := imageFields["input_reference"]
+		if len(compatImages) == 1 {
+			images = compatImages
+		} else {
+			references = compatImages
+		}
+	}
+	if len(images) > 1 {
+		return nil, "", fmt.Errorf("video image accepts one starting image; use reference_images for multiple images")
+	}
+	if len(references) > 7 {
+		return nil, "", fmt.Errorf("video reference_images accepts a maximum of 7 images")
+	}
+	if len(images) == 1 {
+		payload["image"] = images[0]
+	}
+	if len(references) > 0 {
+		payload["reference_images"] = references
+	}
+	out, err := marshalOpenAIUpstreamJSON(payload)
+	if err != nil {
+		return nil, "", fmt.Errorf("encode video multipart request: %w", err)
+	}
+	return out, "application/json", nil
+}
+
+func grokVideoAspectRatioFromSize(size string) (string, error) {
+	width, height, ok := parseImageBillingDimensions(size)
+	if !ok || width <= 0 || height <= 0 {
+		return "", fmt.Errorf("invalid video size %q", size)
+	}
+	// 视频比例集合小于图片比例集合，不能复用图片的最近比例映射。
+	ratios := []struct {
+		label string
+		ratio float64
+	}{
+		{"1:1", 1}, {"16:9", 16.0 / 9}, {"9:16", 9.0 / 16},
+		{"4:3", 4.0 / 3}, {"3:4", 3.0 / 4}, {"3:2", 1.5}, {"2:3", 2.0 / 3},
+	}
+	ratio := float64(width) / float64(height)
+	best, delta := "", math.MaxFloat64
+	for _, candidate := range ratios {
+		if distance := math.Abs(ratio - candidate.ratio); distance < delta {
+			best, delta = candidate.label, distance
+		}
+	}
+	return best, nil
 }
 
 func normalizeGrokMediaJSONImageRefs(body []byte) ([]byte, error) {
