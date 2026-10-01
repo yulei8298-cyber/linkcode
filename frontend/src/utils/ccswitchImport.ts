@@ -24,6 +24,31 @@ export function normalizeGatewayRootEndpoint(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, '').replace(/\/v1$/, '')
 }
 
+/**
+ * Balance query CC Switch runs against the imported provider. CC Switch fills
+ * `{{baseUrl}}` with the provider's base URL as stored — Grok imports carry a
+ * trailing `/v1` (see `ensureOpenAIV1Endpoint`), others do not, and users may
+ * edit it either way afterwards — then evaluates the script, so the URL strips
+ * an existing `/v1` instead of blindly appending one (`/v1/v1/usage` is a 404
+ * and CC Switch shows "query failed").
+ */
+export const CC_SWITCH_USAGE_SCRIPT = `({
+    request: {
+      url: "{{baseUrl}}".replace(/\\/+$/, "").replace(/\\/v1$/, "") + "/v1/usage",
+      method: "GET",
+      headers: { "Authorization": "Bearer {{apiKey}}" }
+    },
+    extractor: function(response) {
+      const remaining = response?.remaining ?? response?.quota?.remaining ?? response?.balance;
+      const unit = response?.unit ?? response?.quota?.unit ?? "USD";
+      return {
+        isValid: response?.is_active ?? response?.isValid ?? true,
+        remaining,
+        unit
+      };
+    }
+  })`
+
 export function ensureOpenAIV1Endpoint(baseUrl: string): string {
   const trimmed = baseUrl.replace(/\/+$/, '')
   return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`

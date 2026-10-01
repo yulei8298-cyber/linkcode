@@ -26,7 +26,8 @@ export interface ModelsListState {
 // 兼容上游重命名后的调用方。
 export type ModelAllowlistState = ModelsListState
 export type ModelAllowlistItem = ModelsListItem
-export type ModelAllowlistAddError = 'empty' | 'invalid_wildcard' | 'duplicate'
+// 自定义条目校验错误码，由视图映射为 i18n 提示。
+export type ModelAllowlistAddError = 'empty' | 'duplicate'
 
 export const createModelsListState = (
   config?: Partial<ModelsListConfig> | null,
@@ -131,14 +132,13 @@ export const moveModelAllowlistItem = (
   state.items.splice(toIndex, 0, item)
 }
 
-// 把手工输入的条目追加到白名单末尾，并校验通配符及重复项。
+// 把手工输入的条目追加到白名单末尾，并校验重复项；`*` 可出现在任意位置。
 export const addCustomModelAllowlistItem = (
   state: ModelAllowlistState,
   raw: string,
 ): ModelAllowlistAddError | null => {
   const entry = raw.trim()
   if (!entry) return 'empty'
-  if (entry.slice(0, -1).includes('*')) return 'invalid_wildcard'
   if (
     state.items.some(item => item.id.toLowerCase() === entry.toLowerCase()) ||
     state.savedModels.some(model => model.toLowerCase() === entry.toLowerCase())

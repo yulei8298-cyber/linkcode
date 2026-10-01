@@ -28,7 +28,9 @@ func TestSeedanceNativeRoutes(t *testing.T) {
 func TestSeedanceRejectsOtherPlatforms(t *testing.T) {
 	for _, platform := range []string{service.PlatformGrok, service.PlatformAnthropic, service.PlatformGemini} {
 		w := httptest.NewRecorder()
-		newGatewayRoutesTestRouter(platform).ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/api/v3/contents/generations/tasks", strings.NewReader(`{"model":"seedance","content":[{}]}`)))
+		req := httptest.NewRequest(http.MethodPost, "/api/v3/contents/generations/tasks", strings.NewReader(`{"model":"seedance","content":[{}]}`))
+		req.Header.Set("Content-Type", "application/json")
+		newGatewayRoutesTestRouter(platform).ServeHTTP(w, req)
 		require.Equal(t, http.StatusForbidden, w.Code)
 	}
 }

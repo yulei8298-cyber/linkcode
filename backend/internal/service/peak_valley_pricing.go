@@ -6,21 +6,21 @@ import (
 
 // PeakValleyPricingConfig 峰谷定价配置
 type PeakValleyPricingConfig struct {
-	Enabled   bool                   `json:"enabled"`    // 是否启用峰谷定价
-	Timezone  string                 `json:"timezone"`   // 时区（UTC/Asia/Shanghai）
-	Schedules []PeakValleySchedule   `json:"schedules"`  // 时段配置列表
+	Enabled   bool                 `json:"enabled"`   // 是否启用峰谷定价
+	Timezone  string               `json:"timezone"`  // 时区（UTC/Asia/Shanghai）
+	Schedules []PeakValleySchedule `json:"schedules"` // 时段配置列表
 }
 
 // PeakValleySchedule 单个时段配置
 type PeakValleySchedule struct {
-	Name         string    `json:"name"`          // 时段名称（如"高峰时段"）
-	StartHour    int       `json:"start_hour"`    // 开始小时（0-23）
-	StartMinute  int       `json:"start_minute"`  // 开始分钟（0-59，默认0）
-	EndHour      int       `json:"end_hour"`      // 结束小时（0-23）
-	EndMinute    int       `json:"end_minute"`    // 结束分钟（0-59，默认0）
-	Multiplier   float64   `json:"multiplier"`    // 价格倍率
-	Weekdays     []int     `json:"weekdays"`      // 生效星期（0=周日,1=周一,...,6=周六；空数组表示全周生效）
-	Priority     int       `json:"priority"`      // 优先级（数字越大优先级越高，用于时段重叠时的选择）
+	Name        string  `json:"name"`         // 时段名称（如"高峰时段"）
+	StartHour   int     `json:"start_hour"`   // 开始小时（0-23）
+	StartMinute int     `json:"start_minute"` // 开始分钟（0-59，默认0）
+	EndHour     int     `json:"end_hour"`     // 结束小时（0-23）
+	EndMinute   int     `json:"end_minute"`   // 结束分钟（0-59，默认0）
+	Multiplier  float64 `json:"multiplier"`   // 价格倍率
+	Weekdays    []int   `json:"weekdays"`     // 生效星期（0=周日,1=周一,...,6=周六；空数组表示全周生效）
+	Priority    int     `json:"priority"`     // 优先级（数字越大优先级越高，用于时段重叠时的选择）
 }
 
 // GetPeakValleyMultiplier 获取指定时刻的峰谷倍率

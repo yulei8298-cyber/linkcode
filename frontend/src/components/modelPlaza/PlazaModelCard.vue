@@ -30,6 +30,7 @@ import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import type { GroupPlatform } from '@/types'
 import type { ModelPlazaGroup, PlazaModel } from '@/api/modelPlaza'
 import { plazaCardPricing, plazaProvider } from '@/utils/modelPlazaPricing'
+import { REASONING_EFFORT_LEVELS } from '@/constants/channel'
 
 const props = defineProps<{ model: PlazaModel; group: ModelPlazaGroup }>()
 defineEmits<{ details: [model: PlazaModel] }>()
@@ -42,7 +43,13 @@ const specialRules = computed(() => {
   if (quote.value.tiered) labels.push(t('modelPlaza.cards.tiered'))
   if (props.model.time_pricing?.periods.length) labels.push(t('modelPlaza.cards.timePricing'))
   if (props.group.peak_rate_enabled) labels.push(t('modelPlaza.cards.peakPricing'))
-  if (props.model.pricing?.max_reasoning_effort_multiplier != null) labels.push(t('modelPlaza.table.maxReasoningMultiplierBadge', { multiplier: props.model.pricing.max_reasoning_effort_multiplier }))
+  const multipliers = props.model.pricing?.reasoning_effort_multipliers
+  for (const effort of REASONING_EFFORT_LEVELS) {
+    const multiplier = multipliers?.[effort]
+    if (typeof multiplier === 'number' && Number.isFinite(multiplier) && multiplier > 0) {
+      labels.push(t('modelPlaza.table.reasoningMultiplierBadge', { effort, multiplier }))
+    }
+  }
   if (quote.value.mode === 'image' && props.group.image_rate_independent) labels.push(t('modelPlaza.cards.imageRate'))
   return labels
 })

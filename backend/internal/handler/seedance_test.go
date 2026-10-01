@@ -37,6 +37,9 @@ func TestSeedanceHandlerLifecycleAndOwnership(t *testing.T) {
 			body = `{"model":"doubao-seedance","content":[{"type":"text","text":"waves"}]}`
 		}
 		c.Request = httptest.NewRequest(method, "/api/v3/contents/generations/tasks", strings.NewReader(body))
+		if method == http.MethodPost {
+			c.Request.Header.Set("Content-Type", "application/json")
+		}
 		c.Params = gin.Params{{Key: "task_id", Value: "task-ark"}}
 		return c, w
 	}
