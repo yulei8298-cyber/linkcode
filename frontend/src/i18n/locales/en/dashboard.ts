@@ -1,6 +1,11 @@
 export default {
   dashboard: {
     title: 'Dashboard',
+    greetingMorning: 'Good morning, {name}',
+    greetingAfternoon: 'Good afternoon, {name}',
+    greetingEvening: 'Good evening, {name}',
+    todaySummary: '{count} requests today, {cost} spent.',
+    baseUrlCopied: 'Base URL copied',
     welcomeMessage: "Welcome back! Here's an overview of your account.",
     balance: 'Balance',
     apiKeys: 'API Keys',

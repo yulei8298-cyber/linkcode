@@ -1,14 +1,1 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="lc-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#2dd4bf"/>
-      <stop offset="1" stop-color="#0d9488"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="16" fill="url(#lc-grad)"/>
-  <!-- 链环：两个交扣的胶囊，呼应 "link" -->
-  <g stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round">
-    <rect x="14" y="22.5" width="26" height="19" rx="9.5" transform="rotate(-30 27 32)"/>
-    <rect x="24" y="22.5" width="26" height="19" rx="9.5" transform="rotate(-30 37 32)"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><style>.b{fill:#141413}.f{fill:#fff;stroke:#fff}@media (prefers-color-scheme: dark){.b{fill:#F2F2EF}.f{fill:#111112;stroke:#111112}}</style><rect class="b" width="32" height="32" rx="9"/><path class="f" d="M10,8 V15.5 a7,7 0 0 0 7,7 H22.5" fill="none" stroke-width="3" stroke-linecap="round" style="fill:none"/><circle class="f" cx="10" cy="8" r="3.1" style="stroke:none"/><circle cx="22.8" cy="22.5" r="3.5" fill="#FF7A3D"/></svg>

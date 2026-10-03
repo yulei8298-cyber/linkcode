@@ -23,9 +23,13 @@
               @update:model-value="onStatusFilterChange"
             />
           </div>
-          <p class="text-sm font-semibold leading-relaxed text-red-600 dark:text-red-400">
-            使用codex必须新建密钥，选择分组，不要选择对话站福利分组，Link AI GPT密钥也不能在codex中使用
-          </p>
+          <div
+            role="note"
+            class="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-800 dark:border-dark-700 dark:bg-dark-800 dark:text-dark-100"
+          >
+            <Icon name="infoCircle" size="sm" class="mt-0.5 flex-shrink-0 text-primary-600 dark:text-primary-400" />
+            <span>使用codex必须新建密钥，选择分组，不要选择对话站福利分组，Link AI GPT密钥也不能在codex中使用</span>
+          </div>
           <EndpointPopover
             v-if="publicSettings?.api_base_url || (publicSettings?.custom_endpoints?.length ?? 0) > 0"
             :api-base-url="publicSettings?.api_base_url || ''"
@@ -51,7 +55,12 @@
       </template>
 
       <template #actions>
-        <div class="flex justify-end gap-3">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div class="min-w-0">
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-dark-50">{{ t('keys.title') }}</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-dark-300">{{ t('keys.description') }}</p>
+          </div>
+          <div class="flex gap-3">
           <button
             @click="loadApiKeys"
             :disabled="loading"
@@ -96,6 +105,7 @@
             <Icon name="plus" size="md" class="mr-2" />
             {{ t('keys.createKey') }}
           </button>
+          </div>
         </div>
       </template>
 

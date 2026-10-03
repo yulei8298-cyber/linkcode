@@ -30,6 +30,8 @@ export interface UserMonitorView {
   primary_status: MonitorStatus
   primary_latency_ms: number | null
   primary_ping_latency_ms: number | null
+  /** 主模型近期真实用户调用的平均首字延迟；无调用时为 null，页面退回展示探测延迟 */
+  primary_first_token_ms?: number | null
   availability_7d: number
   extra_models: UserMonitorExtraModel[]
   timeline: MonitorTimelinePoint[]

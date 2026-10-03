@@ -15,18 +15,20 @@
       <!-- Custom Logo or Default Logo -->
       <router-link
         :to="homePath"
-        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow transition-opacity hover:opacity-80"
+        class="sidebar-logo flex h-9 w-9 items-center justify-center transition-opacity hover:opacity-80"
+        :aria-label="siteName"
         @click="handleMenuItemClick(homePath)"
       >
-        <img v-if="settingsLoaded" :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
+        <BrandLogo v-if="settingsLoaded" :logo-url="siteLogo" :size="30" :show-name="false" />
       </router-link>
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
         <router-link
           :to="homePath"
-          class="sidebar-brand-title text-lg font-bold text-gray-900 transition-colors hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          class="sidebar-brand-title text-lg font-bold text-gray-900 transition-opacity hover:opacity-80 dark:text-white"
           @click="handleMenuItemClick(homePath)"
         >
-          {{ siteName }}
+          <BrandWordmark v-if="isLinkCodeSite" :height="16" />
+          <template v-else>{{ siteName }}</template>
         </router-link>
         <!-- Version Badge -->
         <VersionBadge :version="siteVersion" />
@@ -164,7 +166,17 @@
       <!-- Regular User View -->
       <template v-else-if="!appStore.backendModeEnabled">
         <div class="sidebar-section">
-          <template v-for="item in userNavItems" :key="item.path">
+          <template v-for="(item, index) in userNavItems" :key="item.path">
+            <div
+              v-if="sectionTitleAt(userNavItems, index)"
+              class="sidebar-section-title"
+              :class="{ 'sidebar-section-title-collapsed': sidebarCollapsed }"
+              :aria-hidden="sidebarCollapsed ? 'true' : 'false'"
+            >
+              <span class="sidebar-section-title-text" :class="{ 'sidebar-section-title-text-collapsed': sidebarCollapsed }">
+                {{ sectionTitleAt(userNavItems, index) }}
+              </span>
+            </div>
             <a
               v-if="item.externalUrl"
               :href="item.externalUrl"
@@ -244,13 +256,17 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import VersionBadge from '@/components/common/VersionBadge.vue'
+import BrandLogo from '@/components/brand/BrandLogo.vue'
+import BrandWordmark from '@/components/brand/BrandWordmark.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
 import { sanitizeUrl } from '@/utils/url'
+import { normalizeSiteName } from '@/utils/branding'
 import { buildEmbeddedUrl } from '@/utils/embedded-url'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
 import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
 import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
+import { applyTheme, shouldUseDarkTheme } from '@/utils/theme'
 import type { CustomMenuItem } from '@/types'
 
 interface NavItem {
@@ -320,6 +336,7 @@ const siteName = computed(() => appStore.siteName)
 const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const siteVersion = computed(() => appStore.siteVersion)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
+const isLinkCodeSite = computed(() => normalizeSiteName(siteName.value) === 'LinkCode')
 
 // SVG Icon Components
 const DashboardIcon = {
@@ -786,7 +803,8 @@ const flagBatchImageAccess = () => canUseBatchImage.value
 // buildSelfNavItems 构造用户自己的导航项（用户端主菜单和管理员的"我的账户"子菜单共享这组声明）。
 // withDashboard=true 时包含仪表盘（用户端），false 时不含（管理员的个人区已经有独立仪表盘入口）。
 //
-// 条目顺序：密钥 → 无限画布 → 批量生图 → 用量 → 可用渠道 → 渠道状态 → 订阅/支付 → 兑换/资料。
+// 条目按分组排列（分组标题见 NAV_SECTION_BY_PATH）：
+// 接入（密钥、模型广场、智力检测、可用渠道、渠道状态）→ 用量与账务 → 工具 → 账户。
 // 可用渠道紧挨渠道状态之上，让用户"先看自己能用什么、再看对应状态"。
 function buildSelfNavItems(withDashboard: boolean): NavItem[] {
   const items: NavItem[] = []
@@ -797,20 +815,51 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/model-plaza', query: { embedded: '1' }, label: t('nav.modelPlaza'), icon: DashboardIcon, featureFlag: makeSidebarFlag(FeatureFlags.modelPlaza) },
     { path: '/portal/intel-check', query: { embedded: '1' }, label: t('nav.intelCheck'), icon: SignalIcon, featureFlag: flagIntelCheck },
-    { path: '/infinite-canvas', label: t('nav.infiniteCanvas'), icon: InfiniteCanvasIcon, hideInSimpleMode: true },
-    { path: '/batch-image', label: t('nav.batchImage'), icon: BatchImageIcon, hideInSimpleMode: true, featureFlag: flagBatchImageAccess },
-    { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
+    { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true, featureFlag: flagSubscription },
     { path: '/purchase', label: purchaseNavLabel.value, icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/affiliate', label: t('nav.affiliate'), icon: UsersIcon, hideInSimpleMode: true, featureFlag: flagAffiliate },
+    { path: '/infinite-canvas', label: t('nav.infiniteCanvas'), icon: InfiniteCanvasIcon, hideInSimpleMode: true },
+    { path: '/batch-image', label: t('nav.batchImage'), icon: BatchImageIcon, hideInSimpleMode: true, featureFlag: flagBatchImageAccess },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     ...customMenuItemsForUser.value.map(buildCustomMenuNavItem),
   )
   return items
+}
+
+// 用户菜单按业务分组展示。只登记路径，不改菜单项声明；未登记的（如自定义菜单）归入「更多」。
+const NAV_SECTION_BY_PATH: Record<string, string> = {
+  '/keys': 'access',
+  '/model-plaza': 'access',
+  '/portal/intel-check': 'access',
+  '/available-channels': 'access',
+  '/monitor': 'access',
+  '/usage': 'billing',
+  '/subscriptions': 'billing',
+  '/purchase': 'billing',
+  '/orders': 'billing',
+  '/redeem': 'billing',
+  '/affiliate': 'billing',
+  '/infinite-canvas': 'tools',
+  '/batch-image': 'tools',
+  '/profile': 'account',
+}
+
+function navSection(item: NavItem): string {
+  if (item.path === '/dashboard') return ''
+  return NAV_SECTION_BY_PATH[item.path] ?? 'more'
+}
+
+// 返回该位置需要显示的分组标题；不是分组第一项时返回空串
+function sectionTitleAt(items: NavItem[], index: number): string {
+  const current = navSection(items[index])
+  if (!current) return ''
+  const previous = index > 0 ? navSection(items[index - 1]) : ''
+  return current === previous ? '' : t(`nav.sections.${current}`)
 }
 
 // finalizeNav 合并三重过滤：featureFlag 过滤 + simple 模式过滤。
@@ -958,8 +1007,7 @@ function toggleSidebar() {
 
 function toggleTheme() {
   isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  applyTheme(isDark.value)
 }
 
 function closeMobile() {
@@ -1025,12 +1073,8 @@ function handleGroupClick(item: NavItem) {
   groupExpandOverrides.value.set(item.path, true)
 }
 
-// Initialize theme
-const savedTheme = localStorage.getItem('theme')
-if (
-  savedTheme === 'dark' ||
-  (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-) {
+// Initialize theme（已选主题优先，否则跟随系统，规则见 utils/theme）
+if (shouldUseDarkTheme()) {
   isDark.value = true
   document.documentElement.classList.add('dark')
 }

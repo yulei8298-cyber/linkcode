@@ -1,17 +1,19 @@
 <template>
-  <div class="card p-4">
-    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+  <!-- bare：嵌入到外层卡片时不再套卡片和标题，图表也更高一些 -->
+  <div :class="bare ? '' : 'card p-4'">
+    <h3 v-if="!bare" class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
       {{ t('admin.dashboard.tokenUsageTrend') }}
     </h3>
-    <div v-if="loading" class="flex h-48 items-center justify-center">
+    <div v-if="loading" class="flex items-center justify-center" :class="heightClass">
       <LoadingSpinner />
     </div>
-    <div v-else-if="trendData.length > 0 && chartData" class="h-48">
+    <div v-else-if="trendData.length > 0 && chartData" :class="heightClass">
       <Line :data="chartData" :options="lineOptions" />
     </div>
     <div
       v-else
-      class="flex h-48 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
+      class="flex items-center justify-center text-sm text-gray-500 dark:text-gray-400"
+      :class="heightClass"
     >
       {{ t('admin.dashboard.noDataAvailable') }}
     </div>
@@ -35,6 +37,7 @@ import {
 import { Line } from 'vue-chartjs'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import { useDocumentDarkMode } from '@/composables/useDocumentDarkMode'
+import { chartPalette, withAlpha } from '@/utils/chartTheme'
 import type { TrendDataPoint } from '@/types'
 
 ChartJS.register(
@@ -53,19 +56,25 @@ const { t } = useI18n()
 const props = defineProps<{
   trendData: TrendDataPoint[]
   loading?: boolean
+  bare?: boolean
 }>()
+
+const heightClass = computed(() => (props.bare ? 'h-64' : 'h-48'))
 
 const { isDarkMode } = useDocumentDarkMode()
 
-const chartColors = computed(() => ({
-  text: isDarkMode.value ? '#e5e7eb' : '#374151',
-  grid: isDarkMode.value ? '#374151' : '#e5e7eb',
-  input: '#3b82f6',
-  output: '#10b981',
-  cacheCreation: '#f59e0b',
-  cacheRead: '#06b6d4',
-  cacheHitRate: '#8b5cf6'
-}))
+const chartColors = computed(() => {
+  const palette = chartPalette(isDarkMode.value)
+  return {
+    text: palette.text,
+    grid: palette.grid,
+    input: palette.series[0],
+    output: palette.series[1],
+    cacheCreation: palette.series[4],
+    cacheRead: palette.series[2],
+    cacheHitRate: palette.series[5]
+  }
+})
 
 const chartData = computed(() => {
   if (!props.trendData?.length) return null
@@ -77,7 +86,7 @@ const chartData = computed(() => {
         label: 'Input',
         data: props.trendData.map((d) => d.input_tokens),
         borderColor: chartColors.value.input,
-        backgroundColor: `${chartColors.value.input}20`,
+        backgroundColor: withAlpha(chartColors.value.input, 0.14),
         fill: true,
         tension: 0.3
       },
@@ -85,7 +94,7 @@ const chartData = computed(() => {
         label: 'Output',
         data: props.trendData.map((d) => d.output_tokens),
         borderColor: chartColors.value.output,
-        backgroundColor: `${chartColors.value.output}20`,
+        backgroundColor: withAlpha(chartColors.value.output, 0.1),
         fill: true,
         tension: 0.3
       },
@@ -93,7 +102,7 @@ const chartData = computed(() => {
         label: 'Cache Creation',
         data: props.trendData.map((d) => d.cache_creation_tokens),
         borderColor: chartColors.value.cacheCreation,
-        backgroundColor: `${chartColors.value.cacheCreation}20`,
+        backgroundColor: withAlpha(chartColors.value.cacheCreation, 0.1),
         fill: true,
         tension: 0.3
       },
@@ -101,7 +110,7 @@ const chartData = computed(() => {
         label: 'Cache Read',
         data: props.trendData.map((d) => d.cache_read_tokens),
         borderColor: chartColors.value.cacheRead,
-        backgroundColor: `${chartColors.value.cacheRead}20`,
+        backgroundColor: withAlpha(chartColors.value.cacheRead, 0.1),
         fill: true,
         tension: 0.3
       },
@@ -112,7 +121,7 @@ const chartData = computed(() => {
           return totalPromptTokens > 0 ? (d.cache_read_tokens / totalPromptTokens) * 100 : 0
         }),
         borderColor: chartColors.value.cacheHitRate,
-        backgroundColor: `${chartColors.value.cacheHitRate}20`,
+        backgroundColor: withAlpha(chartColors.value.cacheHitRate, 0.1),
         borderDash: [5, 5],
         fill: false,
         tension: 0.3,

@@ -1,16 +1,16 @@
 <template>
-  <div class="lc-shell">
+  <div class="lc-portal">
     <div class="lc-topbar">
       <div class="lc-wrap lc-topbar-inner">
         <RouterLink to="/portal/status" class="lc-live">
           <span class="lc-live-dot"></span>
-          系统状态实时监控
+          调价、线路变更和故障，群里第一时间通知
         </RouterLink>
         <div class="lc-toplinks">
-          <a v-if="qqGroup" class="lc-toplink" href="#">
-            <Icon name="users" size="sm" />
-            {{ qqGroupLabel }}
-          </a>
+          <button v-if="qqGroup" type="button" class="lc-toplink" :title="`复制 ${qqGroupLabel}`" @click="copyQQGroup">
+            QQ 群 <b>{{ qqGroupNumber }}</b>
+            <Icon name="copy" size="xs" />
+          </button>
           <a
             v-if="telegramGroupUrl"
             class="lc-toplink"
@@ -18,8 +18,8 @@
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Icon name="externalLink" size="sm" />
             Telegram 群
+            <Icon name="externalLink" size="xs" />
           </a>
         </div>
       </div>
@@ -27,12 +27,8 @@
 
     <header class="lc-header">
       <nav class="lc-wrap lc-nav">
-        <RouterLink to="/home" class="lc-brand">
-          <span class="lc-brand-mark">
-            <img v-if="siteLogo" :src="siteLogo" alt="" />
-            <span v-else>&lt;&gt;</span>
-          </span>
-          <span class="truncate">{{ siteName }}</span>
+        <RouterLink to="/home" class="lc-brand" :aria-label="siteName">
+          <BrandLogo :name="siteName" :logo-url="siteLogo" :size="28" />
         </RouterLink>
 
         <div class="lc-navlinks" :class="{ open: mobileOpen }">
@@ -48,7 +44,7 @@
             rel="noopener noreferrer"
             class="lc-navlink"
             @click="handleChatStationClick"
-          >对话站</a>
+          >对话站 ↗</a>
         </div>
 
         <div class="lc-nav-actions">
@@ -58,7 +54,7 @@
             class="lc-button lc-button-primary lc-button-small"
           >进入控制台</RouterLink>
           <template v-else>
-            <RouterLink to="/login" class="lc-navlink lc-login-link">登录</RouterLink>
+            <RouterLink to="/login" class="lc-button lc-button-small lc-login-link">登录</RouterLink>
             <RouterLink to="/register" class="lc-button lc-button-primary lc-button-small">注册</RouterLink>
           </template>
           <button
@@ -79,13 +75,39 @@
     </main>
 
     <footer class="lc-footer">
-      <div class="lc-wrap lc-footer-inner">
-        <div>&copy; {{ currentYear }} {{ siteName }} · 稳定、透明、好用的 AI API 网关</div>
-        <div class="lc-footer-links">
-          <RouterLink to="/portal/pricing">定价方案</RouterLink>
-          <RouterLink to="/portal/status">可用性检测</RouterLink>
-          <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">使用文档</a>
-          <a v-if="telegramGroupUrl" :href="telegramGroupUrl" target="_blank" rel="noopener noreferrer">Telegram</a>
+      <div class="lc-wrap lc-footer-grid">
+        <div>
+          <BrandLogo :name="siteName" :logo-url="siteLogo" :size="26" />
+          <p class="lc-footer-copy">&copy; {{ currentYear }} {{ siteName }}</p>
+        </div>
+        <div>
+          <h4>产品</h4>
+          <ul>
+            <li><RouterLink to="/portal/pricing">定价方案</RouterLink></li>
+            <li v-if="showModelPlaza"><RouterLink to="/model-plaza">模型广场</RouterLink></li>
+            <li v-if="chatStationUrl"><a :href="chatStationUrl" target="_blank" rel="noopener noreferrer" @click="handleChatStationClick">对话站 ↗</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>状态</h4>
+          <ul>
+            <li><RouterLink to="/portal/status">可用性检测</RouterLink></li>
+            <li v-if="showIntelCheck"><RouterLink to="/portal/intel-check">智力检测</RouterLink></li>
+          </ul>
+        </div>
+        <div>
+          <h4>帮助</h4>
+          <ul>
+            <li><RouterLink to="/key-usage">Key 用量查询</RouterLink></li>
+            <li v-if="docUrl"><a :href="docUrl" target="_blank" rel="noopener noreferrer">使用文档</a></li>
+          </ul>
+        </div>
+        <div v-if="qqGroup || telegramGroupUrl">
+          <h4>社群</h4>
+          <ul>
+            <li v-if="qqGroup">QQ 群 <span class="lc-mono">{{ qqGroupNumber }}</span></li>
+            <li v-if="telegramGroupUrl"><a :href="telegramGroupUrl" target="_blank" rel="noopener noreferrer">Telegram 群 ↗</a></li>
+          </ul>
         </div>
       </div>
     </footer>
@@ -98,6 +120,8 @@ import { RouterLink } from 'vue-router'
 import { useAuthStore, useAppStore } from '@/stores'
 import { lobeHubSSOAPI } from '@/api'
 import Icon from '@/components/icons/Icon.vue'
+import BrandLogo from '@/components/brand/BrandLogo.vue'
+import { useClipboard } from '@/composables/useClipboard'
 import { sanitizeUrl } from '@/utils/url'
 import { normalizeSiteName } from '@/utils/branding'
 
@@ -115,10 +139,12 @@ const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url
 const chatStationUrl = computed(() => sanitizeUrl(settings.value?.chat_station_url || ''))
 const telegramGroupUrl = computed(() => sanitizeUrl(settings.value?.telegram_group_url || ''))
 const qqGroup = computed(() => settings.value?.qq_group?.trim() || '')
-const qqGroupLabel = computed(() => {
-  const value = qqGroup.value.replace(/^QQ\s*(?:群)?\s*[:：]?\s*/i, '')
-  return `QQ群 ${value}`
-})
+const qqGroupNumber = computed(() => qqGroup.value.replace(/^QQ\s*(?:群)?\s*[:：]?\s*/i, ''))
+const qqGroupLabel = computed(() => `QQ群 ${qqGroupNumber.value}`)
+// 点击时再取剪贴板工具，避免外壳组件在挂载阶段依赖 store
+function copyQQGroup() {
+  void useClipboard().copyToClipboard(qqGroupNumber.value, '已复制 QQ 群号')
+}
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const showModelPlaza = computed(() => settings.value?.model_plaza_enabled === true &&
   (isAuthenticated.value || settings.value?.model_plaza_require_auth !== true))

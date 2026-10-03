@@ -1,50 +1,48 @@
 <template>
-  <div class="card">
-    <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.recentUsage') }}</h2>
-      <span class="badge badge-gray">{{ t('dashboard.last7Days') }}</span>
-    </div>
-    <div class="p-6">
-      <div v-if="loading" class="flex items-center justify-center py-12">
-        <LoadingSpinner size="lg" />
-      </div>
-      <div v-else-if="data.length === 0" class="py-8">
-        <EmptyState :title="t('dashboard.noUsageRecords')" :description="t('dashboard.startUsingApi')" />
-      </div>
-      <div v-else class="space-y-3">
-        <div v-for="log in data" :key="log.id" class="flex items-center justify-between rounded-xl bg-gray-50 p-4 transition-colors hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-          <div class="flex items-center gap-4">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/30">
-              <Icon name="beaker" size="md" class="text-primary-600 dark:text-primary-400" />
-            </div>
-            <div>
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ log.model }}</p>
-              <p class="text-xs text-gray-500 dark:text-dark-400">{{ formatDateTime(log.created_at) }}</p>
-            </div>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-semibold">
-              <span class="text-green-600 dark:text-green-400" :title="t('dashboard.actual')">${{ formatCost(log.actual_cost) }}</span>
-              <span class="font-normal text-gray-400 dark:text-gray-500" :title="t('dashboard.standard')"> / ${{ formatCost(log.total_cost) }}</span>
-            </p>
-            <p class="text-xs text-gray-500 dark:text-dark-400">{{ (log.input_tokens + log.output_tokens).toLocaleString() }} tokens</p>
-          </div>
-        </div>
-
-        <router-link to="/usage" class="flex items-center justify-center gap-2 py-3 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
-          {{ t('dashboard.viewAllUsage') }}
-          <Icon name="arrowRight" size="sm" />
-        </router-link>
+  <section class="card">
+    <div class="dash-card-head">
+      <h2>{{ t('dashboard.recentUsage') }}</h2>
+      <div class="flex items-center gap-3">
+        <span class="badge badge-gray">{{ t('dashboard.last7Days') }}</span>
+        <RouterLink to="/usage" class="dash-link">{{ t('dashboard.viewAllUsage') }}</RouterLink>
       </div>
     </div>
-  </div>
+    <div v-if="loading" class="flex items-center justify-center py-12">
+      <LoadingSpinner size="lg" />
+    </div>
+    <div v-else-if="data.length === 0" class="py-8">
+      <EmptyState :title="t('dashboard.noUsageRecords')" :description="t('dashboard.startUsingApi')" />
+    </div>
+    <div v-else class="overflow-x-auto">
+      <table class="recent">
+        <thead>
+          <tr>
+            <th>{{ t('usage.time') }}</th>
+            <th>{{ t('dashboard.model') }}</th>
+            <th class="num">Tokens</th>
+            <th class="num">{{ t('dashboard.actual') }}</th>
+            <th class="num">{{ t('dashboard.standard') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="log in data" :key="log.id">
+            <td class="mono">{{ formatDateTime(log.created_at) }}</td>
+            <td class="mono model">{{ log.model }}</td>
+            <td class="num">{{ (log.input_tokens + log.output_tokens).toLocaleString() }}</td>
+            <td class="num strong">${{ formatCost(log.actual_cost) }}</td>
+            <td class="num dim">${{ formatCost(log.total_cost) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 </template>
 
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
-import Icon from '@/components/icons/Icon.vue'
 import { formatDateTime } from '@/utils/format'
 import type { UsageLog } from '@/types'
 
@@ -55,3 +53,57 @@ defineProps<{
 const { t } = useI18n()
 const formatCost = (c: number) => c.toFixed(4)
 </script>
+
+<style scoped>
+.recent {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.recent th {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--lc-line);
+  color: var(--lc-ink-3);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.recent td {
+  height: 46px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--lc-line);
+  color: var(--lc-ink-2);
+  white-space: nowrap;
+}
+
+.recent tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.recent tbody tr:hover td {
+  background: var(--lc-surface-2);
+}
+
+.recent .num {
+  text-align: right;
+  font-family: var(--lc-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.recent .mono {
+  font-family: var(--lc-font-mono);
+  font-size: 12.5px;
+}
+
+.recent .model,
+.recent .strong {
+  color: var(--lc-ink);
+}
+
+.recent .dim {
+  color: var(--lc-ink-3);
+}
+</style>

@@ -163,6 +163,13 @@ export default {
 
   // Navigation
   nav: {
+    sections: {
+      access: '接入',
+      billing: '用量与账务',
+      tools: '工具',
+      account: '账户',
+      more: '更多'
+    },
     dashboard: '仪表盘',
     announcements: '公告',
     apiKeys: 'API 密钥',

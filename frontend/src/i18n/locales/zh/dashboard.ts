@@ -1,6 +1,11 @@
 export default {
   dashboard: {
     title: '仪表盘',
+    greetingMorning: '早上好，{name}',
+    greetingAfternoon: '下午好，{name}',
+    greetingEvening: '晚上好，{name}',
+    todaySummary: '今天已调用 {count} 次，花费 {cost}。',
+    baseUrlCopied: '已复制接口地址',
     welcomeMessage: '欢迎回来！这是您账户的概览。',
     balance: '余额',
     apiKeys: 'API 密钥',

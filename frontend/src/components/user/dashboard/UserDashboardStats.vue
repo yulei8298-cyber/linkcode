@@ -1,136 +1,65 @@
 <template>
-  <!-- Row 1: Core Stats -->
-  <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-    <!-- Balance -->
-    <div v-if="!isSimple" class="card p-4">
-      <div class="flex items-center gap-3">
-        <div class="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-900/30">
-          <svg class="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.balance') }}</p>
-          <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400">${{ formatBalance(balance) }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('common.available') }}</p>
-        </div>
-      </div>
+  <!-- Row 1：余额（主卡）+ 今日三项 -->
+  <dl class="dash-kpi" :class="{ 'is-simple': isSimple }">
+    <div v-if="!isSimple" class="card dash-kpi-card dash-kpi-balance">
+      <dt>{{ t('dashboard.balance') }}</dt>
+      <dd>${{ formatBalance(balance) }}</dd>
+      <p class="dash-kpi-meta">{{ t('common.available') }}</p>
     </div>
 
-    <!-- API Keys -->
-    <div class="card p-4">
-      <div class="flex items-center gap-3">
-        <div class="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
-          <Icon name="key" size="md" class="text-blue-600 dark:text-blue-400" :stroke-width="2" />
-        </div>
-        <div>
-          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.apiKeys') }}</p>
-          <p class="text-xl font-bold text-gray-900 dark:text-white">{{ stats?.total_api_keys || 0 }}</p>
-          <p class="text-xs text-green-600 dark:text-green-400">{{ stats?.active_api_keys || 0 }} {{ t('common.active') }}</p>
-        </div>
-      </div>
+    <div class="card dash-kpi-card">
+      <dt>{{ t('dashboard.todayCost') }}</dt>
+      <dd :title="t('dashboard.actual')">${{ formatCost(stats?.today_actual_cost || 0) }}</dd>
+      <p class="dash-kpi-meta">
+        {{ t('dashboard.standard') }} <b>${{ formatCost(stats?.today_cost || 0) }}</b>
+        · {{ t('common.total') }} <b :title="t('dashboard.actual')">${{ formatCost(stats?.total_actual_cost || 0) }}</b>
+      </p>
     </div>
 
-    <!-- Today Requests -->
-    <div class="card p-4">
-      <div class="flex items-center gap-3">
-        <div class="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
-          <Icon name="chart" size="md" class="text-green-600 dark:text-green-400" :stroke-width="2" />
-        </div>
-        <div>
-          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.todayRequests') }}</p>
-          <p class="text-xl font-bold text-gray-900 dark:text-white">{{ stats?.today_requests || 0 }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('common.total') }}: {{ formatNumber(stats?.total_requests || 0) }}</p>
-        </div>
-      </div>
+    <div class="card dash-kpi-card">
+      <dt>{{ t('dashboard.todayRequests') }}</dt>
+      <dd>{{ formatNumber(stats?.today_requests || 0) }}</dd>
+      <p class="dash-kpi-meta">{{ t('common.total') }} <b>{{ formatNumber(stats?.total_requests || 0) }}</b></p>
     </div>
 
-    <!-- Today Cost -->
-    <div class="card p-4">
-      <div class="flex items-center gap-3">
-        <div class="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
-          <Icon name="dollar" size="md" class="text-purple-600 dark:text-purple-400" :stroke-width="2" />
-        </div>
-        <div>
-          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.todayCost') }}</p>
-          <p class="text-xl font-bold text-gray-900 dark:text-white">
-            <span class="text-purple-600 dark:text-purple-400" :title="t('dashboard.actual')">${{ formatCost(stats?.today_actual_cost || 0) }}</span>
-            <span class="text-sm font-normal text-gray-400 dark:text-gray-500" :title="t('dashboard.standard')"> / ${{ formatCost(stats?.today_cost || 0) }}</span>
-          </p>
-          <p class="text-xs">
-            <span class="text-gray-500 dark:text-gray-400">{{ t('common.total') }}: </span>
-            <span class="text-purple-600 dark:text-purple-400" :title="t('dashboard.actual')">${{ formatCost(stats?.total_actual_cost || 0) }}</span>
-            <span class="text-gray-400 dark:text-gray-500" :title="t('dashboard.standard')"> / ${{ formatCost(stats?.total_cost || 0) }}</span>
-          </p>
-        </div>
-      </div>
+    <div class="card dash-kpi-card">
+      <dt>{{ t('dashboard.todayTokens') }}</dt>
+      <dd>{{ formatTokens(stats?.today_tokens || 0) }}</dd>
+      <p class="dash-kpi-meta">
+        {{ t('dashboard.input') }} <b>{{ formatTokens(stats?.today_input_tokens || 0) }}</b>
+        · {{ t('dashboard.output') }} <b>{{ formatTokens(stats?.today_output_tokens || 0) }}</b>
+        · {{ t('dashboard.cache') }} <b>{{ formatTokens((stats?.today_cache_creation_tokens || 0) + (stats?.today_cache_read_tokens || 0)) }}</b>
+      </p>
     </div>
-  </div>
+  </dl>
 
-  <!-- Row 2: Token Stats -->
-  <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-    <!-- Today Tokens -->
-    <div class="card p-4">
-      <div class="flex items-center gap-3">
-        <div class="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/30">
-          <Icon name="cube" size="md" class="text-amber-600 dark:text-amber-400" :stroke-width="2" />
-        </div>
-        <div>
-          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.todayTokens') }}</p>
-          <p class="text-xl font-bold text-gray-900 dark:text-white">{{ formatTokens(stats?.today_tokens || 0) }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('dashboard.input') }}: {{ formatTokens(stats?.today_input_tokens || 0) }} / {{ t('dashboard.output') }}: {{ formatTokens(stats?.today_output_tokens || 0) }} / {{ t('dashboard.cache') }}: {{ formatTokens((stats?.today_cache_creation_tokens || 0) + (stats?.today_cache_read_tokens || 0)) }}</p>
-        </div>
-      </div>
+  <!-- Row 2：累计与性能，信息不删减，压成一条紧凑指标条 -->
+  <dl class="card dash-strip">
+    <div>
+      <dt>{{ t('dashboard.apiKeys') }}</dt>
+      <dd>{{ stats?.active_api_keys || 0 }}<small> / {{ stats?.total_api_keys || 0 }}</small></dd>
+      <p>{{ t('common.active') }}</p>
     </div>
-
-    <!-- Total Tokens -->
-    <div class="card p-4">
-      <div class="flex items-center gap-3">
-        <div class="rounded-lg bg-indigo-100 p-2 dark:bg-indigo-900/30">
-          <Icon name="database" size="md" class="text-indigo-600 dark:text-indigo-400" :stroke-width="2" />
-        </div>
-        <div>
-          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.totalTokens') }}</p>
-          <p class="text-xl font-bold text-gray-900 dark:text-white">{{ formatTokens(stats?.total_tokens || 0) }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('dashboard.input') }}: {{ formatTokens(stats?.total_input_tokens || 0) }} / {{ t('dashboard.output') }}: {{ formatTokens(stats?.total_output_tokens || 0) }} / {{ t('dashboard.cache') }}: {{ formatTokens((stats?.total_cache_creation_tokens || 0) + (stats?.total_cache_read_tokens || 0)) }}</p>
-        </div>
-      </div>
+    <div>
+      <dt>{{ t('dashboard.totalTokens') }}</dt>
+      <dd>{{ formatTokens(stats?.total_tokens || 0) }}</dd>
+      <p>
+        {{ t('dashboard.input') }} {{ formatTokens(stats?.total_input_tokens || 0) }} ·
+        {{ t('dashboard.output') }} {{ formatTokens(stats?.total_output_tokens || 0) }} ·
+        {{ t('dashboard.cache') }} {{ formatTokens((stats?.total_cache_creation_tokens || 0) + (stats?.total_cache_read_tokens || 0)) }}
+      </p>
     </div>
-
-    <!-- Performance (RPM/TPM) -->
-    <div class="card p-4">
-      <div class="flex items-center gap-3">
-        <div class="rounded-lg bg-violet-100 p-2 dark:bg-violet-900/30">
-          <Icon name="bolt" size="md" class="text-violet-600 dark:text-violet-400" :stroke-width="2" />
-        </div>
-        <div class="flex-1">
-          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.performance') }}</p>
-          <div class="flex items-baseline gap-2">
-            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ formatTokens(stats?.rpm || 0) }}</p>
-            <span class="text-xs text-gray-500 dark:text-gray-400">RPM</span>
-          </div>
-          <div class="flex items-baseline gap-2">
-            <p class="text-sm font-semibold text-violet-600 dark:text-violet-400">{{ formatTokens(stats?.tpm || 0) }}</p>
-            <span class="text-xs text-gray-500 dark:text-gray-400">TPM</span>
-          </div>
-        </div>
-      </div>
+    <div>
+      <dt>{{ t('dashboard.performance') }}</dt>
+      <dd>{{ formatTokens(stats?.rpm || 0) }}<small> RPM</small></dd>
+      <p>{{ formatTokens(stats?.tpm || 0) }} TPM</p>
     </div>
-
-    <!-- Avg Response Time -->
-    <div class="card p-4">
-      <div class="flex items-center gap-3">
-        <div class="rounded-lg bg-rose-100 p-2 dark:bg-rose-900/30">
-          <Icon name="clock" size="md" class="text-rose-600 dark:text-rose-400" :stroke-width="2" />
-        </div>
-        <div>
-          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.avgResponse') }}</p>
-          <p class="text-xl font-bold text-gray-900 dark:text-white">{{ formatDuration(stats?.average_duration_ms || 0) }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('dashboard.averageTime') }}</p>
-        </div>
-      </div>
+    <div>
+      <dt>{{ t('dashboard.avgResponse') }}</dt>
+      <dd>{{ formatDuration(stats?.average_duration_ms || 0) }}</dd>
+      <p>{{ t('dashboard.averageTime') }}</p>
     </div>
-  </div>
+  </dl>
 
   <!-- Row 3: Per-platform breakdown -->
   <div v-if="!isSimple && platformCards.length > 0" class="card p-4">
@@ -157,7 +86,7 @@
           <span class="text-sm font-semibold text-gray-900 dark:text-white">
             {{ item.isOther ? t('dashboard.platformOther') : platformLabel(item.platform) }}
           </span>
-          <span class="font-mono text-sm text-purple-600 dark:text-purple-400" :title="t('dashboard.actual')">
+          <span class="font-mono text-sm font-semibold text-gray-900 dark:text-dark-50" :title="t('dashboard.actual')">
             ${{ formatCost(item.total_actual_cost) }}
           </span>
         </div>
@@ -227,7 +156,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import Icon from '@/components/icons/Icon.vue'
 import type { PlatformDashboardStats, UserDashboardStats as UserStatsType } from '@/api/usage'
 import type { PlatformQuotaItem } from '@/types'
 
@@ -357,7 +285,7 @@ function calcPercent(usage: number, limit: number): number {
 function quotaBarClass(p: number): string {
   if (p >= 95) return 'bg-red-500'
   if (p >= 75) return 'bg-amber-500'
-  return 'bg-green-500'
+  return 'bg-primary-500'
 }
 
 // 与 formatBalance 一致使用 Intl.NumberFormat 做半偶舍入，避免 toFixed 在不同 JS 引擎
@@ -399,3 +327,143 @@ const formatTokens = (t: number) => {
 }
 const formatDuration = (ms: number) => ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${ms.toFixed(0)}ms`
 </script>
+
+<style scoped>
+.dash-kpi {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dash-kpi.is-simple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dash-kpi-card {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 20px;
+}
+
+.dash-kpi-card dt {
+  font-size: 13px;
+  color: var(--lc-ink-3);
+}
+
+.dash-kpi-card dd {
+  font: 600 26px/1.2 var(--lc-font-mono);
+  letter-spacing: -0.02em;
+  color: var(--lc-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-kpi-balance {
+  background: radial-gradient(120% 140% at 100% 0%, var(--lc-accent-soft), transparent 55%), var(--lc-surface);
+}
+
+.dash-kpi-balance dd {
+  font-size: 34px;
+}
+
+.dash-kpi-meta {
+  font-size: 12.5px;
+  color: var(--lc-ink-3);
+}
+
+.dash-kpi-meta b {
+  font-family: var(--lc-font-mono);
+  font-weight: 500;
+  color: var(--lc-ink-2);
+}
+
+.dash-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dash-strip > div {
+  min-width: 0;
+  padding: 14px 20px;
+  border-left: 1px solid var(--lc-line);
+}
+
+.dash-strip > div:first-child {
+  border-left: 0;
+}
+
+.dash-strip dt {
+  font-size: 12.5px;
+  color: var(--lc-ink-3);
+}
+
+.dash-strip dd {
+  margin-top: 2px;
+  font: 600 18px/1.3 var(--lc-font-mono);
+  color: var(--lc-ink);
+}
+
+.dash-strip dd small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lc-ink-3);
+}
+
+.dash-strip p {
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--lc-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .dash-kpi {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dash-kpi-balance {
+    grid-column: 1 / -1;
+  }
+
+  .dash-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-strip > div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .dash-strip > div:nth-child(n + 3) {
+    border-top: 1px solid var(--lc-line);
+  }
+}
+
+@media (max-width: 640px) {
+  .dash-kpi,
+  .dash-kpi.is-simple {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .dash-kpi-card {
+    padding: 14px;
+  }
+
+  .dash-kpi-card dd {
+    font-size: 20px;
+  }
+
+  .dash-kpi-balance dd {
+    font-size: 28px;
+  }
+
+  .dash-kpi > .card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+</style>

@@ -112,4 +112,32 @@ describe('PortalStatusView', () => {
 
     wrapper.unmount()
   })
+
+  it('prefers real-usage first token latency and falls back to probe latency', async () => {
+    const withUsage = { ...monitor(1, 'operational'), primary_first_token_ms: 1830, primary_latency_ms: 6200 }
+    const withoutUsage = { ...monitor(2, 'operational'), primary_first_token_ms: null, primary_latency_ms: 2330 }
+    getPublicMonitors.mockResolvedValue({ items: [withUsage, withoutUsage] })
+
+    const wrapper = mount(PortalStatusView, {
+      global: {
+        stubs: {
+          PortalLayout: { template: '<div><slot /></div>' },
+          PortalMonitorDetailDialog: true,
+          RouterLink: true,
+          Icon: true
+        }
+      }
+    })
+
+    await flushPromises()
+
+    const firstMetric = (index: number) => wrapper.findAll('.lc-monitor-card')[index].find('.st-metrics div')
+    expect(firstMetric(0).find('dt').text()).toBe('首字延迟')
+    expect(firstMetric(0).find('dd').text()).toBe('1.83 s')
+    expect(firstMetric(1).find('dt').text()).toBe('首字延迟')
+    expect(firstMetric(1).find('dd').text()).toBe('2.33 s')
+    expect(wrapper.text()).not.toContain('tok/s')
+
+    wrapper.unmount()
+  })
 })

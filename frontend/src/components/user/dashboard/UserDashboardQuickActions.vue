@@ -1,83 +1,185 @@
 <template>
-  <div class="card">
-    <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.quickActions') }}</h2>
+  <section class="card">
+    <div class="dash-card-head">
+      <h2>{{ t('dashboard.quickActions') }}</h2>
     </div>
-    <div class="space-y-3 p-4">
-      <button @click="router.push('/keys')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary-100 transition-transform group-hover:scale-105 dark:bg-primary-900/30">
-          <Icon name="key" size="lg" class="text-primary-600 dark:text-primary-400" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('dashboard.createApiKey') }}</p>
-          <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.generateNewKey') }}</p>
-        </div>
-        <Icon
-          name="chevronRight"
-          size="md"
-          class="text-gray-400 transition-colors group-hover:text-primary-500 dark:text-dark-500"
-        />
-      </button>
+    <div class="qa">
+      <!-- 接口地址：用户最常复制的内容放在最上面 -->
+      <div class="qa-url">
+        <span>{{ apiBase }}</span>
+        <button type="button" class="qa-copy" :aria-label="`${t('common.copy')} ${apiBase}`" @click="copyBase">
+          <Icon name="copy" size="xs" />{{ t('common.copy') }}
+        </button>
+      </div>
+      <dl class="qa-eps">
+        <div><dt>Claude</dt><dd>/v1/messages</dd></div>
+        <div><dt>OpenAI</dt><dd>/v1/responses</dd></div>
+      </dl>
 
-      <button @click="router.push('/usage')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-100 transition-transform group-hover:scale-105 dark:bg-emerald-900/30">
-          <Icon name="chart" size="lg" class="text-emerald-600 dark:text-emerald-400" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('dashboard.viewUsage') }}</p>
-          <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.checkDetailedLogs') }}</p>
-        </div>
-        <Icon
-          name="chevronRight"
-          size="md"
-          class="text-gray-400 transition-colors group-hover:text-emerald-500 dark:text-dark-500"
-        />
-      </button>
-
-      <button v-if="canUseBatchImage" @click="router.push('/batch-image')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-sky-100 transition-transform group-hover:scale-105 dark:bg-sky-900/30">
-          <Icon name="sparkles" size="lg" class="text-sky-600 dark:text-sky-400" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('dashboard.batchImageAgent') }}</p>
-          <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.batchImageAgentDesc') }}</p>
-        </div>
-        <Icon
-          name="chevronRight"
-          size="md"
-          class="text-gray-400 transition-colors group-hover:text-sky-500 dark:text-dark-500"
-        />
-      </button>
-
-      <button @click="router.push('/redeem')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 transition-transform group-hover:scale-105 dark:bg-amber-900/30">
-          <Icon name="gift" size="lg" class="text-amber-600 dark:text-amber-400" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('dashboard.redeemCode') }}</p>
-          <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.addBalanceWithCode') }}</p>
-        </div>
-        <Icon
-          name="chevronRight"
-          size="md"
-          class="text-gray-400 transition-colors group-hover:text-amber-500 dark:text-dark-500"
-        />
-      </button>
+      <div class="qa-actions">
+        <button type="button" class="qa-action" @click="router.push('/keys')">
+          <Icon name="key" size="md" class="qa-icon" />
+          <span><b>{{ t('dashboard.createApiKey') }}</b><small>{{ t('dashboard.generateNewKey') }}</small></span>
+        </button>
+        <button type="button" class="qa-action" @click="router.push('/usage')">
+          <Icon name="chart" size="md" class="qa-icon" />
+          <span><b>{{ t('dashboard.viewUsage') }}</b><small>{{ t('dashboard.checkDetailedLogs') }}</small></span>
+        </button>
+        <button v-if="canUseBatchImage" type="button" class="qa-action" @click="router.push('/batch-image')">
+          <Icon name="sparkles" size="md" class="qa-icon" />
+          <span><b>{{ t('dashboard.batchImageAgent') }}</b><small>{{ t('dashboard.batchImageAgentDesc') }}</small></span>
+        </button>
+        <button type="button" class="qa-action" @click="router.push('/redeem')">
+          <Icon name="gift" size="md" class="qa-icon" />
+          <span><b>{{ t('dashboard.redeemCode') }}</b><small>{{ t('dashboard.addBalanceWithCode') }}</small></span>
+        </button>
+      </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import { useAppStore } from '@/stores/app'
+import { useClipboard } from '@/composables/useClipboard'
 import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
+
 const router = useRouter()
 const { t } = useI18n()
+const appStore = useAppStore()
 const { canUseBatchImage, refreshBatchImageAccess } = useBatchImageAccess()
+
+const apiBase = computed(() => {
+  const url = appStore.cachedPublicSettings?.api_base_url?.trim() || window.location.origin
+  return url.replace(/\/+$/, '').replace(/\/v1$/i, '')
+})
+
+function copyBase() {
+  void useClipboard().copyToClipboard(apiBase.value, t('dashboard.baseUrlCopied'))
+}
 
 onMounted(() => {
   void refreshBatchImageAccess()
 })
 </script>
+
+<style scoped>
+.qa {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px 20px;
+}
+
+.qa-url {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 40px;
+  min-width: 0;
+  padding: 0 6px 0 12px;
+  border: 1px solid var(--lc-line);
+  border-radius: 8px;
+  background: var(--lc-bg-2);
+  font: 13px var(--lc-font-mono);
+  color: var(--lc-ink);
+}
+
+.qa-url span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qa-copy {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--lc-ink-3);
+  font: 12px var(--lc-font-mono);
+}
+
+.qa-copy:hover {
+  border-color: var(--lc-line-2);
+  color: var(--lc-ink);
+}
+
+.qa-eps {
+  border: 1px solid var(--lc-line);
+  border-radius: 8px;
+}
+
+.qa-eps div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--lc-line);
+  font-size: 12.5px;
+}
+
+.qa-eps div:first-child {
+  border-top: 0;
+}
+
+.qa-eps dt {
+  color: var(--lc-ink-2);
+}
+
+.qa-eps dd {
+  font-family: var(--lc-font-mono);
+  color: var(--lc-ink);
+}
+
+.qa-actions {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.qa-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+
+.qa-action:hover {
+  background: var(--lc-surface-2);
+}
+
+.qa-icon {
+  flex: none;
+  color: var(--lc-accent);
+}
+
+.qa-action span {
+  display: grid;
+  min-width: 0;
+}
+
+.qa-action b {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--lc-ink);
+}
+
+.qa-action small {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--lc-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+</style>
