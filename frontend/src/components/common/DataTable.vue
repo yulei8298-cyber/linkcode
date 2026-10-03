@@ -181,10 +181,13 @@
 
         <!-- Empty state -->
         <tr v-else-if="!data || data.length === 0">
-          <td
-            :colspan="tableColumnCount"
-            :class="['py-12 text-center text-gray-500 dark:text-dark-400', getAdaptivePaddingClass()]"
-          >
+          <td :colspan="tableColumnCount" class="p-0 text-center text-gray-500 dark:text-dark-400">
+            <!-- 列很多时表格远宽于可视区，空状态固定在可视区内居中，避免被推到看不见的右侧 -->
+            <div
+              class="data-table-empty py-12"
+              :class="getAdaptivePaddingClass()"
+              :style="visibleWidth ? { width: `${visibleWidth}px` } : undefined"
+            >
             <slot name="empty">
               <div class="flex flex-col items-center">
                 <Icon
@@ -197,6 +200,7 @@
                 </p>
               </div>
             </slot>
+            </div>
           </td>
         </tr>
 
@@ -285,6 +289,8 @@ const emit = defineEmits<{
 
 // 表格容器引用
 const tableWrapperRef = ref<HTMLElement | null>(null)
+// 表格滚动容器的可视宽度，用于把空状态固定在可视区内
+const visibleWidth = ref(0)
 const isScrollable = ref(false)
 const actionsColumnNeedsExpanding = ref(false)
 
@@ -313,6 +319,7 @@ const observeElementRectNonZero = (
 const checkScrollable = () => {
   if (tableWrapperRef.value) {
     isScrollable.value = tableWrapperRef.value.scrollWidth > tableWrapperRef.value.clientWidth
+    visibleWidth.value = tableWrapperRef.value.clientWidth
   }
 }
 
@@ -962,6 +969,12 @@ defineExpose({
   isolation: isolate;
 }
 
+/* 空状态随横向滚动固定在可视区左侧，宽度等于可视区 */
+.data-table-empty {
+  position: sticky;
+  left: 0;
+}
+
 /* 表头容器，确保在滚动时覆盖表体内容 */
 .table-wrapper .table-header {
   position: sticky;
@@ -1049,9 +1062,9 @@ tbody tr:hover .sticky-col {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 10px;
+  width: 6px;
   transform: translateX(100%);
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.045), transparent);
   pointer-events: none;
 }
 
@@ -1062,9 +1075,9 @@ tbody tr:hover .sticky-col {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 10px;
+  width: 6px;
   transform: translateX(100%);
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.045), transparent);
   pointer-events: none;
 }
 
@@ -1075,9 +1088,9 @@ tbody tr:hover .sticky-col {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 10px;
+  width: 6px;
   transform: translateX(-100%);
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.08), transparent);
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.045), transparent);
   pointer-events: none;
 }
 

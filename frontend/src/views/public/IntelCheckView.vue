@@ -236,84 +236,60 @@ onBeforeUnmount(() => abortController?.abort())
 </script>
 
 <style scoped>
-/* 设计稿「方案A · 状态页式」的配色。定义在 ic-root 上而不是 :root，
-   避免污染全局，也让同一套变量能在门户深色壳里被整体替换。 */
+/* 配色全部引用 lc-tokens，深浅主题由设计变量自动切换。
+   定义在 ic-root 上而不是 :root，避免污染全局。 */
 .ic-root {
-  --ic-accent: #0d9488;
-  --ic-accent-strong: #0f766e;
-  --ic-surface: #fff;
-  --ic-text: #0f172a;
-  --ic-text-soft: #334155;
-  --ic-muted: #64748b;
-  --ic-faint: #94a3b8;
-  --ic-line: #e2e8f0;
-  --ic-line-soft: rgba(15, 23, 42, 0.05);
-  --ic-chip-bg: #f1f5f9;
-  --ic-chip-text: #334155;
-  --ic-subtle: #f8fafc;
+  /* 强调色只留给进度条等少量位置（见 .ic-kpi-bar），大数字与标题用墨色 */
+  --ic-accent: var(--lc-ink);
+  --ic-accent-strong: var(--lc-ink);
+  --ic-surface: var(--lc-surface);
+  --ic-text: var(--lc-ink);
+  --ic-text-soft: var(--lc-ink-2);
+  --ic-muted: var(--lc-ink-3);
+  --ic-faint: var(--lc-ink-3);
+  --ic-line: var(--lc-line);
+  --ic-line-soft: var(--lc-line);
+  --ic-chip-bg: var(--lc-surface-2);
+  --ic-chip-text: var(--lc-ink-2);
+  --ic-subtle: var(--lc-surface-2);
 
-  --ic-ok: #10b981;
-  --ic-fail: #ef4444;
-  --ic-req: #f59e0b;
-  --ic-run: #7dd3fc;
-  --ic-unverified: #64748b;
-  --ic-none: #e2e8f0;
+  --ic-ok: var(--lc-ok);
+  --ic-fail: var(--lc-bad);
+  --ic-req: var(--lc-warn);
+  --ic-run: var(--lc-info);
+  --ic-unverified: var(--lc-ink-3);
+  --ic-none: var(--lc-line-2);
 
-  --ic-ok-bg: #ecfdf5;
-  --ic-ok-text: #047857;
-  --ic-ok-line: #a7f3d0;
-  --ic-fail-bg: #fef2f2;
-  --ic-fail-text: #b91c1c;
-  --ic-fail-line: #fecaca;
-  --ic-warn-text: #b45309;
-  --ic-bad-outline: rgba(239, 68, 68, 0.35);
-  --ic-bad-surface: linear-gradient(180deg, #fff, #fff8f8);
+  --ic-ok-bg: var(--lc-ok-soft);
+  --ic-ok-text: var(--lc-ok);
+  --ic-ok-line: var(--lc-line-2);
+  --ic-fail-bg: var(--lc-bad-soft);
+  --ic-fail-text: var(--lc-bad);
+  --ic-fail-line: var(--lc-line-2);
+  --ic-warn-text: var(--lc-warn);
+  --ic-bad-outline: var(--lc-bad);
+  --ic-bad-surface: var(--lc-surface);
 
   color: var(--ic-text);
   padding: 24px 0 40px;
 }
 
-/* 深色环境有两处，必须一起覆盖，漏掉任何一处都会出现「深色字压深色底」：
-     .lc-shell —— 门户的霓虹主题（portal-neon.css）
-     .dark     —— 后台控制台的深色模式（类挂在 html 上）
-   顶栏标题位于卡片之外、直接压在页面背景上，是最先暴露问题的地方。
-   布局与信息结构完全不变，只换表面色与文字色。 */
-.lc-shell .ic-root,
-.dark .ic-root {
-  --ic-surface: rgba(19, 19, 22, 0.94);
-  --ic-text: #f8fafc;
-  --ic-text-soft: #e2e8f0;
-  --ic-muted: #94a3b8;
-  --ic-faint: #64748b;
-  --ic-line: rgba(148, 163, 184, 0.22);
-  --ic-line-soft: rgba(148, 163, 184, 0.18);
-  --ic-chip-bg: rgba(148, 163, 184, 0.16);
-  --ic-chip-text: #cbd5e1;
-  --ic-subtle: rgba(148, 163, 184, 0.1);
-  --ic-accent: #2dd4bf;
-  --ic-accent-strong: #5eead4;
-  --ic-none: rgba(148, 163, 184, 0.25);
-  --ic-unverified: #94a3b8;
-  --ic-ok-bg: rgba(16, 185, 129, 0.14);
-  --ic-ok-text: #6ee7b7;
-  --ic-ok-line: rgba(16, 185, 129, 0.35);
-  --ic-fail-bg: rgba(239, 68, 68, 0.14);
-  --ic-fail-text: #fca5a5;
-  --ic-fail-line: rgba(239, 68, 68, 0.35);
-  --ic-warn-text: #fbbf24;
-  --ic-bad-surface: linear-gradient(180deg, rgba(19, 19, 22, 0.94), rgba(60, 20, 20, 0.5));
-}
-
 /* 门户形态给页面留出左右留白；后台形态由 AppLayout 的内容区负责。 */
 .ic-root.ic-portal {
-  max-width: 1560px;
+  width: min(1200px, calc(100% - 48px));
   margin: 0 auto;
-  padding: 24px 24px 48px;
+  padding: 40px 0 72px;
+}
+
+@media (max-width: 640px) {
+  .ic-root.ic-portal {
+    width: calc(100% - 32px);
+  }
 }
 
 .ic-card {
   background: var(--ic-surface);
-  border-radius: 24px;
+  border-radius: 16px;
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.04),
     0 1px 2px rgba(0, 0, 0, 0.06);
@@ -373,7 +349,7 @@ onBeforeUnmount(() => abortController?.abort())
   height: 8px;
   border-radius: 50%;
   background: var(--ic-ok);
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 0 4px var(--lc-ok-soft);
 }
 
 /* ---------- 说明卡 + KPI ---------- */
@@ -405,10 +381,10 @@ onBeforeUnmount(() => abortController?.abort())
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #14b8a6, #0d9488);
-  color: #fff;
+  border: 1px solid var(--lc-line);
+  background: var(--lc-surface-2);
+  color: var(--lc-accent);
   font-size: 26px;
-  box-shadow: 0 8px 24px rgba(20, 184, 166, 0.3);
 }
 
 .ic-hero-text {
@@ -519,7 +495,7 @@ onBeforeUnmount(() => abortController?.abort())
   display: block;
   height: 100%;
   border-radius: 99px;
-  background: linear-gradient(90deg, #14b8a6, #2dd4bf);
+  background: var(--lc-accent);
   transition: width 0.4s ease;
 }
 

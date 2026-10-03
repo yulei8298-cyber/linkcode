@@ -567,6 +567,28 @@ export default {
   },
 
   // Channel Status (user-facing read-only view)
+  // 号池状态列表（公开可用性页与控制台渠道状态共用）
+  monitorBoard: {
+    ok: '正常',
+    degraded: '降级',
+    bad: '异常',
+    unknown: '未知',
+    total: '共 {n} 个号池',
+    emptyTitle: '暂无监控',
+    emptyText: '后台配置监控后，数据会自动显示在这里。',
+    now: '现在',
+    firstToken: '首字延迟',
+    ping: '端点 Ping',
+    availability: '可用率 · {window}',
+    detail: '详情',
+    extraModels: '同号池其他模型',
+    firstTokenRealHint: '近 1 小时用户真实调用的平均首字耗时',
+    firstTokenProbeHint: '近期没有用户调用，显示最近一次探测的整次对话耗时',
+    timelineLabel: '最近 {total} 次探测中 {ok} 次正常',
+    minutesAgo: '{n} 分钟前',
+    hoursAgo: '{n} 小时前',
+    daysAgo: '{n} 天前'
+  },
   channelStatus: {
     title: '渠道状态',
     description: '查看渠道可用性、延迟和近期状态',

@@ -18,10 +18,11 @@ describe('IntelCheckView 内嵌形态', () => {
     expect(source).toContain('</component>')
   })
 
-  it('两种布局共用状态页内容，并分别应用门户留白与深色变量', () => {
+  it('两种布局共用状态页内容，配色引用设计变量以自动适配深浅主题', () => {
     expect(source).toContain('<div class="ic-root" :class="{ \'ic-portal\': !isEmbedded }">')
     expect(source).toContain('<div class="ic-topbar">')
-    expect(source).toContain('.lc-shell .ic-root,')
-    expect(source).toContain('.dark .ic-root {')
+    // 表面色与文字色必须成对来自 lc-tokens，深色下才不会出现「深色字压深色底」
+    expect(source).toContain('--ic-surface: var(--lc-surface);')
+    expect(source).toContain('--ic-text: var(--lc-ink);')
   })
 })

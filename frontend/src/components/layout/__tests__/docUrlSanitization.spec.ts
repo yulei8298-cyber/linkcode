@@ -27,11 +27,9 @@ describe('doc_url sanitization', () => {
     expect(portalLayoutSource).toContain('sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl')
   })
 
-  it('KeyUsageView imports sanitizeUrl', () => {
-    expect(keyUsageViewSource).toContain("import { sanitizeUrl } from '@/utils/url'")
-  })
-
-  it('KeyUsageView applies sanitizeUrl to docUrl', () => {
-    expect(keyUsageViewSource).toContain('sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl')
+  // KeyUsageView 改用门户外壳，文档链接由 PortalLayout 净化后渲染，自身不得再直接读取 doc_url
+  it('KeyUsageView renders doc links only through PortalLayout', () => {
+    expect(keyUsageViewSource).toContain("import PortalLayout from '@/views/public/components/PortalLayout.vue'")
+    expect(keyUsageViewSource).not.toContain('doc_url')
   })
 })

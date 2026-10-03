@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import zh from '@/i18n/locales/zh'
 
 import PortalStatusView from '../PortalStatusView.vue'
 
@@ -11,6 +12,18 @@ const { getPublicMonitors } = vi.hoisted(() => ({
 vi.mock('@/api/public', () => ({
   getPublicMonitors,
   getPublicMonitorStatus: vi.fn()
+}))
+
+// 测试环境的 vue-i18n 是不含消息编译器的运行时版本，这里直接按中文词条解析并替换占位符
+function translate(key: string, params: Record<string, unknown> = {}) {
+  const value = key.split('.').reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], zh)
+  if (typeof value !== 'string') return key
+  return value.replace(/\{(\w+)\}/g, (_, name: string) => String(params[name] ?? ''))
+}
+
+vi.mock('vue-i18n', async () => ({
+  ...await vi.importActual<typeof import('vue-i18n')>('vue-i18n'),
+  useI18n: () => ({ t: translate, locale: { value: 'zh' } }),
 }))
 
 vi.mock('@/stores/app', () => ({

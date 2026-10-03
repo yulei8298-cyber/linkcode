@@ -19,12 +19,14 @@ describe('site_logo sanitization', () => {
     expect(portalLayoutSource).toContain('sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo')
   })
 
-  it('KeyUsageView applies sanitizeUrl to siteLogo', () => {
-    expect(keyUsageViewSource).toContain('sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo')
+  // KeyUsageView 改用门户外壳渲染 Logo，自身不得再直接读取未净化的 site_logo
+  it('KeyUsageView renders the logo only through PortalLayout', () => {
+    expect(keyUsageViewSource).toContain("import PortalLayout from '@/views/public/components/PortalLayout.vue'")
+    expect(keyUsageViewSource).not.toContain('site_logo')
   })
 
-  it('all three pass allowRelative and allowDataUrl options', () => {
-    for (const src of [sidebarSource, portalLayoutSource, keyUsageViewSource]) {
+  it('logo renderers pass allowRelative and allowDataUrl options', () => {
+    for (const src of [sidebarSource, portalLayoutSource]) {
       expect(src).toContain('allowRelative: true')
       expect(src).toContain('allowDataUrl: true')
     }

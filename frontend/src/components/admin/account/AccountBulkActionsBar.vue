@@ -1,13 +1,13 @@
 <template>
-  <div class="mb-4 flex items-center justify-between rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20">
+  <div class="mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-dark-700 dark:bg-dark-800/60">
     <div class="flex flex-wrap items-center gap-2">
-      <span v-if="allResultsSelected" class="text-sm font-medium text-primary-900 dark:text-primary-100">
+      <span v-if="allResultsSelected" class="text-sm font-medium text-gray-900 dark:text-dark-50">
         {{ t('admin.accounts.bulkActions.selectedAll', { count: selectedIds.length }) }}
       </span>
-      <span v-else-if="selectedIds.length > 0" class="text-sm font-medium text-primary-900 dark:text-primary-100">
+      <span v-else-if="selectedIds.length > 0" class="text-sm font-medium text-gray-900 dark:text-dark-50">
         {{ t('admin.accounts.bulkActions.selected', { count: selectedIds.length }) }}
       </span>
-      <span v-else class="text-sm font-medium text-primary-900 dark:text-primary-100">
+      <span v-else class="text-sm font-medium text-gray-900 dark:text-dark-50">
         {{ t('admin.accounts.bulkEdit.title') }}
       </span>
       <template v-if="selectedIds.length > 0">
@@ -19,7 +19,7 @@
         </button>
       </template>
       <template v-if="!allResultsSelected && totalResults > selectedIds.length">
-        <span v-if="selectedIds.length > 0" class="text-gray-300 dark:text-primary-800">•</span>
+        <span v-if="selectedIds.length > 0" class="text-gray-300 dark:text-dark-600">•</span>
         <button
           :disabled="selectingAll"
           @click="$emit('select-all-results')"
@@ -33,7 +33,7 @@
         </button>
       </template>
       <template v-if="selectedIds.length > 0">
-        <span class="text-gray-300 dark:text-primary-800">•</span>
+        <span class="text-gray-300 dark:text-dark-600">•</span>
         <button
           @click="$emit('clear')"
           class="text-xs font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200"

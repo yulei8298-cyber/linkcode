@@ -301,14 +301,14 @@ watch(
   padding: 5px 10px;
   border: 0;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #334155;
-  outline: 1px solid rgba(148, 163, 184, 0.4);
+  background: var(--lc-surface);
+  color: var(--lc-ink-2);
+  outline: 1px solid var(--lc-line-2);
   cursor: pointer;
 }
 
 .ic-artbtn:hover {
-  background: #fff;
+  background: var(--lc-surface-2);
 }
 
 .ic-tip {

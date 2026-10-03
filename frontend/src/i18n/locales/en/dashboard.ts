@@ -562,6 +562,28 @@ export default {
   },
 
   // Channel Status (user-facing read-only view)
+  // Monitor status board (shared by the public status page and the console channel status page)
+  monitorBoard: {
+    ok: 'Operational',
+    degraded: 'Degraded',
+    bad: 'Down',
+    unknown: 'Unknown',
+    total: '{n} pools',
+    emptyTitle: 'No monitors yet',
+    emptyText: 'Monitors configured by the admin will show up here.',
+    now: 'Now',
+    firstToken: 'First token',
+    ping: 'Endpoint ping',
+    availability: 'Availability · {window}',
+    detail: 'Details',
+    extraModels: 'Other models in this pool',
+    firstTokenRealHint: 'Average time to first token of real user requests in the last hour',
+    firstTokenProbeHint: 'No recent user requests; showing the full duration of the latest probe',
+    timelineLabel: '{ok} of the last {total} probes succeeded',
+    minutesAgo: '{n} min ago',
+    hoursAgo: '{n} h ago',
+    daysAgo: '{n} d ago'
+  },
   channelStatus: {
     title: 'Channel Status',
     description: 'Inspect channel availability, latency and recent status',

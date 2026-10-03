@@ -35,11 +35,6 @@ import {
 
 const NEUTRAL_BADGE = 'bg-gray-100 text-gray-800 dark:bg-dark-700 dark:text-gray-300'
 
-/** Availability HSL hue multiplier: 0%=red(0) / 50%=yellow(60) / 100%=green(120). */
-const HSL_HUE_PER_PERCENT = 1.2
-const HSL_SATURATION = 72
-const HSL_LIGHTNESS = 42
-
 export interface AvailabilityRow {
   primary_status: MonitorStatus | ''
   availability_7d: number | null | undefined
@@ -237,46 +232,5 @@ export function useChannelMonitorFormat() {
     formatPercent,
     formatAvailability,
     formatRelativeTime,
-  }
-}
-
-/**
- * Map availability percent to an HSL colour (red -> yellow -> green).
- * Returns undefined for null/NaN so callers can fall back to a neutral colour.
- */
-export function hslForPct(pct: number | null | undefined): string | undefined {
-  if (pct === null || pct === undefined || Number.isNaN(pct)) return undefined
-  const clamped = Math.max(0, Math.min(100, pct))
-  const hue = clamped * HSL_HUE_PER_PERCENT
-  return `hsl(${hue} ${HSL_SATURATION}% ${HSL_LIGHTNESS}%)`
-}
-
-/**
- * Tailwind gradient class for the provider icon tile background.
- */
-export function providerGradient(provider: string): string {
-  switch (provider) {
-    case PROVIDER_OPENAI:
-      return 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-500/10 dark:to-emerald-500/20'
-    case PROVIDER_ANTHROPIC:
-      return 'bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-500/10 dark:to-amber-500/20'
-    case PROVIDER_GEMINI:
-      return 'bg-gradient-to-br from-sky-50 to-indigo-100 dark:from-sky-500/10 dark:to-indigo-500/20'
-    case PROVIDER_GROK:
-      return 'bg-gradient-to-br from-zinc-50 to-neutral-200 dark:from-zinc-500/10 dark:to-neutral-500/20'
-    case PROVIDER_ANTIGRAVITY:
-      return 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-500/10 dark:to-purple-500/20'
-    case PROVIDER_KIMI:
-      return 'bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-500/10 dark:to-pink-500/20'
-    case PROVIDER_ZHIPU:
-      return 'bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-500/10 dark:to-indigo-500/20'
-    case PROVIDER_DEEPSEEK:
-      return 'bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-500/10 dark:to-teal-500/20'
-    case PROVIDER_MINIMAX:
-      return 'bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-500/10 dark:to-rose-500/20'
-    case PROVIDER_OPENCODE_GO:
-      return 'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-500/10 dark:to-amber-500/20'
-    default:
-      return 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-dark-700 dark:to-dark-600'
   }
 }

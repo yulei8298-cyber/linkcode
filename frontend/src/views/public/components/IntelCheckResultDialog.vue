@@ -331,56 +331,35 @@ watch(
 /*
  * 配色与主页面同一套路：变量定义在根节点上，深色环境整体替换。
  *
- * 两处深色环境都要覆盖（门户 .lc-shell / 后台 .dark），漏一处就会出现
- * 「浅色框砸在深色弹窗里」。凡是自定义背景的块，背景与文字色必须成对定死——
+ * 颜色统一引用 lc-tokens，深浅主题自动切换。凡是自定义背景的块，背景与文字色必须成对定死——
  * 只设背景、让文字色向上继承，在浅色环境下测不出问题，一换主题就瞎。
  */
 .ic-dlg {
-  --d-text: #0f172a;
-  --d-soft: #334155;
-  --d-muted: #64748b;
-  --d-line: #e2e8f0;
-  --d-surface: #f8fafc;
-  --d-ok-bg: #ecfdf5;
-  --d-ok-text: #065f46;
-  --d-ok-line: #a7f3d0;
-  --d-bad-bg: #fef2f2;
-  --d-bad-text: #b91c1c;
-  --d-bad-line: #fecaca;
-  --d-warn-bg: #fffbeb;
-  --d-warn-text: #b45309;
-  --d-neutral-bg: #f1f5f9;
-  --d-neutral-text: #475569;
-  --d-accent: #0d9488;
+  --d-text: var(--lc-ink);
+  --d-soft: var(--lc-ink-2);
+  --d-muted: var(--lc-ink-3);
+  --d-line: var(--lc-line);
+  --d-surface: var(--lc-surface-2);
+  --d-ok-bg: var(--lc-ok-soft);
+  --d-ok-text: var(--lc-ok);
+  --d-ok-line: var(--lc-line-2);
+  --d-bad-bg: var(--lc-bad-soft);
+  --d-bad-text: var(--lc-bad);
+  --d-bad-line: var(--lc-line-2);
+  --d-warn-bg: var(--lc-warn-soft);
+  --d-warn-text: var(--lc-warn);
+  --d-neutral-bg: var(--lc-surface-2);
+  --d-neutral-text: var(--lc-ink-2);
+  --d-accent: var(--lc-ink);
 
   color: var(--d-text);
-}
-
-.lc-shell .ic-dlg,
-.dark .ic-dlg {
-  --d-text: #f1f5f9;
-  --d-soft: #cbd5e1;
-  --d-muted: #94a3b8;
-  --d-line: rgba(148, 163, 184, 0.22);
-  --d-surface: rgba(15, 23, 42, 0.55);
-  --d-ok-bg: rgba(16, 185, 129, 0.14);
-  --d-ok-text: #6ee7b7;
-  --d-ok-line: rgba(16, 185, 129, 0.35);
-  --d-bad-bg: rgba(239, 68, 68, 0.14);
-  --d-bad-text: #fca5a5;
-  --d-bad-line: rgba(239, 68, 68, 0.35);
-  --d-warn-bg: rgba(245, 158, 11, 0.14);
-  --d-warn-text: #fbbf24;
-  --d-neutral-bg: rgba(148, 163, 184, 0.14);
-  --d-neutral-text: #cbd5e1;
-  --d-accent: #2dd4bf;
 }
 
 .ic-dlg-hint {
   padding: 40px 0;
   text-align: center;
   font-size: 13px;
-  color: #64748b;
+  color: var(--lc-ink-3);
 }
 
 /* ---------- 结论行 ---------- */
@@ -604,7 +583,7 @@ watch(
 .ic-dlg-tabs button.active {
   background: var(--d-accent);
   border-color: var(--d-accent);
-  color: #fff;
+  color: var(--lc-surface);
 }
 
 /* ---------- 判定明细 ---------- */

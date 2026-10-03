@@ -267,3 +267,38 @@
     grid-column: auto;
   }
 }
+
+/* 筛选区：自适应网格 + 小号标签，操作按钮单独一行靠右 */
+.dash-filters {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.dash-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px 14px;
+  align-items: end;
+}
+
+.dash-filter-grid > * {
+  min-width: 0;
+}
+
+.dash-filter-grid .input-label {
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lc-ink-3);
+}
+
+.dash-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--lc-line);
+}

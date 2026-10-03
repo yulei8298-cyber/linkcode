@@ -1,27 +1,23 @@
 <template>
   <AppLayout>
-    <div class="space-y-6">
+    <div class="space-y-5">
+      <div class="card dash-toolbar">
+        <span class="dash-toolbar-label">{{ t('admin.dashboard.timeRange') }}</span>
+        <DateRangePicker
+          v-model:start-date="startDate"
+          v-model:end-date="endDate"
+          @change="onDateRangeChange"
+        />
+        <div class="dash-toolbar-end">
+          <span class="dash-toolbar-label">{{ t('admin.dashboard.granularity') }}</span>
+          <div class="w-28">
+            <Select v-model="granularity" :options="granularityOptions" @change="loadChartData" />
+          </div>
+        </div>
+      </div>
       <UsageStatsCards :stats="usageStats" />
       <!-- Charts Section -->
       <div class="space-y-4">
-        <div class="card p-4">
-          <div class="flex flex-wrap items-center gap-4">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.dashboard.timeRange') }}:</span>
-              <DateRangePicker
-                v-model:start-date="startDate"
-                v-model:end-date="endDate"
-                @change="onDateRangeChange"
-              />
-            </div>
-            <div class="ml-auto flex items-center gap-2">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.dashboard.granularity') }}:</span>
-              <div class="w-28">
-                <Select v-model="granularity" :options="granularityOptions" @change="loadChartData" />
-              </div>
-            </div>
-          </div>
-        </div>
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <ModelDistributionChart
             v-model:source="modelDistributionSource"
