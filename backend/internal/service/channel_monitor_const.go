@@ -131,6 +131,11 @@ const (
 	// monitorChallengeMaxTokens 单次 challenge 请求的 max_tokens（足够回答个位数算术）。
 	monitorChallengeMaxTokens = 50
 
+	// monitorFirstTokenWindow 用户视图「首字延迟」统计真实调用的回看窗口。
+	monitorFirstTokenWindow = time.Hour
+	// monitorFirstTokenCacheTTL 首字延迟统计结果的缓存时长。
+	monitorFirstTokenCacheTTL = time.Minute
+
 	// monitorRunOneBuffer runOne 的总超时缓冲（除请求超时与 ping 超时外的额外裕量）。
 	monitorRunOneBuffer = 10 * time.Second
 

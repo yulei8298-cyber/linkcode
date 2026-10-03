@@ -54,7 +54,8 @@ func (s *ChannelMonitorService) BatchMonitorStatusSummary(
 //	1 次查 monitors；
 //	1 次批量 latest（含 ping_latency_ms）；
 //	1 次批量 7d availability；
-//	1 次批量 timeline（主模型最近 N 条）。
+//	1 次批量 timeline（主模型最近 N 条）；
+//	1 次批量真实调用首字延迟（带 TTL 缓存）。
 func (s *ChannelMonitorService) ListUserView(ctx context.Context) ([]*UserMonitorView, error) {
 	monitors, err := s.repo.ListEnabled(ctx)
 	if err != nil {
@@ -68,11 +69,16 @@ func (s *ChannelMonitorService) ListUserView(ctx context.Context) ([]*UserMonito
 	summaries := s.BatchMonitorStatusSummary(ctx, ids, primaryByID, extrasByID)
 	latestMap := s.batchLatest(ctx, ids)
 	timelineMap := s.batchTimeline(ctx, ids, primaryByID)
+	firstTokenMap := s.batchFirstToken(ctx, monitors)
 
 	views := make([]*UserMonitorView, 0, len(monitors))
 	for _, m := range monitors {
 		primaryLatest := pickLatest(latestMap[m.ID], m.PrimaryModel)
-		views = append(views, buildUserViewFromSummary(m, summaries[m.ID], primaryLatest, timelineMap[m.ID]))
+		view := buildUserViewFromSummary(m, summaries[m.ID], primaryLatest, timelineMap[m.ID])
+		if ms, ok := firstTokenMap[m.ID]; ok {
+			view.PrimaryFirstTokenMs = &ms
+		}
+		views = append(views, view)
 	}
 	return views, nil
 }

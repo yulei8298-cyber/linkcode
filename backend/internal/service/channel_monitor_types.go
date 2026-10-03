@@ -154,12 +154,21 @@ type UserMonitorView struct {
 	PrimaryStatus        string
 	PrimaryLatencyMs     *int
 	PrimaryPingLatencyMs *int    // 主模型最近一次 ping 延迟
+	PrimaryFirstTokenMs  *int    // 主模型近期真实调用平均首字延迟；无调用或探测 Key 非本站签发时为 nil
 	Availability7d       float64 // 0-100
 	ExtraModels          []ExtraModelStatus
 	Timeline             []UserMonitorTimelinePoint // 主模型最近 N 个历史点（按 checked_at DESC，最新在前）
 	// LatestQuota 主模型最近一次配额快照；channel_monitor_show_quota=false
 	// 时由 handler 服务端剥离。
 	LatestQuota *domain.MonitorQuotaSnapshot
+}
+
+// MonitorFirstTokenTarget 统计真实调用首字延迟的目标：
+// 用号池探测 Key 定位其所属分组，再按主模型过滤该分组的用户调用（排除探测 Key 自身）。
+type MonitorFirstTokenTarget struct {
+	MonitorID int64
+	APIKey    string // 解密后的明文 Key，仅用于查询匹配，不得落日志
+	Model     string
 }
 
 // UserMonitorTimelinePoint 用户视图 timeline 单点数据（去除 message 以减小响应体）。

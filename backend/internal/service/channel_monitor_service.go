@@ -46,6 +46,9 @@ type ChannelMonitorRepository interface {
 	// ListRecentHistoryForMonitors 批量取多个 monitor 各自主模型（primaryModels[monitorID]）最近 perMonitorLimit 条历史。
 	// 返回的 entry 已按 checked_at DESC 排序（最新在前），不含 message 字段。
 	ListRecentHistoryForMonitors(ctx context.Context, ids []int64, primaryModels map[int64]string, perMonitorLimit int) (map[int64][]*ChannelMonitorHistoryEntry, error)
+	// AvgFirstTokenForMonitors 统计 since 之后各号池对应分组 + 主模型的真实调用平均首字延迟（毫秒）。
+	// 未命中（Key 不属于本站 / 无调用）的监控不出现在返回 map 中。
+	AvgFirstTokenForMonitors(ctx context.Context, targets []MonitorFirstTokenTarget, since time.Time) (map[int64]int, error)
 
 	// ---------- 聚合维护（OpsCleanupService 调用） ----------
 
@@ -82,6 +85,8 @@ type ChannelMonitorService struct {
 	// 之后构造，构造参数注入会破坏既有依赖顺序）。nil 时 fail-closed：
 	// 配额模式的检测产出「未配置」错误快照，Create/Update 关联账号直接报错。
 	quotaFetcher *ChannelMonitorQuotaFetcher
+	// firstToken 公开状态页会被频繁轮询，真实调用首字延迟按 TTL 缓存，避免反复扫 usage_logs。
+	firstToken monitorFirstTokenCache
 }
 
 const maxChannelMonitorNameRunes = 100
