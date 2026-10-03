@@ -17,7 +17,8 @@
   --lc-ink-2: #57574f;
   --lc-ink-3: #6c6c64;
 
-  --lc-accent: #d4561b;
+  /* 浅色底上的强调色兼作小字链接，按 WCAG AA 正文 4.5:1 取值（#d4561b 仅 3.77:1） */
+  --lc-accent: #bd4d18;
   --lc-accent-soft: rgba(212, 86, 27, 0.08);
   --lc-accent-line: rgba(212, 86, 27, 0.35);
 

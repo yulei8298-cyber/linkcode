@@ -675,6 +675,7 @@ export default {
 
   // Model Plaza (public group/model pricing showcase)
   modelPlaza: {
+    breadcrumbHome: '首页',
     title: '模型广场',
     description: '按分组浏览可用模型与价格',
     loading: '加载中...',

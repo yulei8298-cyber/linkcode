@@ -2,7 +2,7 @@
   <div class="model-plaza" :class="{ 'plaza-portal': portal }">
     <div class="plaza-page-heading">
       <div>
-        <p v-if="portal" class="plaza-eyebrow">MODEL PLAZA</p>
+        <p v-if="portal" class="plaza-eyebrow"><router-link to="/home">{{ t('modelPlaza.breadcrumbHome') }}</router-link> / {{ t('modelPlaza.title') }}</p>
         <h1>{{ t('modelPlaza.title') }}</h1>
         <p class="plaza-page-description">{{ t('modelPlaza.cards.description') }}</p>
       </div>

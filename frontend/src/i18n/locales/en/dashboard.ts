@@ -670,6 +670,7 @@ export default {
 
   // Model Plaza (public group/model pricing showcase)
   modelPlaza: {
+    breadcrumbHome: 'Home',
     title: 'Model Plaza',
     description: 'Browse available models and pricing by group',
     loading: 'Loading...',

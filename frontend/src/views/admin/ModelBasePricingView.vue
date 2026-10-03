@@ -77,11 +77,9 @@ async function restore() {
 
 <template>
   <AppLayout>
-    <div class="mx-auto max-w-5xl space-y-6 p-6">
+    <div class="mx-auto max-w-5xl space-y-6">
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-600">Pricing control</p>
-        <h1 class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">模型基准价</h1>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">官方目录价格作为默认基准，修改后所有真实分组按各自倍率计算实付价格。留空字段会继续继承官方目录，0 可以表示免费。</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">官方目录价格作为默认基准，修改后所有真实分组按各自倍率计算实付价格。留空字段会继续继承官方目录，0 可以表示免费。</p>
       </div>
 
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-dark-500 dark:bg-dark-800">

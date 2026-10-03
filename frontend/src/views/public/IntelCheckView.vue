@@ -6,9 +6,8 @@
     未登录时即便带了 embedded=1 也降级为门户形态，否则转发出去的链接会渲染出
     一个没有登录态的空后台骨架。
 
-    页面样式完全自带（ic-* 前缀），不使用门户的 lc-* 类：那套类的卡片背景是
-    深色霓虹（portal-neon.css），而本页按设计稿「方案A · 状态页式」是浅色白卡片。
-    自带样式后两种外壳里都能正常渲染，深色门户下只换表面色、布局不变。
+    页面样式自带（ic-* 前缀），配色变量统一引用 lc-tokens，
+    因此在门户与后台两种外壳、深浅两种主题下都能正常渲染。
   -->
   <component :is="isEmbedded ? AppLayout : PortalLayout">
     <div class="ic-root" :class="{ 'ic-portal': !isEmbedded }">
@@ -270,6 +269,12 @@ onBeforeUnmount(() => abortController?.abort())
   --ic-bad-outline: var(--lc-bad);
   --ic-bad-surface: var(--lc-surface);
 
+  /* 色条、图例方块与状态圆点：与渠道状态页的状态条同一组高饱和色，
+     正文里的「通过 / 未通过」文字仍用上面克制的状态色以保证可读性 */
+  --ic-bar-ok: #22c55e;
+  --ic-bar-fail: #dc2626;
+  --ic-bar-req: #e69500;
+
   color: var(--ic-text);
   padding: 24px 0 40px;
 }
@@ -348,7 +353,7 @@ onBeforeUnmount(() => abortController?.abort())
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--ic-ok);
+  background: var(--ic-bar-ok);
   box-shadow: 0 0 0 4px var(--lc-ok-soft);
 }
 
@@ -432,11 +437,11 @@ onBeforeUnmount(() => abortController?.abort())
 }
 
 .ic-sdot.ok {
-  background: var(--ic-ok);
+  background: var(--ic-bar-ok);
 }
 
 .ic-sdot.fail {
-  background: var(--ic-fail);
+  background: var(--ic-bar-fail);
 }
 
 .ic-sdot.none {
@@ -520,16 +525,16 @@ onBeforeUnmount(() => abortController?.abort())
 .ic-sq {
   width: 12px;
   height: 12px;
-  border-radius: 3px;
-  background: var(--ic-ok);
+  border-radius: 2px;
+  background: var(--ic-bar-ok);
 }
 
 .ic-sq.bad {
-  background: var(--ic-fail);
+  background: var(--ic-bar-fail);
 }
 
 .ic-sq.degraded {
-  background: var(--ic-req);
+  background: var(--ic-bar-req);
 }
 
 .ic-sq.running {

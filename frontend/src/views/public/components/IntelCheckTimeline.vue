@@ -5,7 +5,7 @@
         <span class="ic-kind-ico">{{ kind === 'drawing' ? '🎨' : '◻' }}</span>
         {{ label }}
       </b>
-      <span v-if="latest" class="ic-last" :class="{ f: latest.status === 'fail', u: latest.status === 'unverified' }">
+      <span v-if="latest" class="ic-last" :class="{ f: latest.status === 'fail', u: latest.status === 'unverified', e: latest.status === 'request_error' }">
         ● <b>{{ statusLabel(latest.status) }}</b> · {{ formatRelative(latest.checked_at) }}
       </span>
     </div>
@@ -127,6 +127,11 @@ const lowPassRate = computed(
   color: var(--ic-unverified);
 }
 
+/* 请求失败是链路问题，用琥珀色，不能和「通过」一样显示为绿色 */
+.ic-last.e b {
+  color: var(--ic-warn-text);
+}
+
 .ic-stats {
   display: flex;
   align-items: baseline;
@@ -162,13 +167,14 @@ const lowPassRate = computed(
    「同题同刻横向对比」靠的就是这个对齐。 */
 .ic-tl {
   display: grid;
-  gap: 4px;
-  height: 38px;
+  gap: 2px;
 }
 
+/* 与渠道状态页一致：每格宽高比固定 5:14，随列宽等比缩放的矮粗方块 */
 .ic-tl i {
-  border-radius: 5px;
-  background: var(--ic-ok);
+  aspect-ratio: 5 / 14;
+  border-radius: 2px;
+  background: var(--ic-bar-ok);
   transition: transform 0.1s ease;
 }
 
@@ -181,13 +187,13 @@ const lowPassRate = computed(
 }
 
 .ic-tl i.bad {
-  background: var(--ic-fail);
+  background: var(--ic-bar-fail);
 }
 
 /* 请求失败用琥珀色，与红色的「未通过」严格区分：
    前者是我们这侧的链路故障，后者才是对受检模型的指控。 */
 .ic-tl i.degraded {
-  background: var(--ic-req);
+  background: var(--ic-bar-req);
 }
 
 .ic-tl i.running {

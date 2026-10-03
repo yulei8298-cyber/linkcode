@@ -61,7 +61,7 @@
     <Transition name="agreement-fade">
       <div
         v-if="dialogVisible"
-        class="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-gray-950/60 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-black/50 p-4"
       >
         <div class="w-full max-w-[600px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10 dark:bg-dark-900 dark:ring-white/10">
           <div class="border-b border-gray-100 bg-white px-6 py-6 dark:border-dark-800 dark:bg-dark-900">
@@ -129,7 +129,7 @@
               </button>
               <button
                 type="button"
-                class="rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-primary-600/20 transition hover:bg-primary-700"
+                class="btn btn-primary px-4 py-3"
                 @click="emit('accept')"
               >
                 {{ t('legal.loginAgreementPrompt.accept') }}

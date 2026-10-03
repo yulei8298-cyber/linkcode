@@ -2,21 +2,11 @@
   <AppLayout>
     <div class="w-full min-w-0 space-y-6 pb-8">
       <header
-        class="page-header mb-0 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-800 dark:ring-dark-700 sm:p-6"
+        class="page-header card mb-0 p-3"
       >
-        <h1 class="page-title flex items-center gap-2 text-xl font-black text-gray-900 dark:text-white">
-          <span
-            class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-500 dark:bg-teal-900/30 dark:text-teal-400"
-          >
-            <Icon name="chart" size="sm" />
-          </span>
-          {{ t('admin.intelCheck.title') }}
-        </h1>
-        <p class="page-description mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-          {{ t('admin.intelCheck.description') }}
-        </p>
-
-        <div class="mt-4 border-t border-gray-100 pt-4 dark:border-dark-700">
+        <!-- 标题与说明已在顶栏显示，这里仅保留给读屏器的 h1 与标签页 -->
+        <h1 class="page-title sr-only">{{ t('admin.intelCheck.title') }}</h1>
+        <div>
           <div class="tabs inline-flex w-full max-w-2xl flex-wrap sm:w-auto" role="tablist">
             <button
               v-for="tab in tabs"
@@ -51,7 +41,6 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import Icon from '@/components/icons/Icon.vue'
 import IntelCheckOverviewTab from './intel-check/IntelCheckOverviewTab.vue'
 import IntelCheckTargetsTab from './intel-check/IntelCheckTargetsTab.vue'
 import IntelCheckQuestionsTab from './intel-check/IntelCheckQuestionsTab.vue'

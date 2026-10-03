@@ -5,14 +5,9 @@
         class="flex flex-col gap-4 border-b border-gray-200 pb-5 dark:border-dark-700 sm:flex-row sm:items-end sm:justify-between"
       >
         <div class="min-w-0">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ t("admin.plugins.title") }}
-          </h2>
-          <p class="mt-1 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
-            {{ t("admin.plugins.description") }}
-          </p>
+          <!-- 标题与说明已在顶栏显示，这里只保留能力范围标签 -->
           <div
-            class="mt-3 flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300"
+            class="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300"
           >
             <span class="rounded bg-gray-100 px-2 py-1 dark:bg-dark-700">{{
               t("admin.plugins.onlyOpenAI")
