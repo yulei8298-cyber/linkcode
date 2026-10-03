@@ -174,3 +174,46 @@
   .lc-segments { width: 100%; }
   .lc-segment { flex: 1; }
 }
+
+/* ---------- 公开文档页（教程、法律文档）：左侧目录 + 720 宽正文 ---------- */
+.lc-doc { padding: 48px 0 88px; }
+.lc-doc-title { margin-top: 10px; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.lc-doc-meta { margin-top: 8px; color: var(--lc-ink-3); font-size: 13px; }
+.lc-doc-body { display: grid; grid-template-columns: minmax(0, 720px); justify-content: center; gap: 56px; margin-top: 36px; padding-top: 32px; border-top: 1px solid var(--lc-line); }
+.lc-doc-body.has-toc { grid-template-columns: 200px minmax(0, 720px); justify-content: start; }
+.lc-doc-toc { position: sticky; top: 88px; align-self: start; display: grid; gap: 2px; max-height: calc(100vh - 120px); overflow-y: auto; font-size: 13px; }
+.lc-doc-toc-title { margin-bottom: 8px; color: var(--lc-ink-3); font: 600 11.5px/1.4 var(--lc-font-mono); letter-spacing: .08em; }
+.lc-doc-toc a { padding: 5px 0 5px 12px; border-left: 2px solid var(--lc-line); color: var(--lc-ink-2); line-height: 1.45; }
+.lc-doc-toc a:hover { color: var(--lc-ink); }
+.lc-doc-toc a.active { border-left-color: var(--lc-ink); color: var(--lc-ink); font-weight: 600; }
+.lc-doc-state { padding: 56px 24px; border: 1px dashed var(--lc-line-2); border-radius: 12px; text-align: center; color: var(--lc-ink-2); font-size: 14px; }
+
+.lc-prose { min-width: 0; color: var(--lc-ink-2); font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+.lc-prose > :first-child { margin-top: 0; }
+.lc-prose h1, .lc-prose h2, .lc-prose h3, .lc-prose h4 { color: var(--lc-ink); font-weight: 700; line-height: 1.35; letter-spacing: -0.01em; scroll-margin-top: 96px; }
+.lc-prose h1 { margin: 40px 0 16px; font-size: 26px; }
+.lc-prose h2 { margin: 44px 0 14px; padding-top: 4px; font-size: 21px; }
+.lc-prose h3 { margin: 28px 0 10px; font-size: 17px; }
+.lc-prose h4 { margin: 22px 0 8px; font-size: 15px; }
+.lc-prose p, .lc-prose ul, .lc-prose ol, .lc-prose blockquote, .lc-prose pre, .lc-prose table { margin: 0 0 16px; }
+.lc-prose strong { color: var(--lc-ink); font-weight: 600; }
+.lc-prose a { color: var(--lc-ink); text-decoration: underline; text-decoration-color: var(--lc-accent); text-underline-offset: 3px; }
+.lc-prose a:hover { color: var(--lc-accent); }
+.lc-prose ul { padding-left: 20px; list-style: disc; }
+.lc-prose ol { padding-left: 22px; list-style: decimal; }
+.lc-prose li { margin: 4px 0; }
+.lc-prose li::marker { color: var(--lc-ink-3); }
+.lc-prose blockquote { padding: 2px 0 2px 16px; border-left: 2px solid var(--lc-line-2); color: var(--lc-ink-2); }
+.lc-prose code { padding: 1px 6px; border: 1px solid var(--lc-line); border-radius: 5px; background: var(--lc-surface-2); color: var(--lc-ink); font: 0.88em var(--lc-font-mono); }
+.lc-prose pre { padding: 14px 16px; border: 1px solid var(--lc-code-line); border-radius: 10px; background: var(--lc-code-bg); color: var(--lc-code-ink); overflow-x: auto; line-height: 1.6; }
+.lc-prose pre code { padding: 0; border: 0; background: none; color: inherit; font-size: 13px; }
+.lc-prose table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 14px; }
+.lc-prose th, .lc-prose td { padding: 8px 12px; border-bottom: 1px solid var(--lc-line); text-align: left; vertical-align: top; }
+.lc-prose th { color: var(--lc-ink); font-weight: 600; white-space: nowrap; }
+.lc-prose img { display: block; max-width: 100%; height: auto; margin: 20px 0; border: 1px solid var(--lc-line); border-radius: 10px; }
+.lc-prose hr { margin: 32px 0; border: 0; border-top: 1px solid var(--lc-line); }
+
+@media (max-width: 1024px) {
+  .lc-doc-body.has-toc { grid-template-columns: minmax(0, 1fr); }
+  .lc-doc-toc { display: none; }
+}

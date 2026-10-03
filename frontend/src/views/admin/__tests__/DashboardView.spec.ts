@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import type { DashboardStats } from '@/types'
 import DashboardView from '../DashboardView.vue'
+import { chartPalette } from '@/utils/chartTheme'
 
 const { getSnapshotV2, getUserUsageTrend, getUserSpendingRanking } = vi.hoisted(() => ({
   getSnapshotV2: vi.fn(),
@@ -210,14 +211,14 @@ describe('admin DashboardView', () => {
     await flushPromises()
     expect(
       JSON.parse(wrapper.find('.recent-usage-options').text()).plugins.legend.labels.color
-    ).toBe('#e5e7eb')
+    ).toBe(chartPalette(true).text)
 
     document.documentElement.classList.remove('dark')
     await flushPromises()
 
     const lightOptions = JSON.parse(wrapper.find('.recent-usage-options').text())
-    expect(lightOptions.plugins.legend.labels.color).toBe('#374151')
-    expect(lightOptions.scales.x.ticks.color).toBe('#374151')
+    expect(lightOptions.plugins.legend.labels.color).toBe(chartPalette(false).text)
+    expect(lightOptions.scales.x.ticks.color).toBe(chartPalette(false).text)
 
     wrapper.unmount()
   })

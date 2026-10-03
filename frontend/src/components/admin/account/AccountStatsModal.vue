@@ -502,8 +502,8 @@ const isDarkMode = computed(() => {
 
 // Chart colors
 const chartColors = computed(() => ({
-  text: isDarkMode.value ? '#e5e7eb' : '#374151',
-  grid: isDarkMode.value ? '#374151' : '#e5e7eb'
+  text: isDarkMode.value ? '#cfcfca' : '#3f3f39',
+  grid: isDarkMode.value ? '#26262a' : '#e3e3de'
 }))
 
 // Line chart data
@@ -516,7 +516,7 @@ const trendChartData = computed(() => {
       {
         label: t('usage.accountBilled') + ' (USD)',
         data: stats.value.history.map((h) => h.actual_cost),
-        borderColor: '#3b82f6',
+        borderColor: '#4f6fd0',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
         tension: 0.3,
@@ -525,7 +525,7 @@ const trendChartData = computed(() => {
       {
         label: t('usage.userBilled') + ' (USD)',
         data: stats.value.history.map((h) => h.user_cost),
-        borderColor: '#10b981',
+        borderColor: '#2f7a50',
         backgroundColor: 'rgba(16, 185, 129, 0.08)',
         fill: false,
         tension: 0.3,
@@ -601,7 +601,7 @@ const lineChartOptions = computed(() => ({
         color: chartColors.value.grid
       },
       ticks: {
-        color: '#3b82f6',
+        color: '#4f6fd0',
         font: {
           size: 10
         },
@@ -610,7 +610,7 @@ const lineChartOptions = computed(() => ({
       title: {
         display: true,
         text: t('usage.accountBilled') + ' (USD)',
-        color: '#3b82f6',
+        color: '#4f6fd0',
         font: {
           size: 11
         }

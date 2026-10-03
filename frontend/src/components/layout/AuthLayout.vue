@@ -24,7 +24,9 @@
       </div>
     </main>
 
-    <footer class="lc-copyright">&copy; {{ currentYear }} {{ siteName }}</footer>
+    <footer class="lc-copyright">
+      &copy; {{ currentYear }} {{ siteName }}<template v-if="qqGroupNumber"> · QQ 群 <span class="lc-mono">{{ qqGroupNumber }}</span></template>
+    </footer>
   </div>
 </template>
 
@@ -45,6 +47,9 @@ const apiHost = computed(() => {
   const url = appStore.cachedPublicSettings?.api_base_url?.trim() || window.location.origin
   return url.replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/\/v1$/i, '')
 })
+const qqGroupNumber = computed(() =>
+  (appStore.cachedPublicSettings?.qq_group?.trim() || '').replace(/^QQ\s*(?:群)?\s*[:：]?\s*/i, '')
+)
 const currentYear = new Date().getFullYear()
 
 onMounted(() => { void appStore.fetchPublicSettings() })

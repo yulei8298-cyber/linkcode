@@ -1,0 +1,269 @@
+/* 控制台与管理后台共用的数据展示样式（设计稿 A）。
+   类名统一用 dash- 前缀：KPI 卡、指标条、工具栏、分段切换、状态点。
+   只在这里定义一次，各页面按需组合，不在页面里重复写 scoped 样式。 */
+.dash-kpi {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dash-kpi.is-simple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dash-kpi-card {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 20px;
+}
+
+.dash-kpi-card dt {
+  font-size: 13px;
+  color: var(--lc-ink-3);
+}
+
+.dash-kpi-card dd {
+  font: 600 26px/1.2 var(--lc-font-mono);
+  letter-spacing: -0.02em;
+  color: var(--lc-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-kpi-balance {
+  background: radial-gradient(120% 140% at 100% 0%, var(--lc-accent-soft), transparent 55%), var(--lc-surface);
+}
+
+.dash-kpi-balance dd {
+  font-size: 34px;
+}
+
+.dash-kpi-meta {
+  font-size: 12.5px;
+  color: var(--lc-ink-3);
+}
+
+.dash-kpi-meta b {
+  font-family: var(--lc-font-mono);
+  font-weight: 500;
+  color: var(--lc-ink-2);
+}
+
+.dash-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dash-strip > div {
+  min-width: 0;
+  padding: 14px 20px;
+  border-left: 1px solid var(--lc-line);
+}
+
+.dash-strip > div:first-child {
+  border-left: 0;
+}
+
+.dash-strip dt {
+  font-size: 12.5px;
+  color: var(--lc-ink-3);
+}
+
+.dash-strip dd {
+  margin-top: 2px;
+  font: 600 18px/1.3 var(--lc-font-mono);
+  color: var(--lc-ink);
+}
+
+.dash-strip dd small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lc-ink-3);
+}
+
+.dash-strip p {
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--lc-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .dash-kpi {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dash-kpi-balance {
+    grid-column: 1 / -1;
+  }
+
+  .dash-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-strip > div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .dash-strip > div:nth-child(n + 3) {
+    border-top: 1px solid var(--lc-line);
+  }
+}
+
+@media (max-width: 640px) {
+  .dash-kpi,
+  .dash-kpi.is-simple {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .dash-kpi-card {
+    padding: 14px;
+  }
+
+  .dash-kpi-card dd {
+    font-size: 20px;
+  }
+
+  .dash-kpi-balance dd {
+    font-size: 28px;
+  }
+
+  .dash-kpi > .card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* 四张等宽 KPI（管理后台等没有主卡的场景） */
+.dash-kpi.is-even {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dash-kpi-card dd.is-accent {
+  color: var(--lc-accent);
+}
+
+.dash-strip.is-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+/* 工具栏：筛选条件在左，次要操作在右 */
+.dash-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 12px 16px;
+}
+
+.dash-toolbar-label {
+  font-size: 13px;
+  color: var(--lc-ink-3);
+}
+
+.dash-toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* 工具栏右侧的快捷入口与筛选项之间用竖线隔开 */
+.dash-toolbar-end .dash-shortcuts {
+  padding-right: 14px;
+  border-right: 1px solid var(--lc-line);
+}
+
+.dash-toolbar-end .dash-shortcuts button {
+  padding: 5px 10px;
+  font-size: 12.5px;
+}
+
+/* 分段切换：替代各处自写的蓝色高亮按钮组 */
+.dash-seg {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--lc-line);
+  border-radius: 8px;
+  background: var(--lc-surface-2);
+}
+
+.dash-seg button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--lc-ink-2);
+}
+
+.dash-seg button:hover {
+  color: var(--lc-ink);
+}
+
+.dash-seg button[aria-pressed='true'] {
+  background: var(--lc-surface);
+  color: var(--lc-ink);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* 状态方点：只表达真实状态 */
+.dash-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 2px;
+  background: var(--lc-ink-3);
+  vertical-align: 1px;
+}
+
+.dash-dot.ok { background: var(--lc-ok); }
+.dash-dot.warn { background: var(--lc-warn); }
+.dash-dot.bad { background: var(--lc-bad); }
+
+/* 快捷入口：一行文字链接，不做彩色图标卡 */
+.dash-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dash-shortcuts a,
+.dash-shortcuts button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--lc-line);
+  border-radius: 8px;
+  background: var(--lc-surface);
+  font-size: 13px;
+  color: var(--lc-ink-2);
+}
+
+.dash-shortcuts a:hover,
+.dash-shortcuts button:hover {
+  border-color: var(--lc-line-2);
+  color: var(--lc-ink);
+}
+
+@media (max-width: 1100px) {
+  .dash-kpi.is-even {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-strip.is-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dash-kpi.is-even > .card:last-child {
+    grid-column: auto;
+  }
+}

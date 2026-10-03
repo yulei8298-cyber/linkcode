@@ -1,4 +1,15 @@
 /** @type {import('tailwindcss').Config} */
+
+// 设计稿 A 的低饱和色系。全站页面大量直接使用 Tailwind 彩色类（bg-blue-100、text-emerald-600…），
+// 这里把各彩色色阶统一映射到同一组克制色调，保留「绿=正常、红=异常、黄=警告」的语义，
+// 不改任何类名即可让所有页面换到新视觉。600 / 400 两档分别对齐 lc-tokens 的浅色 / 深色状态色。
+// 品牌橙：primary 与 orange 共用，页面里散落的 orange 类也落到品牌色上
+const BRAND = { 50: '#fff5ef', 100: '#ffe8da', 200: '#ffcdb0', 300: '#ffab7d', 400: '#ff8a4c', 500: '#f0702f', 600: '#d4561b', 700: '#b0440f', 800: '#8a3610', 900: '#6f2e11', 950: '#3c1506' }
+const OK = { 50: '#eef6f1', 100: '#dcede2', 200: '#b9dbc6', 300: '#96cfac', 400: '#6fb88a', 500: '#4a9a6b', 600: '#2f7a50', 700: '#276643', 800: '#215238', 900: '#1c432f', 950: '#0f261a' }
+const INFO = { 50: '#eff3f6', 100: '#dfe7ed', 200: '#c2d2de', 300: '#b0c8d9', 400: '#86a7bf', 500: '#5f8199', 600: '#48667c', 700: '#3c5567', 800: '#334655', 900: '#2c3b47', 950: '#1a242c' }
+const WARN = { 50: '#fbf5e9', 100: '#f6eacd', 200: '#edd49e', 300: '#e6bf78', 400: '#e0a85a', 500: '#c38a36', 600: '#a37422', 700: '#8f6416', 800: '#714f15', 900: '#5c4115', 950: '#33230a' }
+const BAD = { 50: '#fbf1ef', 100: '#f7e0dc', 200: '#efc0b9', 300: '#e69e94', 400: '#e07d70', 500: '#c85a4d', 600: '#b0453a', 700: '#923a31', 800: '#78322b', 900: '#642c27', 950: '#371411' }
+const VIOLET = { 50: '#f5f2f9', 100: '#ebe4f3', 200: '#d6c9e7', 300: '#bda9d8', 400: '#a68cc8', 500: '#8d71b3', 600: '#775c9c', 700: '#634c82', 800: '#52406b', 900: '#453759', 950: '#2a2036' }
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   darkMode: 'class',
@@ -6,19 +17,7 @@ export default {
     extend: {
       colors: {
         // 主色 - LinkCode 品牌橙：只用于强调（链接、选中、焦点、关键数据），大面积主按钮用墨黑/纸白
-        primary: {
-          50: '#fff5ef',
-          100: '#ffe8da',
-          200: '#ffcdb0',
-          300: '#ffab7d',
-          400: '#ff8a4c',
-          500: '#f0702f',
-          600: '#d4561b',
-          700: '#b0440f',
-          800: '#8a3610',
-          900: '#6f2e11',
-          950: '#3c1506'
-        },
+        primary: BRAND,
         // 浅色中性色 - 暖灰，替代默认冷灰
         gray: {
           50: '#f6f6f3',
@@ -60,7 +59,13 @@ export default {
           800: '#141415',
           900: '#0f0f10',
           950: '#0b0b0c'
-        }
+        },
+        green: OK, emerald: OK, teal: OK, lime: OK,
+        blue: INFO, sky: INFO, cyan: INFO, indigo: INFO,
+        amber: WARN, yellow: WARN,
+        red: BAD, rose: BAD, pink: BAD,
+        violet: VIOLET, purple: VIOLET, fuchsia: VIOLET,
+        orange: BRAND
       },
       fontFamily: {
         sans: [
@@ -139,8 +144,10 @@ export default {
       backdropBlur: {
         xs: '2px'
       },
+      // 设计稿 A 的卡片圆角上限 16px：页面里的大圆角（3xl / 4xl）统一收敛，避免「气泡卡片」观感
       borderRadius: {
-        '4xl': '2rem'
+        '3xl': '1rem',
+        '4xl': '1rem'
       }
     }
   },

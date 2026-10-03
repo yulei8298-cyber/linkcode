@@ -14,6 +14,12 @@
         </p>
       </div>
 
+      <AuthCallbackStatus
+        v-if="!(needsInvitation || needsAdoptionConfirmation || needsChooser || needsCreateAccount || needsBindLogin || needsTotpChallenge)"
+        :processing="isProcessing"
+        :message="errorMessage"
+      />
+
       <transition name="fade">
         <div
           v-if="
@@ -320,6 +326,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { AuthLayout } from '@/components/layout'
+import AuthCallbackStatus from '@/components/auth/AuthCallbackStatus.vue'
 import PendingOAuthCreateAccountForm, {
   type PendingOAuthCreateAccountPayload
 } from '@/components/auth/PendingOAuthCreateAccountForm.vue'

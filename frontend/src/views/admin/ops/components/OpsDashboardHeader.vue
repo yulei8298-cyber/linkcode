@@ -440,9 +440,9 @@ const healthScoreColor = computed(() => {
   if (isSystemIdle.value) return '#9ca3af' // gray-400
   const score = healthScoreValue.value
   if (score == null) return '#9ca3af'
-  if (score >= 90) return '#10b981' // green
-  if (score >= 60) return '#f59e0b' // yellow
-  return '#ef4444' // red
+  if (score >= 90) return '#2f7a50' // green
+  if (score >= 60) return '#a8781f' // yellow
+  return '#b0453a' // red
 })
 
 const healthScoreClass = computed(() => {
@@ -863,7 +863,8 @@ function handleToolbarRefresh() {
     <!-- Top Toolbar -->
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4 dark:border-dark-700">
       <div>
-        <h1 class="flex items-center gap-2 text-xl font-black text-gray-900 dark:text-white">
+        <!-- 页面标题已在顶栏显示，只在全屏（无顶栏）时重复出现 -->
+        <h1 v-if="props.fullscreen" class="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white">
           <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               stroke-linecap="round"

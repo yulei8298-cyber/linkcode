@@ -113,6 +113,8 @@ import { useI18n } from 'vue-i18n'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Doughnut } from 'vue-chartjs'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import { useDocumentDarkMode } from '@/composables/useDocumentDarkMode'
+import { chartPalette } from '@/utils/chartTheme'
 import UserBreakdownSubTable from './UserBreakdownSubTable.vue'
 import type { GroupStat, UserBreakdownItem } from '@/types'
 import { getUserBreakdown } from '@/api/admin/dashboard'
@@ -175,18 +177,9 @@ const toggleBreakdown = async (type: string, id: number | string) => {
   }
 }
 
-const chartColors = [
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#14b8a6',
-  '#f97316',
-  '#6366f1',
-  '#84cc16'
-]
+// 分类配色跟随深浅主题，统一取自 chartTheme
+const { isDarkMode } = useDocumentDarkMode()
+const chartColors = computed(() => chartPalette(isDarkMode.value).series)
 
 const displayGroupStats = computed(() => {
   if (!props.groupStats?.length) return []
@@ -203,7 +196,7 @@ const chartData = computed(() => {
     datasets: [
       {
         data: displayGroupStats.value.map((g) => toFiniteNumber(props.metric === 'actual_cost' ? g.actual_cost : g.total_tokens)),
-        backgroundColor: chartColors.slice(0, displayGroupStats.value.length),
+        backgroundColor: chartColors.value.slice(0, displayGroupStats.value.length),
         borderWidth: 0
       }
     ]

@@ -1063,7 +1063,10 @@ export default {
     serverError: '服务器错误',
     networkError: '网络错误',
     timeout: '请求超时',
-    tryAgain: '请重试'
+    tryAgain: '请重试',
+    pageNotFoundHint: '地址可能输错了，或者这个页面已经下线。',
+    goBack: '返回上一页',
+    backDashboard: '回到控制台'
   },
 
   // Dates

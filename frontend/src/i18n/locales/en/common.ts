@@ -168,6 +168,10 @@ export default {
       billing: 'Usage & Billing',
       tools: 'Tools',
       account: 'Account',
+      resources: 'Users & Resources',
+      operations: 'Operations & Security',
+      commerce: 'Marketing & Orders',
+      records: 'Records & Settings',
       more: 'More'
     },
     dashboard: 'Dashboard',
@@ -197,6 +201,7 @@ export default {
     promoCodes: 'Promo Codes',
     settings: 'Settings',
     myAccount: 'My Account',
+    myOverview: 'My Overview',
     lightMode: 'Light Mode',
     darkMode: 'Dark Mode',
     collapse: 'Collapse',
@@ -229,7 +234,13 @@ export default {
   // Auth
   auth: {
     welcomeBack: 'Welcome Back',
-    signInToAccount: 'Sign in to your account to continue',
+    signInToAccount: 'Sign in to manage keys, usage and balance',
+    callbackStatus: {
+      failedTitle: 'Sign-in was not completed',
+      failedHint: 'Go back to the sign-in page and try again. Contact support if it keeps happening.',
+      backToLogin: 'Back to sign in',
+      backHome: 'Back to home'
+    },
     signIn: 'Sign In',
     signingIn: 'Signing in...',
     passkeySignIn: 'Sign in with a passkey',
@@ -319,9 +330,9 @@ export default {
     linuxdo: {
       signIn: 'Continue with Linux.do',
       orContinue: 'or continue with email',
-      callbackTitle: 'Signing you in',
+      callbackTitle: 'Sign in with LinuxDo',
       callbackProcessing: 'Completing login, please wait...',
-      callbackHint: 'If you are not redirected automatically, go back to the login page and try again.',
+      callbackHint: 'Follow the steps below to continue.',
       callbackMissingToken: 'Missing login token, please try again.',
       backToLogin: 'Back to Login',
       invitationRequired: 'This Linux.do account is not yet registered. The site requires an invitation code — please enter one to complete registration.',
@@ -332,9 +343,9 @@ export default {
     },
     dingtalk: {
       signIn: 'Continue with DingTalk',
-      callbackTitle: 'Signing you in with DingTalk',
+      callbackTitle: 'Sign in with DingTalk',
       callbackProcessing: 'Completing DingTalk login, please wait...',
-      callbackHint: 'If you are not redirected automatically, go back to the login page and try again.',
+      callbackHint: 'Follow the steps below to continue.',
       callbackMissingToken: 'Missing login token, please try again.',
       backToLogin: 'Back to Login',
       invitationRequired: 'This DingTalk account is not yet registered. The site requires an invitation code — please enter one to complete registration.',
@@ -363,9 +374,9 @@ export default {
     },
     oidc: {
       signIn: 'Continue with {providerName}',
-      callbackTitle: 'Signing you in with {providerName}',
+      callbackTitle: 'Sign in with {providerName}',
       callbackProcessing: 'Completing login with {providerName}, please wait...',
-      callbackHint: 'If you are not redirected automatically, go back to the login page and try again.',
+      callbackHint: 'Follow the steps below to continue.',
       callbackMissingToken: 'Missing login token, please try again.',
       backToLogin: 'Back to Login',
       invitationRequired:

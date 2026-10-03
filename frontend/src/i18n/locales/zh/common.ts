@@ -168,6 +168,10 @@ export default {
       billing: '用量与账务',
       tools: '工具',
       account: '账户',
+      resources: '用户与资源',
+      operations: '运营与安全',
+      commerce: '营销与订单',
+      records: '记录与设置',
       more: '更多'
     },
     dashboard: '仪表盘',
@@ -197,6 +201,7 @@ export default {
     promoCodes: '优惠码',
     settings: '系统设置',
     myAccount: '我的账户',
+    myOverview: '我的概览',
     lightMode: '浅色模式',
     darkMode: '深色模式',
     collapse: '收起',
@@ -229,7 +234,13 @@ export default {
   // Auth
   auth: {
     welcomeBack: '欢迎回来',
-    signInToAccount: '登录您的账户以继续',
+    signInToAccount: '登录后管理密钥、查看用量和余额',
+    callbackStatus: {
+      failedTitle: '登录没有完成',
+      failedHint: '可以回到登录页重新发起，问题持续请在 QQ 群反馈。',
+      backToLogin: '返回登录',
+      backHome: '回到首页'
+    },
     signIn: '登录',
     signingIn: '登录中...',
     passkeySignIn: '使用 Passkey 登录',
@@ -318,9 +329,9 @@ export default {
     linuxdo: {
       signIn: '使用 Linux.do 登录',
       orContinue: '或使用邮箱密码继续',
-      callbackTitle: '正在完成登录',
+      callbackTitle: '使用 LinuxDo 登录',
       callbackProcessing: '正在验证登录信息，请稍候...',
-      callbackHint: '如果页面未自动跳转，请返回登录页重试。',
+      callbackHint: '按下方提示继续。',
       callbackMissingToken: '登录信息缺失，请返回重试。',
       backToLogin: '返回登录',
       invitationRequired: '该 Linux.do 账号尚未注册，站点已开启邀请码注册，请输入邀请码以完成注册。',
@@ -331,9 +342,9 @@ export default {
     },
     dingtalk: {
       signIn: '钉钉登录',
-      callbackTitle: '正在完成钉钉登录',
+      callbackTitle: '使用钉钉登录',
       callbackProcessing: '正在验证钉钉登录信息，请稍候...',
-      callbackHint: '如果页面未自动跳转，请返回登录页重试。',
+      callbackHint: '按下方提示继续。',
       callbackMissingToken: '登录信息缺失，请返回重试。',
       backToLogin: '返回登录',
       invitationRequired: '该钉钉账号尚未注册，站点已开启邀请码注册，请输入邀请码以完成注册。',
@@ -362,9 +373,9 @@ export default {
     },
     oidc: {
       signIn: '使用 {providerName} 登录',
-      callbackTitle: '正在完成 {providerName} 登录',
+      callbackTitle: '使用 {providerName} 登录',
       callbackProcessing: '正在验证 {providerName} 登录信息，请稍候...',
-      callbackHint: '如果页面未自动跳转，请返回登录页重试。',
+      callbackHint: '按下方提示继续。',
       callbackMissingToken: '登录信息缺失，请返回重试。',
       backToLogin: '返回登录',
       invitationRequired: '该 {providerName} 账号尚未注册，站点已开启邀请码注册，请输入邀请码以完成注册。',

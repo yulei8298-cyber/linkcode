@@ -55,12 +55,7 @@
       </template>
 
       <template #actions>
-        <div class="flex flex-wrap items-end justify-between gap-3">
-          <div class="min-w-0">
-            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-dark-50">{{ t('keys.title') }}</h1>
-            <p class="mt-1 text-sm text-gray-600 dark:text-dark-300">{{ t('keys.description') }}</p>
-          </div>
-          <div class="flex gap-3">
+        <div class="flex justify-end gap-3">
           <button
             @click="loadApiKeys"
             :disabled="loading"
@@ -105,7 +100,6 @@
             <Icon name="plus" size="md" class="mr-2" />
             {{ t('keys.createKey') }}
           </button>
-          </div>
         </div>
       </template>
 

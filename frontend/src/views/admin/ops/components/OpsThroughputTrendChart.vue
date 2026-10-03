@@ -45,12 +45,12 @@ watch(
 
 const isDarkMode = computed(() => document.documentElement.classList.contains('dark'))
 const colors = computed(() => ({
-  blue: '#3b82f6',
-  blueAlpha: '#3b82f620',
-  green: '#10b981',
-  greenAlpha: '#10b98120',
-  grid: isDarkMode.value ? '#374151' : '#f3f4f6',
-  text: isDarkMode.value ? '#9ca3af' : '#6b7280'
+  blue: '#4f6fd0',
+  blueAlpha: '#4f6fd020',
+  green: '#2f7a50',
+  greenAlpha: '#2f7a5020',
+  grid: isDarkMode.value ? '#26262a' : '#e3e3de',
+  text: isDarkMode.value ? '#a6a6a1' : '#57574f'
 }))
 
 const totalRequests = computed(() => sumNumbers(props.points.map((p) => p.request_count)))
@@ -104,9 +104,9 @@ const options = computed(() => {
         labels: { color: c.text, usePointStyle: true, boxWidth: 6, font: { size: 10 } }
       },
       tooltip: {
-        backgroundColor: isDarkMode.value ? '#1f2937' : '#ffffff',
-        titleColor: isDarkMode.value ? '#f3f4f6' : '#111827',
-        bodyColor: isDarkMode.value ? '#d1d5db' : '#4b5563',
+        backgroundColor: isDarkMode.value ? '#141415' : '#ffffff',
+        titleColor: isDarkMode.value ? '#f2f2ef' : '#141413',
+        bodyColor: isDarkMode.value ? '#cfcfca' : '#57574f',
         borderColor: c.grid,
         borderWidth: 1,
         padding: 10,

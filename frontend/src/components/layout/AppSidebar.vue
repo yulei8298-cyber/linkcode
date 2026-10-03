@@ -41,7 +41,17 @@
       <template v-if="isAdmin">
         <!-- Admin Section -->
         <div class="sidebar-section">
-          <template v-for="item in adminNavItems" :key="item.path">
+          <template v-for="(item, index) in adminNavItems" :key="item.path">
+            <div
+              v-if="sectionTitleAt(adminNavItems, index)"
+              class="sidebar-section-title"
+              :class="{ 'sidebar-section-title-collapsed': sidebarCollapsed }"
+              :aria-hidden="sidebarCollapsed ? 'true' : 'false'"
+            >
+              <span class="sidebar-section-title-text" :class="{ 'sidebar-section-title-text-collapsed': sidebarCollapsed }">
+                {{ sectionTitleAt(adminNavItems, index) }}
+              </span>
+            </div>
             <!-- Collapsible group (has children) -->
             <template v-if="item.children?.length">
               <button
@@ -801,16 +811,15 @@ const flagAdminPayment = () => adminSettingsStore.paymentEnabled
 const flagBatchImageAccess = () => canUseBatchImage.value
 
 // buildSelfNavItems 构造用户自己的导航项（用户端主菜单和管理员的"我的账户"子菜单共享这组声明）。
-// withDashboard=true 时包含仪表盘（用户端），false 时不含（管理员的个人区已经有独立仪表盘入口）。
+// withDashboard=true 时包含仪表盘（用户端）；管理员个人区用「我的概览」指向同一页面，
+// 避免管理员登录后落在 /dashboard、跳到其他页面就再也回不去。
 //
 // 条目按分组排列（分组标题见 NAV_SECTION_BY_PATH）：
 // 接入（密钥、模型广场、智力检测、可用渠道、渠道状态）→ 用量与账务 → 工具 → 账户。
 // 可用渠道紧挨渠道状态之上，让用户"先看自己能用什么、再看对应状态"。
 function buildSelfNavItems(withDashboard: boolean): NavItem[] {
   const items: NavItem[] = []
-  if (withDashboard) {
-    items.push({ path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon })
-  }
+  items.push({ path: '/dashboard', label: withDashboard ? t('nav.dashboard') : t('nav.myOverview'), icon: DashboardIcon })
   items.push(
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/model-plaza', query: { embedded: '1' }, label: t('nav.modelPlaza'), icon: DashboardIcon, featureFlag: makeSidebarFlag(FeatureFlags.modelPlaza) },
@@ -847,10 +856,31 @@ const NAV_SECTION_BY_PATH: Record<string, string> = {
   '/infinite-canvas': 'tools',
   '/batch-image': 'tools',
   '/profile': 'account',
+  // 管理后台：保持原有菜单顺序，只按业务插入分组标题
+  '/admin/users': 'resources',
+  '/admin/groups': 'resources',
+  '/admin/channels': 'resources',
+  '/admin/model-pricing': 'resources',
+  '/admin/subscriptions': 'resources',
+  '/admin/accounts': 'resources',
+  '/admin/plugins': 'resources',
+  '/admin/announcements': 'operations',
+  '/admin/proxies': 'operations',
+  '/admin/security-audit': 'operations',
+  '/admin/redeem': 'commerce',
+  '/admin/promo-codes': 'commerce',
+  '/admin/affiliates': 'commerce',
+  '/admin/orders': 'commerce',
+  '/admin/usage': 'records',
+  '/admin/audit-logs': 'records',
+  '/admin/settings': 'records',
 }
 
+// 概览类入口位于列表最上方，不加分组标题
+const NAV_PATHS_WITHOUT_SECTION = new Set(['/dashboard', '/admin/dashboard', '/admin/ops'])
+
 function navSection(item: NavItem): string {
-  if (item.path === '/dashboard') return ''
+  if (NAV_PATHS_WITHOUT_SECTION.has(item.path)) return ''
   return NAV_SECTION_BY_PATH[item.path] ?? 'more'
 }
 

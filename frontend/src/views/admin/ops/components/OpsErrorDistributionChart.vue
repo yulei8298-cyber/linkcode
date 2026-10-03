@@ -23,11 +23,11 @@ const { t } = useI18n()
 
 const isDarkMode = computed(() => document.documentElement.classList.contains('dark'))
 const colors = computed(() => ({
-  blue: '#3b82f6',
-  red: '#ef4444',
-  orange: '#f59e0b',
+  blue: '#4f6fd0',
+  red: '#b0453a',
+  orange: '#a8781f',
   gray: '#9ca3af',
-  text: isDarkMode.value ? '#9ca3af' : '#6b7280'
+  text: isDarkMode.value ? '#a6a6a1' : '#57574f'
 }))
 
 const totalSlaErrors = computed(() =>
@@ -100,9 +100,9 @@ const options = computed(() => ({
   plugins: {
     legend: { display: false },
     tooltip: {
-      backgroundColor: isDarkMode.value ? '#1f2937' : '#ffffff',
-      titleColor: isDarkMode.value ? '#f3f4f6' : '#111827',
-      bodyColor: isDarkMode.value ? '#d1d5db' : '#4b5563'
+      backgroundColor: isDarkMode.value ? '#141415' : '#ffffff',
+      titleColor: isDarkMode.value ? '#f2f2ef' : '#141413',
+      bodyColor: isDarkMode.value ? '#cfcfca' : '#57574f'
     }
   }
 }))

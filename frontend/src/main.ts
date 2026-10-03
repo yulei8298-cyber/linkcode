@@ -10,6 +10,7 @@ import { applyTheme, shouldUseDarkTheme } from '@/utils/theme'
 import './styles/lc-tokens.css'
 import './style.css'
 import './styles/portal.css'
+import './styles/console.css'
 
 function initIOSViewportZoomFix() {
   // iOS Safari 在输入框字号小于 16px 时聚焦会自动放大页面，且失焦后不会恢复。

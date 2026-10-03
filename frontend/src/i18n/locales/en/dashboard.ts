@@ -1059,7 +1059,10 @@ export default {
     serverError: 'Server error',
     networkError: 'Network error',
     timeout: 'Request timeout',
-    tryAgain: 'Please try again'
+    tryAgain: 'Please try again',
+    pageNotFoundHint: 'The address may be mistyped, or this page has been removed.',
+    goBack: 'Go back',
+    backDashboard: 'Back to dashboard'
   },
 
   // Dates
