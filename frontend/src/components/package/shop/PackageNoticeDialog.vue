@@ -61,7 +61,8 @@ const props = defineProps<{
   show: boolean
   text: string
   concurrency: number
-  maxFreezeDays: number
+  maxFreezeDaysWeek: number
+  maxFreezeDaysMonth: number
   /** 购买模式：必须读到底并勾选同意；为空时只是查看 */
   purchase: PackagePurchaseContext | null
 }>()
@@ -77,7 +78,11 @@ const read = ref(false)
 const agreed = ref(false)
 
 const lines = computed(() =>
-  parsePackageNotice(props.text, { concurrency: props.concurrency, maxFreezeDays: props.maxFreezeDays }),
+  parsePackageNotice(props.text, {
+    concurrency: props.concurrency,
+    maxFreezeDaysWeek: props.maxFreezeDaysWeek,
+    maxFreezeDaysMonth: props.maxFreezeDaysMonth,
+  }),
 )
 const purchaseHue = computed(() =>
   props.purchase ? packagePlanStyle(props.purchase.plan.cycle, props.purchase.plan.tier).hue : 'violet',

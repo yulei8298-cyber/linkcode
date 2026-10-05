@@ -33,7 +33,7 @@ afterEach(() => {
 
 async function mountOpen(purchase: { plan: PackagePlan; groupName: string } | null) {
   const wrapper = mount(PackageNoticeDialog, {
-    props: { show: false, text: '立即生效：付款后生效\n退款政策：不退款', concurrency: 5, maxFreezeDays: 7, purchase },
+    props: { show: false, text: '立即生效：付款后生效\n退款政策：不退款', concurrency: 5, maxFreezeDaysWeek: 7, maxFreezeDaysMonth: 15, purchase },
     attachTo: document.body,
   })
   await wrapper.setProps({ show: true })

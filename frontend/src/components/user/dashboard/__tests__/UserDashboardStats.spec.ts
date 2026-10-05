@@ -152,3 +152,26 @@ describe('UserDashboardStats 按平台拆分', () => {
     expect(w.html()).not.toContain('dashboard.platformBreakdown')
   })
 })
+
+describe('UserDashboardStats 累计充值卡片', () => {
+  const mountStats = (props: Record<string, unknown>) =>
+    mount(UserDashboardStats, { props: { stats: makeStats(), balance: 12.5, isSimple: false, ...props } })
+
+  it('显示累计充值金额，并带上说明文案', () => {
+    const wrapper = mountStats({ totalRecharged: 1234.5 })
+    const card = wrapper.get('[data-test="total-recharged"]')
+    expect(card.text()).toContain('dashboard.totalRecharged')
+    expect(card.text()).toContain('$1,234.50')
+    expect(card.text()).toContain('dashboard.totalRechargedHint')
+  })
+
+  it('未提供累计充值时按 $0.00 展示', () => {
+    expect(mountStats({}).get('[data-test="total-recharged"]').text()).toContain('$0.00')
+  })
+
+  it('简易模式没有余额，也不显示累计充值', () => {
+    const wrapper = mountStats({ isSimple: true, totalRecharged: 99 })
+    expect(wrapper.find('[data-test="total-recharged"]').exists()).toBe(false)
+    expect(wrapper.get('.dash-kpi').classes()).not.toContain('has-recharged')
+  })
+})

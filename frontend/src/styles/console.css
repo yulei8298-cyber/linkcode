@@ -11,6 +11,11 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* 余额主卡 + 累计充值 + 今日三项 */
+.dash-kpi.has-recharged {
+  grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr));
+}
+
 .dash-kpi-card {
   display: grid;
   align-content: start;
@@ -98,6 +103,11 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  /* 主卡占满一行，其余四张卡 2×2 */
+  .dash-kpi.has-recharged {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .dash-kpi-balance {
     grid-column: 1 / -1;
   }
@@ -136,6 +146,11 @@
 
   .dash-kpi > .card:last-child {
     grid-column: 1 / -1;
+  }
+
+  /* 有累计充值卡时四张小卡正好 2×2，最后一张不再单独占满一行 */
+  .dash-kpi.has-recharged > .card:last-child {
+    grid-column: auto;
   }
 }
 

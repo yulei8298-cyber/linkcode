@@ -8,6 +8,8 @@ export default {
     baseUrlCopied: '已复制接口地址',
     welcomeMessage: '欢迎回来！这是您账户的概览。',
     balance: '余额',
+    totalRecharged: '累计充值',
+    totalRechargedHint: '含兑换码与返利转入',
     apiKeys: 'API 密钥',
     todayRequests: '今日请求',
     todayCost: '今日消费',

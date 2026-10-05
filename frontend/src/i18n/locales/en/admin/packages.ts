@@ -45,7 +45,7 @@ export default {
     },
     notice: {
       title: 'Purchase notice',
-      desc: 'One item per line as "Title：Content". Text inside 〔〕 is highlighted, {conc} becomes the user\'s package concurrency and {cap} the freeze cap in days. Changing the text bumps the version and users must agree again.',
+      desc: 'One item per line as "Title：Content". Text inside 〔〕 is highlighted, {conc} becomes the user\'s package concurrency and {week} / {month} the freeze caps in days for weekly / monthly packages. Changing the text bumps the version and users must agree again.',
       version: 'Current version: v{n}',
       preview: 'Preview',
       reset: 'Restore default text',
@@ -56,7 +56,7 @@ export default {
       weekendTitle: 'Weekends (Sat, Sun)',
       weekendDesc: 'Always freezable, cannot be turned off; make-up workday weekends included.',
       fixed: 'Always on',
-      capTitle: 'Freeze cap per package',
+      capTitle: 'Freeze cap per package (weekly and monthly set separately)',
       capDesc: 'All freeze time of a package adds up; once the cap is reached it auto-unfreezes and cannot be frozen again.',
       daysUnit: 'days',
       holidayTitle: 'Public holidays (auto sync)',

@@ -6,7 +6,7 @@
         <div>
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.packages.notice.title') }}</h3>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {{ t('admin.packages.notice.desc', { conc: '{并发}', cap: '{冻结上限}' }) }}
+            {{ t('admin.packages.notice.desc', { conc: '{并发}', week: '{周卡冻结上限}', month: '{月卡冻结上限}' }) }}
           </p>
           <p class="mt-1 text-xs font-semibold text-gray-700 dark:text-gray-300">{{ t('admin.packages.notice.version', { n: settings.notice_version }) }}</p>
         </div>
@@ -23,7 +23,8 @@
       :show="previewOpen"
       :text="settings?.notice_text || ''"
       :concurrency="5"
-      :max-freeze-days="settings?.max_freeze_days || 0"
+      :max-freeze-days-week="settings?.max_freeze_days_week || 0"
+      :max-freeze-days-month="settings?.max_freeze_days_month || 0"
       :purchase="null"
       @close="previewOpen = false"
     />
@@ -52,7 +53,8 @@ async function save() {
     const s = settings.value
     const saved = await packagesAdminAPI.updateSettings({
       freeze_enabled: s.freeze_enabled,
-      max_freeze_days: s.max_freeze_days,
+      max_freeze_days_week: s.max_freeze_days_week,
+      max_freeze_days_month: s.max_freeze_days_month,
       holiday_sync_enabled: s.holiday_sync_enabled,
       holiday_source_url: s.holiday_source_url,
       notice_text: s.notice_text,

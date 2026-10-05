@@ -78,25 +78,25 @@ func (s *PackageService) UpdateSettings(ctx context.Context, in PackageSettings)
 		return PackageSettings{}, fmt.Errorf("save package settings: %w", err)
 	}
 	if current.FreezeEnabled && !in.FreezeEnabled {
-		s.unfreezeAll(ctx, PackageUnfreezeDisabled, in.FreezeCapSeconds())
+		s.unfreezeAll(ctx, PackageUnfreezeDisabled, in.FreezeCaps())
 	}
 	return in, nil
 }
 
-func (s *PackageService) unfreezeAll(ctx context.Context, reason string, capSeconds int64) {
+func (s *PackageService) unfreezeAll(ctx context.Context, reason string, caps PackageFreezeCaps) {
 	ids, err := s.repo.ListFrozenIDs(ctx)
 	if err != nil {
 		log.Printf("[Package] list frozen packages failed: %v", err)
 		return
 	}
-	s.unfreezeIDs(ctx, ids, reason, capSeconds)
+	s.unfreezeIDs(ctx, ids, reason, caps)
 }
 
-func (s *PackageService) unfreezeIDs(ctx context.Context, ids []int64, reason string, capSeconds int64) int {
+func (s *PackageService) unfreezeIDs(ctx context.Context, ids []int64, reason string, caps PackageFreezeCaps) int {
 	done := 0
 	for _, id := range ids {
 		pkg, err := s.repo.UnfreezePackage(ctx, PackageUnfreezeInput{
-			PackageID: id, Now: s.now(), Reason: reason, CapSeconds: capSeconds,
+			PackageID: id, Now: s.now(), Reason: reason, Caps: caps,
 		})
 		if err != nil {
 			log.Printf("[Package] unfreeze package %d (%s) failed: %v", id, reason, err)
@@ -164,9 +164,9 @@ func (s *PackageService) RunMaintenance(ctx context.Context) (int, int, error) {
 	if err != nil {
 		return len(expired), 0, err
 	}
-	ids, err := s.repo.ListFrozenOverCap(ctx, s.now(), settings.FreezeCapSeconds())
+	ids, err := s.repo.ListFrozenOverCap(ctx, s.now(), settings.FreezeCaps())
 	if err != nil {
 		return len(expired), 0, err
 	}
-	return len(expired), s.unfreezeIDs(ctx, ids, PackageUnfreezeCap, settings.FreezeCapSeconds()), nil
+	return len(expired), s.unfreezeIDs(ctx, ids, PackageUnfreezeCap, settings.FreezeCaps()), nil
 }

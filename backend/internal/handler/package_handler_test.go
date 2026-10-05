@@ -30,7 +30,7 @@ func (s *packageHandlerRepoStub) ListFreezeDays(context.Context, time.Time, time
 	return s.freezeDays, nil
 }
 
-func (s *packageHandlerRepoStub) FreezePackage(_ context.Context, id, userID int64, now time.Time, _ int64) (*service.UserPackage, error) {
+func (s *packageHandlerRepoStub) FreezePackage(_ context.Context, id, userID int64, now time.Time, _ service.PackageFreezeCaps) (*service.UserPackage, error) {
 	s.frozenID = id
 	return &service.UserPackage{ID: id, UserID: userID, GroupID: 7, Status: service.PackageStatusFrozen, FrozenAt: &now}, nil
 }
@@ -89,7 +89,8 @@ func TestPackageHandler_ShopReturnsPlansNoticeAndConcurrency(t *testing.T) {
 	require.EqualValues(t, 1, notice["version"])
 	require.Contains(t, notice["text"], "立即生效")
 	require.EqualValues(t, 6, data["package_concurrency"], "返回当前用户的套餐并发")
-	require.EqualValues(t, service.DefaultPackageMaxFreezeDay, data["max_freeze_days"])
+	require.EqualValues(t, service.DefaultPackageMaxFreezeDayWeek, data["max_freeze_days_week"])
+	require.EqualValues(t, service.DefaultPackageMaxFreezeDayMonth, data["max_freeze_days_month"])
 }
 
 func TestPackageHandler_CalendarRejectsBadMonth(t *testing.T) {

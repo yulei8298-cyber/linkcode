@@ -8,9 +8,9 @@
         <dt>{{ t('packages.freezeDialog.expires') }}</dt>
         <dd class="pkg-mono">{{ formatDateTimeToMinute(item.expires_at) }}</dd>
         <dt>{{ t('packages.freezeDialog.left') }}</dt>
-        <dd>{{ t('packages.freezeDialog.leftValue', { left: leftLabel, max: maxFreezeDays }) }}</dd>
+        <dd>{{ t('packages.freezeDialog.leftValue', { left: leftLabel, max: item.max_freeze_days }) }}</dd>
         <dt>{{ t('packages.freezeDialog.unfreeze') }}</dt>
-        <dd>{{ t('packages.freezeDialog.unfreezeValue', { max: maxFreezeDays }) }}</dd>
+        <dd>{{ t('packages.freezeDialog.unfreezeValue', { max: item.max_freeze_days }) }}</dd>
         <dt>{{ t('packages.freezeDialog.after') }}</dt>
         <dd>{{ t('packages.freezeDialog.afterValue') }}</dd>
       </dl>
@@ -37,7 +37,6 @@ import { splitDuration } from '../packageUtils'
 const props = defineProps<{
   item: UserPackageView | null
   todayLabel: string
-  maxFreezeDays: number
   busy: boolean
 }>()
 

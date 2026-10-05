@@ -26,7 +26,7 @@
       </div>
       <div v-if="isFrozen" class="item-ice">
         <Icon name="clock" size="sm" />
-        {{ t('packages.mine.frozenNote', { time: formatDateTimeToMinute(item.frozen_at), used: frozenDaysLabel, max: maxFreezeDays }) }}
+        {{ t('packages.mine.frozenNote', { time: formatDateTimeToMinute(item.frozen_at), used: frozenDaysLabel, max: item.max_freeze_days }) }}
       </div>
     </div>
 
@@ -35,7 +35,7 @@
         <button type="button" class="pkg-btn pkg-btn-sm pkg-btn-warm" :disabled="busy" data-test="package-unfreeze" @click="emit('unfreeze', item)">
           {{ t('packages.mine.unfreezeBtn') }}
         </button>
-        <small>{{ t('packages.mine.frozenUsed', { used: frozenDaysLabel, max: maxFreezeDays }) }}</small>
+        <small>{{ t('packages.mine.frozenUsed', { used: frozenDaysLabel, max: item.max_freeze_days }) }}</small>
       </template>
       <template v-else-if="freezeEnabled">
         <button
@@ -73,7 +73,6 @@ const props = defineProps<{
   freezeEnabled: boolean
   todayFreezable: boolean
   nextFreezableDate: string
-  maxFreezeDays: number
   busy: boolean
 }>()
 

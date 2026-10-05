@@ -1,10 +1,17 @@
 <template>
   <!-- Row 1：余额（主卡）+ 今日三项 -->
-  <dl class="dash-kpi" :class="{ 'is-simple': isSimple }">
+  <dl class="dash-kpi" :class="{ 'is-simple': isSimple, 'has-recharged': !isSimple }">
     <div v-if="!isSimple" class="card dash-kpi-card dash-kpi-balance">
       <dt>{{ t('dashboard.balance') }}</dt>
       <dd>${{ formatBalance(balance) }}</dd>
       <p class="dash-kpi-meta">{{ t('common.available') }}</p>
+    </div>
+
+    <!-- 累计充值：来自用户的 total_recharged，含兑换码与返利转入的入账 -->
+    <div v-if="!isSimple" class="card dash-kpi-card" data-test="total-recharged">
+      <dt>{{ t('dashboard.totalRecharged') }}</dt>
+      <dd>${{ formatBalance(totalRecharged) }}</dd>
+      <p class="dash-kpi-meta">{{ t('dashboard.totalRechargedHint') }}</p>
     </div>
 
     <div class="card dash-kpi-card">
@@ -169,12 +176,14 @@ interface FusedPlatformCard {
   quota?: PlatformQuotaItem
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   stats: UserStatsType
   balance: number
+  /** 累计充值金额（美元），缺省按 0 展示 */
+  totalRecharged?: number
   isSimple: boolean
   platformQuotas?: PlatformQuotaItem[] | null
-}>()
+}>(), { totalRecharged: 0 })
 const { t } = useI18n()
 
 const PLATFORM_LABELS: Record<string, string> = {

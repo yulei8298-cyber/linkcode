@@ -40,7 +40,9 @@ export interface PackageShop {
   groups: PackageShopGroup[]
   notice: PackageNotice
   freeze_enabled: boolean
-  max_freeze_days: number
+  /** 单张周卡 / 月卡的累计冻结上限（天），分开设置 */
+  max_freeze_days_week: number
+  max_freeze_days_month: number
   package_concurrency: number
 }
 
@@ -69,6 +71,8 @@ export interface UserPackageView extends UserPackage {
   remaining_usd: number
   frozen_seconds: number
   freeze_left_seconds: number
+  /** 这张套餐（按周卡 / 月卡）的累计冻结上限（天） */
+  max_freeze_days: number
   /** 同分组内的扣费顺序，冻结或已结束为 0 */
   deduct_order: number
 }
@@ -86,7 +90,8 @@ export interface PackageMine {
   ended: UserPackageView[]
   package_concurrency: number
   freeze_enabled: boolean
-  max_freeze_days: number
+  max_freeze_days_week: number
+  max_freeze_days_month: number
   today: PackageCalendarDay
   next_freezable?: PackageCalendarDay
 }

@@ -13,6 +13,7 @@ type UserPackageView struct {
 	UserPackage
 	GroupName         string  `json:"group_name"`
 	RemainingUSD      float64 `json:"remaining_usd"`
+	MaxFreezeDays     int     `json:"max_freeze_days"`     // 这张套餐（按周卡 / 月卡）的累计冻结上限（天）
 	FrozenSeconds     int64   `json:"frozen_seconds"`      // 截至现在的累计冻结秒数
 	FreezeLeftSeconds int64   `json:"freeze_left_seconds"` // 还可冻结的秒数
 	DeductOrder       int     `json:"deduct_order"`        // 同分组内的扣费顺序，冻结或已结束为 0
@@ -24,7 +25,8 @@ type PackageMine struct {
 	Ended              []UserPackageView   `json:"ended"`
 	PackageConcurrency int                 `json:"package_concurrency"`
 	FreezeEnabled      bool                `json:"freeze_enabled"`
-	MaxFreezeDays      int                 `json:"max_freeze_days"`
+	MaxFreezeDaysWeek  int                 `json:"max_freeze_days_week"`
+	MaxFreezeDaysMonth int                 `json:"max_freeze_days_month"`
 	Today              PackageCalendarDay  `json:"today"`
 	NextFreezable      *PackageCalendarDay `json:"next_freezable,omitempty"`
 }
@@ -52,15 +54,16 @@ func (s *PackageService) GetMine(ctx context.Context, userID int64) (*PackageMin
 		Ended:              []UserPackageView{},
 		PackageConcurrency: s.UserPackageConcurrency(ctx, userID),
 		FreezeEnabled:      settings.FreezeEnabled,
-		MaxFreezeDays:      settings.MaxFreezeDays,
+		MaxFreezeDaysWeek:  settings.MaxFreezeDaysWeek,
+		MaxFreezeDaysMonth: settings.MaxFreezeDaysMonth,
 	}
 
 	groupNames := map[int64]string{}
 	order := map[int64]int{}
-	capSeconds := settings.FreezeCapSeconds()
+	caps := settings.FreezeCaps()
 	for _, p := range pkgs {
-		view := UserPackageView{UserPackage: p, RemainingUSD: p.RemainingUSD(), FrozenSeconds: p.FrozenSecondsAt(now)}
-		if left := capSeconds - view.FrozenSeconds; left > 0 {
+		view := UserPackageView{UserPackage: p, RemainingUSD: p.RemainingUSD(), FrozenSeconds: p.FrozenSecondsAt(now), MaxFreezeDays: settings.MaxFreezeDaysFor(p.Cycle)}
+		if left := caps.For(p.Cycle) - view.FrozenSeconds; left > 0 {
 			view.FreezeLeftSeconds = left
 		}
 		view.GroupName = s.groupName(ctx, groupNames, p.GroupID)
@@ -137,7 +140,7 @@ func (s *PackageService) Freeze(ctx context.Context, userID, packageID int64) (*
 	if !newPackageDayIndex(days).classify(now, true).Freezable {
 		return nil, ErrPackageFreezeNotToday
 	}
-	pkg, err := s.repo.FreezePackage(ctx, packageID, userID, now, settings.FreezeCapSeconds())
+	pkg, err := s.repo.FreezePackage(ctx, packageID, userID, now, settings.FreezeCaps())
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +164,7 @@ func (s *PackageService) unfreezeOne(ctx context.Context, packageID int64, userI
 		return nil, err
 	}
 	pkg, err := s.repo.UnfreezePackage(ctx, PackageUnfreezeInput{
-		PackageID: packageID, UserID: userID, Now: s.now(), Reason: reason, CapSeconds: settings.FreezeCapSeconds(),
+		PackageID: packageID, UserID: userID, Now: s.now(), Reason: reason, Caps: settings.FreezeCaps(),
 	})
 	if err != nil {
 		return nil, err

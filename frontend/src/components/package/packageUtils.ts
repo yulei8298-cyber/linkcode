@@ -59,13 +59,14 @@ export interface NoticeLine {
 
 export interface NoticeVars {
   concurrency: number
-  maxFreezeDays: number
+  maxFreezeDaysWeek: number
+  maxFreezeDaysMonth: number
 }
 
 const NOTICE_WARN_TITLES = ['使用规则', '退款']
 
 /**
- * 解析购买须知：每行「标题：内容」，〔〕内文字高亮，{并发}、{冻结上限} 替换为实际值。
+ * 解析购买须知：每行「标题：内容」，〔〕内文字高亮，{并发}、{周卡冻结上限}、{月卡冻结上限} 替换为实际值。
  * 返回结构化片段，由模板逐段渲染，不使用 v-html。
  */
 export function parsePackageNotice(text: string, vars: NoticeVars): NoticeLine[] {
@@ -76,7 +77,8 @@ export function parsePackageNotice(text: string, vars: NoticeVars): NoticeLine[]
     .map((line) => {
       const filled = line
         .replace(/\{并发\}/g, String(vars.concurrency))
-        .replace(/\{冻结上限\}/g, String(vars.maxFreezeDays))
+        .replace(/\{周卡冻结上限\}/g, String(vars.maxFreezeDaysWeek))
+        .replace(/\{月卡冻结上限\}/g, String(vars.maxFreezeDaysMonth))
       const sep = filled.indexOf('：')
       const title = sep > 0 ? filled.slice(0, sep) : ''
       const body = sep > 0 ? filled.slice(sep + 1) : filled

@@ -27,7 +27,8 @@ export interface PackageHolidaySyncState {
 
 export interface PackageSettings {
   freeze_enabled: boolean
-  max_freeze_days: number
+  max_freeze_days_week: number
+  max_freeze_days_month: number
   holiday_sync_enabled: boolean
   holiday_source_url: string
   notice_text: string

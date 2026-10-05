@@ -35,14 +35,14 @@ describe('packagePlanStyle', () => {
 describe('parsePackageNotice', () => {
   const text = [
     '并发说明：套餐不限 RPM，〔同时不超过 {并发} 个〕，超出拒绝。',
-    '冻结规则：每张最多冻结 {冻结上限} 天。',
+    '冻结规则：周卡最多冻结 {周卡冻结上限} 天，月卡最多冻结 {月卡冻结上限} 天。',
     '',
     '退款政策：〔付款后不退款〕',
     '没有标题的一行',
   ].join('\n')
 
   it('替换占位符、拆出高亮片段并标记需要醒目的条目', () => {
-    const lines = parsePackageNotice(text, { concurrency: 5, maxFreezeDays: 7 })
+    const lines = parsePackageNotice(text, { concurrency: 5, maxFreezeDaysWeek: 7, maxFreezeDaysMonth: 15 })
     expect(lines).toHaveLength(4)
     expect(lines[0].title).toBe('并发说明')
     expect(lines[0].segments).toEqual([
@@ -50,14 +50,14 @@ describe('parsePackageNotice', () => {
       { text: '同时不超过 5 个', highlight: true },
       { text: '，超出拒绝。', highlight: false },
     ])
-    expect(lines[1].segments[0].text).toBe('每张最多冻结 7 天。')
+    expect(lines[1].segments[0].text).toBe('周卡最多冻结 7 天，月卡最多冻结 15 天。')
     expect(lines[2]).toMatchObject({ title: '退款政策', warn: true })
     expect(lines[2].segments).toEqual([{ text: '付款后不退款', highlight: true }])
     expect(lines[3]).toMatchObject({ title: '', warn: false })
   })
 
   it('正文里的尖括号原样作为文本，不会被当成 HTML', () => {
-    const [line] = parsePackageNotice('提示：<img src=x onerror=alert(1)>', { concurrency: 5, maxFreezeDays: 7 })
+    const [line] = parsePackageNotice('提示：<img src=x onerror=alert(1)>', { concurrency: 5, maxFreezeDaysWeek: 7, maxFreezeDaysMonth: 15 })
     expect(line.segments).toEqual([{ text: '<img src=x onerror=alert(1)>', highlight: false }])
   })
 })

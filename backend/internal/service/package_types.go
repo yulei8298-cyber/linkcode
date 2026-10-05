@@ -31,10 +31,12 @@ const (
 	PackageUnfreezeAdmin    = "admin"    // 管理员解冻
 	PackageUnfreezeDisabled = "disabled" // 后台关闭冻结功能
 
-	DefaultPackageConcurrency  = 5
-	MaxPackageConcurrency      = 50
-	DefaultPackageMaxFreezeDay = 7
-	MaxPackageMaxFreezeDay     = 30
+	DefaultPackageConcurrency = 5
+	MaxPackageConcurrency     = 50
+	// 单张套餐累计冻结上限（天），周卡与月卡分开设置。
+	DefaultPackageMaxFreezeDayWeek  = 7
+	DefaultPackageMaxFreezeDayMonth = 15
+	MaxPackageMaxFreezeDay          = 60
 
 	// PackageHistoryRetention 「我的套餐」展示已结束套餐的时间范围。
 	PackageHistoryRetention = 30 * 24 * time.Hour
@@ -143,11 +145,25 @@ type PackageFreezeDay struct {
 
 // PackageUnfreezeInput 解冻参数。UserID 非空时只允许解冻自己的套餐。
 type PackageUnfreezeInput struct {
-	PackageID  int64
-	UserID     *int64
-	Now        time.Time
-	Reason     string
-	CapSeconds int64
+	PackageID int64
+	UserID    *int64
+	Now       time.Time
+	Reason    string
+	Caps      PackageFreezeCaps
+}
+
+// PackageFreezeCaps 单张套餐累计冻结上限（秒），按周期取值。
+type PackageFreezeCaps struct {
+	WeekSeconds  int64
+	MonthSeconds int64
+}
+
+// For 返回某周期的上限秒数；周期未知时按周卡处理。
+func (c PackageFreezeCaps) For(cycle string) int64 {
+	if cycle == PackageCycleMonth {
+		return c.MonthSeconds
+	}
+	return c.WeekSeconds
 }
 
 // PackageGroupState 某用户在某分组的套餐概况，用于请求鉴权。
@@ -172,9 +188,9 @@ type PackageRepository interface {
 	GetUserPackageByOrderID(ctx context.Context, orderID int64) (*UserPackage, error)
 	ListUserPackages(ctx context.Context, userID int64, endedSince time.Time) ([]UserPackage, error)
 	GetGroupState(ctx context.Context, userID, groupID int64, now time.Time) (*PackageGroupState, error)
-	FreezePackage(ctx context.Context, packageID, userID int64, now time.Time, capSeconds int64) (*UserPackage, error)
+	FreezePackage(ctx context.Context, packageID, userID int64, now time.Time, caps PackageFreezeCaps) (*UserPackage, error)
 	UnfreezePackage(ctx context.Context, in PackageUnfreezeInput) (*UserPackage, error)
-	ListFrozenOverCap(ctx context.Context, now time.Time, capSeconds int64) ([]int64, error)
+	ListFrozenOverCap(ctx context.Context, now time.Time, caps PackageFreezeCaps) ([]int64, error)
 	ListFrozenIDs(ctx context.Context) ([]int64, error)
 	ExpirePackages(ctx context.Context, now time.Time) ([]UserPackage, error)
 	VoidPackage(ctx context.Context, packageID int64) (*UserPackage, error)

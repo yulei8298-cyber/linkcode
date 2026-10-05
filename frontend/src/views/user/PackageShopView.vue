@@ -61,7 +61,7 @@
           </div>
           <div class="shop-tile pkg-hue pkg-h-ice">
             <h3><span class="pkg-icon-box shop-tile-icon"><Icon name="calendar" size="sm" /></span>{{ t('packages.shop.tiles.freezeTitle') }}</h3>
-            <p>{{ shop.freeze_enabled ? t('packages.shop.tiles.freezeDesc', { days: shop.max_freeze_days }) : t('packages.shop.tiles.freezeOff') }}</p>
+            <p>{{ shop.freeze_enabled ? t('packages.shop.tiles.freezeDesc', { week: shop.max_freeze_days_week, month: shop.max_freeze_days_month }) : t('packages.shop.tiles.freezeOff') }}</p>
           </div>
         </div>
       </template>
@@ -71,7 +71,8 @@
       :show="noticeOpen"
       :text="shop?.notice.text || ''"
       :concurrency="shop?.package_concurrency || 0"
-      :max-freeze-days="shop?.max_freeze_days || 0"
+      :max-freeze-days-week="shop?.max_freeze_days_week || 0"
+      :max-freeze-days-month="shop?.max_freeze_days_month || 0"
       :purchase="purchase"
       @close="noticeOpen = false"
       @confirm="goPay"

@@ -22,10 +22,18 @@
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.packages.freeze.capTitle') }}</h3>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.packages.freeze.capDesc') }}</p>
           </div>
-          <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <input v-model.number="settings.max_freeze_days" type="number" min="1" max="30" class="input w-24" />
-            {{ t('admin.packages.freeze.daysUnit') }}
-          </label>
+          <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
+            <label class="flex items-center gap-2">
+              {{ t('packages.cycle.week') }}
+              <input v-model.number="settings.max_freeze_days_week" type="number" min="1" max="60" class="input w-24" data-test="max-freeze-week" />
+              {{ t('admin.packages.freeze.daysUnit') }}
+            </label>
+            <label class="flex items-center gap-2">
+              {{ t('packages.cycle.month') }}
+              <input v-model.number="settings.max_freeze_days_month" type="number" min="1" max="60" class="input w-24" data-test="max-freeze-month" />
+              {{ t('admin.packages.freeze.daysUnit') }}
+            </label>
+          </div>
         </div>
         <div class="grid gap-4 border-t border-gray-100 pt-4 dark:border-dark-700 md:grid-cols-[auto_1fr]">
           <label class="flex items-center gap-3 text-sm font-semibold text-gray-900 dark:text-white">
@@ -164,7 +172,8 @@ const saveSettings = () =>
     const s = settings.value!
     const saved = await packagesAdminAPI.updateSettings({
       freeze_enabled: s.freeze_enabled,
-      max_freeze_days: s.max_freeze_days,
+      max_freeze_days_week: s.max_freeze_days_week,
+      max_freeze_days_month: s.max_freeze_days_month,
       holiday_sync_enabled: s.holiday_sync_enabled,
       holiday_source_url: s.holiday_source_url,
       notice_text: s.notice_text,

@@ -21,7 +21,7 @@ func NewPackageHandler(packageService *service.PackageService) *PackageHandler {
 	return &PackageHandler{packageService: packageService}
 }
 
-// packageNoticeResponse 购买须知：前端把 {并发}、{冻结上限} 替换为当前用户的值。
+// packageNoticeResponse 购买须知：前端把 {并发}、{周卡冻结上限}、{月卡冻结上限} 替换为当前值。
 type packageNoticeResponse struct {
 	Text    string `json:"text"`
 	Version int    `json:"version"`
@@ -31,7 +31,8 @@ type packageShopResponse struct {
 	Groups             []service.PackageShopGroup `json:"groups"`
 	Notice             packageNoticeResponse      `json:"notice"`
 	FreezeEnabled      bool                       `json:"freeze_enabled"`
-	MaxFreezeDays      int                        `json:"max_freeze_days"`
+	MaxFreezeDaysWeek  int                        `json:"max_freeze_days_week"`
+	MaxFreezeDaysMonth int                        `json:"max_freeze_days_month"`
 	PackageConcurrency int                        `json:"package_concurrency"`
 }
 
@@ -56,7 +57,8 @@ func (h *PackageHandler) Shop(c *gin.Context) {
 		Groups:             groups,
 		Notice:             packageNoticeResponse{Text: settings.NoticeText, Version: settings.NoticeVersion},
 		FreezeEnabled:      settings.FreezeEnabled,
-		MaxFreezeDays:      settings.MaxFreezeDays,
+		MaxFreezeDaysWeek:  settings.MaxFreezeDaysWeek,
+		MaxFreezeDaysMonth: settings.MaxFreezeDaysMonth,
 		PackageConcurrency: h.packageService.UserPackageConcurrency(ctx, subject.UserID),
 	})
 }

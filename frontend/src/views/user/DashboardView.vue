@@ -18,7 +18,7 @@
 
       <div v-if="loading" class="flex items-center justify-center py-12"><LoadingSpinner /></div>
       <template v-else-if="stats">
-        <UserDashboardStats :stats="stats" :balance="user?.balance || 0" :is-simple="authStore.isSimpleMode" :platform-quotas="platformQuotas" />
+        <UserDashboardStats :stats="stats" :balance="user?.balance || 0" :total-recharged="user?.total_recharged || 0" :is-simple="authStore.isSimpleMode" :platform-quotas="platformQuotas" />
         <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <div class="min-w-0 xl:col-span-2">
             <UserDashboardCharts v-model:startDate="startDate" v-model:endDate="endDate" v-model:granularity="granularity" :loading="loadingCharts" :trend="trendData" @dateRangeChange="loadCharts" @granularityChange="loadCharts" @refresh="refreshAll" />

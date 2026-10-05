@@ -14,7 +14,8 @@
           :today="mine.today"
           :next-freezable="mine.next_freezable"
           :freeze-enabled="mine.freeze_enabled"
-          :max-freeze-days="mine.max_freeze_days"
+          :max-freeze-days-week="mine.max_freeze_days_week"
+          :max-freeze-days-month="mine.max_freeze_days_month"
         />
 
         <section class="mine-sec" aria-labelledby="pkg-active-title">
@@ -33,7 +34,6 @@
             :freeze-enabled="mine.freeze_enabled"
             :today-freezable="mine.today.freezable"
             :next-freezable-date="mine.next_freezable?.date || ''"
-            :max-freeze-days="mine.max_freeze_days"
             :busy="busyId === item.id"
             @freeze="freezeTarget = $event"
             @unfreeze="unfreeze"
@@ -79,7 +79,6 @@
     <PackageFreezeDialog
       :item="freezeTarget"
       :today-label="todayLabel"
-      :max-freeze-days="mine?.max_freeze_days || 0"
       :busy="busyId !== null"
       @close="freezeTarget = null"
       @confirm="freeze"

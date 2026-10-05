@@ -8,6 +8,8 @@ export default {
     baseUrlCopied: 'Base URL copied',
     welcomeMessage: "Welcome back! Here's an overview of your account.",
     balance: 'Balance',
+    totalRecharged: 'Total top-ups',
+    totalRechargedHint: 'Includes redeem codes and referral transfers',
     apiKeys: 'API Keys',
     todayRequests: 'Today Requests',
     todayCost: 'Today Cost',

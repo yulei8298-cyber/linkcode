@@ -17,7 +17,7 @@ const packageDayLayout = "2006-01-02"
 
 // FreezePackage 在行锁下校验并冻结一张套餐，同时写入冻结记录。
 // 「今天能否冻结」属于业务规则，由 service 层在调用前判断。
-func (r *packageRepository) FreezePackage(ctx context.Context, packageID, userID int64, now time.Time, capSeconds int64) (*service.UserPackage, error) {
+func (r *packageRepository) FreezePackage(ctx context.Context, packageID, userID int64, now time.Time, caps service.PackageFreezeCaps) (*service.UserPackage, error) {
 	var out *service.UserPackage
 	err := r.withTx(ctx, func(txCtx context.Context, tx *dbent.Client) error {
 		row, err := tx.UserPackage.Query().
@@ -30,7 +30,7 @@ func (r *packageRepository) FreezePackage(ctx context.Context, packageID, userID
 		if row.Status != service.PackageStatusActive || !row.ExpiresAt.After(now) || row.UsedUsd >= row.QuotaUsd {
 			return service.ErrPackageNotFreezable
 		}
-		if capSeconds > 0 && row.FrozenSecondsTotal >= capSeconds {
+		if capSeconds := caps.For(row.Cycle); capSeconds > 0 && row.FrozenSecondsTotal >= capSeconds {
 			return service.ErrPackageFreezeCapUsed
 		}
 		updated, err := row.Update().
@@ -75,8 +75,8 @@ func (r *packageRepository) UnfreezePackage(ctx context.Context, in service.Pack
 		if in.Now.After(*row.FrozenAt) {
 			elapsed = int64(in.Now.Sub(*row.FrozenAt) / time.Second)
 		}
-		if in.CapSeconds > 0 && row.FrozenSecondsTotal+elapsed > in.CapSeconds {
-			elapsed = max(in.CapSeconds-row.FrozenSecondsTotal, 0)
+		if capSeconds := in.Caps.For(row.Cycle); capSeconds > 0 && row.FrozenSecondsTotal+elapsed > capSeconds {
+			elapsed = max(capSeconds-row.FrozenSecondsTotal, 0)
 		}
 		shift := time.Duration(elapsed) * time.Second
 		status := service.PackageStatusActive
@@ -106,12 +106,14 @@ func (r *packageRepository) UnfreezePackage(ctx context.Context, in service.Pack
 	return out, err
 }
 
-func (r *packageRepository) ListFrozenOverCap(ctx context.Context, now time.Time, capSeconds int64) ([]int64, error) {
+// ListFrozenOverCap 找出累计冻结已达上限的冻结中套餐；周卡与月卡各用各的上限。
+func (r *packageRepository) ListFrozenOverCap(ctx context.Context, now time.Time, caps service.PackageFreezeCaps) ([]int64, error) {
 	const q = `
 SELECT id FROM user_packages
 WHERE status = 'frozen'
-  AND frozen_seconds_total + EXTRACT(EPOCH FROM ($1 - frozen_at)) >= $2`
-	return r.queryIDs(ctx, q, now, capSeconds)
+  AND frozen_seconds_total + EXTRACT(EPOCH FROM ($1 - frozen_at)) >=
+      CASE WHEN cycle = 'month' THEN $3::bigint ELSE $2::bigint END`
+	return r.queryIDs(ctx, q, now, caps.WeekSeconds, caps.MonthSeconds)
 }
 
 func (r *packageRepository) ListFrozenIDs(ctx context.Context) ([]int64, error) {

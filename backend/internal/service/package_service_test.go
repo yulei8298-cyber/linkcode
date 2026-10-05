@@ -21,7 +21,7 @@ type packageRepoFake struct {
 	days       []PackageFreezeDay
 	frozenCall *struct {
 		id, userID int64
-		cap        int64
+		caps       PackageFreezeCaps
 	}
 	state *PackageGroupState
 
@@ -71,11 +71,11 @@ func (f *packageRepoFake) ListFreezeDays(_ context.Context, _, _ time.Time) ([]P
 	return f.days, nil
 }
 
-func (f *packageRepoFake) FreezePackage(_ context.Context, id, userID int64, now time.Time, capSeconds int64) (*UserPackage, error) {
+func (f *packageRepoFake) FreezePackage(_ context.Context, id, userID int64, now time.Time, caps PackageFreezeCaps) (*UserPackage, error) {
 	f.frozenCall = &struct {
 		id, userID int64
-		cap        int64
-	}{id, userID, capSeconds}
+		caps       PackageFreezeCaps
+	}{id, userID, caps}
 	return &UserPackage{ID: id, UserID: userID, GroupID: 7, Status: PackageStatusFrozen, FrozenAt: &now}, nil
 }
 
@@ -208,13 +208,16 @@ func TestPackageUpdateSettings_NoticeVersionBumpsOnlyWhenTextChanges(t *testing.
 	cur, err := svc.GetSettings(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, cur.NoticeVersion)
-	require.Equal(t, DefaultPackageMaxFreezeDay, cur.MaxFreezeDays)
+	require.Equal(t, 7, cur.MaxFreezeDaysWeek, "周卡默认最多冻结 7 天")
+	require.Equal(t, 15, cur.MaxFreezeDaysMonth, "月卡默认最多冻结 15 天")
 
-	cur.MaxFreezeDays = 99
+	cur.MaxFreezeDaysWeek = 99
+	cur.MaxFreezeDaysMonth = 20
 	saved, err := svc.UpdateSettings(ctx, cur)
 	require.NoError(t, err)
 	require.Equal(t, 1, saved.NoticeVersion, "只改冻结上限不应提升须知版本")
-	require.Equal(t, MaxPackageMaxFreezeDay, saved.MaxFreezeDays, "越界值收敛到上限")
+	require.Equal(t, MaxPackageMaxFreezeDay, saved.MaxFreezeDaysWeek, "越界值收敛到上限")
+	require.Equal(t, 20, saved.MaxFreezeDaysMonth, "周卡与月卡上限互不影响")
 
 	saved.NoticeText = "立即生效：测试"
 	saved, err = svc.UpdateSettings(ctx, saved)
@@ -242,7 +245,7 @@ func TestPackageFreeze_RespectsCalendarAndSwitch(t *testing.T) {
 	repo.days = []PackageFreezeDay{{Day: packageDate(t, "2026-10-14 00:00"), Name: "平台活动日", Kind: PackageDayKindOff, Source: PackageDaySourceManual}}
 	_, err = svc.Freeze(ctx, 1, 11)
 	require.NoError(t, err)
-	require.Equal(t, int64(7*86400), repo.frozenCall.cap)
+	require.Equal(t, PackageFreezeCaps{WeekSeconds: 7 * 86400, MonthSeconds: 15 * 86400}, repo.frozenCall.caps)
 
 	// 关闭总开关后任何日子都不能冻结。
 	settings, _ := svc.GetSettings(ctx)
@@ -251,6 +254,21 @@ func TestPackageFreeze_RespectsCalendarAndSwitch(t *testing.T) {
 	require.NoError(t, err)
 	_, err = svc.Freeze(ctx, 1, 11)
 	require.ErrorIs(t, err, ErrPackageFreezeDisabled)
+}
+
+func TestPackageFreezeCaps_PerCycle(t *testing.T) {
+	settings := DefaultPackageSettings()
+	caps := settings.FreezeCaps()
+	require.Equal(t, int64(7*86400), caps.For(PackageCycleWeek))
+	require.Equal(t, int64(15*86400), caps.For(PackageCycleMonth))
+	require.Equal(t, 7, settings.MaxFreezeDaysFor(PackageCycleWeek))
+	require.Equal(t, 15, settings.MaxFreezeDaysFor(PackageCycleMonth))
+
+	// 只配了其中一个时，另一个回落默认值；旧版单一字段不再生效。
+	partial := PackageSettings{MaxFreezeDaysMonth: 10}
+	partial.Normalize()
+	require.Equal(t, 7, partial.MaxFreezeDaysWeek)
+	require.Equal(t, 10, partial.MaxFreezeDaysMonth)
 }
 
 func TestPackageCalendar_ClassifiesWeekendHolidayAndMakeup(t *testing.T) {

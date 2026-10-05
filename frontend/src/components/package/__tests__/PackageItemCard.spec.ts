@@ -13,13 +13,13 @@ function view(patch: Partial<UserPackageView> = {}): UserPackageView {
     id: 1, user_id: 1, group_id: 7, plan_id: 2, name: '爆肝周卡', cycle: 'week', tier: 2,
     quota_usd: 240, used_usd: 187.6, starts_at: '2026-09-30T13:00:00Z', expires_at: '2026-10-07T13:00:00Z',
     status: 'active', frozen_seconds_total: 0, created_at: '', updated_at: '', group_name: 'Claude',
-    remaining_usd: 52.4, frozen_seconds: 0, freeze_left_seconds: 7 * 86400, deduct_order: 1, ...patch,
+    remaining_usd: 52.4, frozen_seconds: 0, freeze_left_seconds: 7 * 86400, max_freeze_days: 7, deduct_order: 1, ...patch,
   }
 }
 
 function render(item: UserPackageView, todayFreezable: boolean, freezeEnabled = true) {
   return mount(PackageItemCard, {
-    props: { item, freezeEnabled, todayFreezable, nextFreezableDate: '2026-10-10', maxFreezeDays: 7, busy: false },
+    props: { item, freezeEnabled, todayFreezable, nextFreezableDate: '2026-10-10', busy: false },
     global: { stubs: { Icon: true } },
   })
 }

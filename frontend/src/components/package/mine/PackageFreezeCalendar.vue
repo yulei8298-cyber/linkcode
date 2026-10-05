@@ -18,7 +18,7 @@
       <template v-if="!freezeEnabled"><b>{{ t('packages.calendar.disabled') }}</b></template>
       <template v-else-if="today.freezable">
         <b>{{ t('packages.calendar.todayOk', { date: today.date, label: dayLabel(today) }) }}</b>
-        <span>{{ t('packages.calendar.todayOkHint', { days: maxFreezeDays }) }}</span>
+        <span>{{ t('packages.calendar.todayOkHint', { week: maxFreezeDaysWeek, month: maxFreezeDaysMonth }) }}</span>
       </template>
       <template v-else>
         <b>{{ t('packages.calendar.todayNo') }}</b>
@@ -63,7 +63,8 @@ const props = defineProps<{
   today: PackageCalendarDay
   nextFreezable?: PackageCalendarDay | null
   freezeEnabled: boolean
-  maxFreezeDays: number
+  maxFreezeDaysWeek: number
+  maxFreezeDaysMonth: number
 }>()
 
 const { t } = useI18n()
