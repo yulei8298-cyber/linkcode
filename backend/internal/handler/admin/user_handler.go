@@ -85,6 +85,8 @@ type UpdateUserRequest struct {
 	Status               string   `json:"status" binding:"omitempty,oneof=active disabled"`
 	AllowedGroups        *[]int64 `json:"allowed_groups"`
 	RestrictPublicGroups *bool    `json:"restrict_public_groups"`
+	// PackageConcurrency 二开：套餐并发（1~50），对该用户所有套餐合计生效。
+	PackageConcurrency *int `json:"package_concurrency"`
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]*rate，nil 表示删除该分组的专属倍率
 	GroupRates map[int64]*float64 `json:"group_rates"`
@@ -358,6 +360,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		RestrictPublicGroups: req.RestrictPublicGroups,
 		GroupRates:           req.GroupRates,
 		ActorAdminID:         getAdminIDFromContext(c),
+		PackageConcurrency:   req.PackageConcurrency,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

@@ -342,6 +342,11 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 		// 免费分组只记每日免费账本，不扣余额。
 	case p.Cost.ActualCost > 0:
 		cmd.BalanceCost = p.Cost.ActualCost
+		// 二开：套餐计费时扣费事务先从该分组的套餐扣，剩余部分再扣余额。
+		if cmd.BillingType == BillingTypePackage && p.APIKey.GroupID != nil {
+			groupID := *p.APIKey.GroupID
+			cmd.PackageGroupID = &groupID
+		}
 	}
 
 	if p.shouldDeductAPIKeyQuota() {
@@ -477,6 +482,7 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 		}
 	} else if !p.IsFreeBill && p.Cost.ActualCost > 0 && p.User != nil {
 		syncBalanceCacheAfterDeduction(ctx, p, deps, result)
+		notifyPackageExhausted(ctx, p, deps, result)
 	}
 
 	if p.Cost.ActualCost > 0 && p.APIKey != nil && p.APIKey.HasRateLimits() && deps.billingCacheService != nil {
@@ -492,7 +498,7 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 	//     限制在并发 in-flight 请求数量内（旧实现的异步入队会让超支无限累积直到 worker 处理）
 	//   - DB 异步(flusher_enabled=false):在独立 goroutine 中走 detached context,失败用 ALERT log 触发 oncall 对账
 	//   - flusher_enabled=true:不直写 DB,由 flusher 异步批量刷（markDirty 已在 IncrementUserPlatformQuotaUsage 内部完成）
-	if !p.IsSubscriptionBill && !p.IsFreeBill && p.Platform != "" && p.Cost.ActualCost > 0 && p.User != nil && deps.userPlatformQuotaRepo != nil && deps.billingCacheService != nil {
+	if !p.IsSubscriptionBill && !p.IsFreeBill && PackageBillingFromContext(ctx) == nil && p.Platform != "" && p.Cost.ActualCost > 0 && p.User != nil && deps.userPlatformQuotaRepo != nil && deps.billingCacheService != nil {
 		if deps.billingCacheService.HasUserPlatformQuotaLimit(ctx, p.User.ID, p.Platform) {
 			deps.billingCacheService.IncrementUserPlatformQuotaUsage(p.User.ID, p.Platform, p.Cost.ActualCost)
 			if deps.cfg == nil || !deps.cfg.Database.UserPlatformQuotaFlusherEnabled {
@@ -529,6 +535,11 @@ func syncBalanceCacheAfterDeduction(ctx context.Context, p *postUsageBillingPara
 	if p == nil || p.Cost == nil || p.User == nil || deps == nil || deps.billingCacheService == nil {
 		return
 	}
+	// 二开：套餐覆盖的部分没有扣余额，余额缓存只扣实际从余额扣掉的金额。
+	balanceDeducted := balanceDeductedAfterPackages(p.Cost.ActualCost, result)
+	if balanceDeducted <= 0 {
+		return
+	}
 	if result != nil && result.NewBalance != nil && deps.billingCacheService.balanceBelowEligibilityThreshold(*result.NewBalance) {
 		if err := deps.billingCacheService.InvalidateUserBalance(ctx, p.User.ID); err != nil {
 			slog.Warn("invalidate balance cache after exhausted deduction failed",
@@ -544,13 +555,13 @@ func syncBalanceCacheAfterDeduction(ctx context.Context, p *postUsageBillingPara
 		// 在途预留开启时同步扣减余额缓存：计费任务结束后才会释放预留，
 		// 必须保证此时准入读取的缓存余额已反映本次扣费，否则释放与扣减之间
 		// 仍存在「在途=0 且余额未扣」的窗口。本函数运行在计费 worker 中，不在请求热路径。
-		err := deps.billingCacheService.DeductBalanceCache(ctx, p.User.ID, p.Cost.ActualCost)
+		err := deps.billingCacheService.DeductBalanceCache(ctx, p.User.ID, balanceDeducted)
 		if err == nil {
 			return
 		}
 		logger.LegacyPrintf("service.gateway", "Warning: sync deduct balance cache failed for user %d, falling back to queue: %v", p.User.ID, err)
 	}
-	deps.billingCacheService.QueueDeductBalance(p.User.ID, p.Cost.ActualCost)
+	deps.billingCacheService.QueueDeductBalance(p.User.ID, balanceDeducted)
 }
 
 // notifyBalanceLow sends balance low notification after deduction.
@@ -920,10 +931,7 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 	// 判断计费方式：订阅模式 vs 余额模式
 	isSubscriptionBilling := subscription != nil && apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
 	isFreeBilling := apiKey.Group != nil && apiKey.Group.IsFree
-	billingType := BillingTypeBalance
-	if isSubscriptionBilling {
-		billingType = BillingTypeSubscription
-	}
+	billingType := usageBillingTypeFor(ctx, isSubscriptionBilling)
 
 	// 创建使用日志
 	accountRateMultiplier := account.BillingRateMultiplier()

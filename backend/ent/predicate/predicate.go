@@ -75,6 +75,12 @@ type IntelCheckRound func(*sql.Selector)
 // IntelCheckTarget is the predicate function for intelchecktarget builders.
 type IntelCheckTarget func(*sql.Selector)
 
+// PackageFreezeDay is the predicate function for packagefreezeday builders.
+type PackageFreezeDay func(*sql.Selector)
+
+// PackagePlan is the predicate function for packageplan builders.
+type PackagePlan func(*sql.Selector)
+
 // PaymentAuditLog is the predicate function for paymentauditlog builders.
 type PaymentAuditLog func(*sql.Selector)
 
@@ -128,6 +134,12 @@ type UserAttributeDefinition func(*sql.Selector)
 
 // UserAttributeValue is the predicate function for userattributevalue builders.
 type UserAttributeValue func(*sql.Selector)
+
+// UserPackage is the predicate function for userpackage builders.
+type UserPackage func(*sql.Selector)
+
+// UserPackageFreeze is the predicate function for userpackagefreeze builders.
+type UserPackageFreeze func(*sql.Selector)
 
 // UserPlatformQuota is the predicate function for userplatformquota builders.
 type UserPlatformQuota func(*sql.Selector)

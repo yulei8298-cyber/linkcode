@@ -73,6 +73,7 @@ import { useAppStore } from '@/stores'
 import { getPaymentPopupFeatures } from '@/components/payment/providerConfig'
 import { currencySymbol } from '@/components/payment/currency'
 import type { Stripe, StripeElements } from '@stripe/stripe-js'
+import type { OrderType } from '@/types/payment'
 import Icon from '@/components/icons/Icon.vue'
 
 // Stripe payment methods that open a popup (redirect or QR code)
@@ -82,7 +83,7 @@ const props = defineProps<{
   orderId: number
   amount: number
   clientSecret: string
-  orderType?: 'balance' | 'subscription'
+  orderType?: OrderType
   publishableKey: string
   payAmount: number
   currency?: string

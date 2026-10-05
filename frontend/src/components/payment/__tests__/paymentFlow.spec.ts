@@ -293,6 +293,28 @@ describe('decidePaymentLaunch', () => {
 })
 
 describe('buildCreateOrderPayload', () => {
+  it('套餐订单带上用户同意的购买须知版本', () => {
+    expect(buildCreateOrderPayload({
+      amount: 95,
+      paymentType: 'alipay',
+      orderType: 'package',
+      planId: 3,
+      packageNoticeVersion: 2,
+      origin: 'https://app.example.com',
+      isMobile: false,
+      isWechatBrowser: false,
+    })).toEqual({
+      amount: 95,
+      payment_type: 'alipay',
+      order_type: 'package',
+      plan_id: 3,
+      package_notice_version: 2,
+      return_url: 'https://app.example.com/payment/result',
+      is_mobile: false,
+      payment_source: 'hosted_redirect',
+    })
+  })
+
   it('normalizes visible method aliases and attaches a canonical result URL', () => {
     expect(buildCreateOrderPayload({
       amount: 88,

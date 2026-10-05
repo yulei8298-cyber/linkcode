@@ -54,6 +54,9 @@ func (User) Fields() []ent.Field {
 			Default(0),
 		field.Int("concurrency").
 			Default(5),
+		// 套餐请求的并发上限，对该用户所有套餐合计生效；余额请求仍用 concurrency。
+		field.Int("package_concurrency").
+			Default(5),
 		field.String("status").
 			MaxLen(20).
 			Default(domain.StatusActive),

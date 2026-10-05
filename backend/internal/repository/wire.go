@@ -104,6 +104,7 @@ var ProviderSet = wire.NewSet(
 	NewChannelMonitorRequestTemplateRepository,
 	NewContentModerationRepository,
 	NewIntelCheckRepository, // 模型智力检测：分组/题库/轮次/明细
+	NewPackageRepository,    // 套餐：配置/用户套餐/冻结/可冻结日期
 	NewAffiliateRepository,
 	NewUserPlatformQuotaRepository,     // T14: user × platform quota
 	NewUserPlatformQuotaServiceAdapter, // T14: adapter → service.UserPlatformQuotaRepository

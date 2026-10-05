@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/googleapi"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -226,8 +227,17 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			}
 
 			c.Set(string(ContextKeySubscription), subscription)
-		} else if apiKey.Group == nil || !apiKey.Group.IsFree {
-			if apiKeyBalanceBelowAuthThreshold(apiKey.User.Balance, cfg) {
+		} else {
+			// 二开：普通分组有可用套餐时按套餐计费，不受余额阈值限制。
+			lowBalance := (apiKey.Group == nil || !apiKey.Group.IsFree) && apiKeyBalanceBelowAuthThreshold(apiKey.User.Balance, cfg)
+			packageBilling, packageErr := apiKeyService.ResolvePackageBilling(c.Request.Context(), apiKey, lowBalance)
+			if packageErr != nil {
+				abortWithGoogleError(c, 403, infraerrors.Message(packageErr))
+				return
+			}
+			if packageBilling != nil {
+				c.Request = c.Request.WithContext(service.WithPackageBilling(c.Request.Context(), packageBilling))
+			} else if lowBalance {
 				abortWithGoogleError(c, 403, "Insufficient account balance")
 				return
 			}

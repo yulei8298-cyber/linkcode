@@ -18,7 +18,7 @@ import (
 // v24 includes model allowlist plus local free/chat-station authorization, pricing and Fast/reasoning
 // policy fields, plus the Codex model manifest configuration. Bump this whenever
 // snapshot shape changes so stale L2 entries are rebuilt.
-const apiKeyAuthSnapshotVersion = 24
+const apiKeyAuthSnapshotVersion = 25
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -360,6 +360,7 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			Role:                       apiKey.User.Role,
 			Balance:                    apiKey.User.Balance,
 			Concurrency:                apiKey.User.Concurrency,
+			PackageConcurrency:         apiKey.User.PackageConcurrency,
 			AllowedGroups:              apiKey.User.AllowedGroups,
 			Email:                      apiKey.User.Email,
 			Username:                   apiKey.User.Username,
@@ -475,6 +476,7 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			Role:                       snapshot.User.Role,
 			Balance:                    snapshot.User.Balance,
 			Concurrency:                snapshot.User.Concurrency,
+			PackageConcurrency:         snapshot.User.PackageConcurrency,
 			AllowedGroups:              snapshot.User.AllowedGroups,
 			Email:                      snapshot.User.Email,
 			Username:                   snapshot.User.Username,

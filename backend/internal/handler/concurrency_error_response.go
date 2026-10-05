@@ -12,9 +12,15 @@ const statusClientClosedRequest = 499
 const (
 	gatewayQueueFullCode        = "gateway_queue_full"
 	gatewayConcurrencyLimitCode = "gateway_concurrency_limit"
+	packageConcurrencyLimitCode = "package_concurrency_limit"
 )
 
 func concurrencyErrorResponse(err error, slotType string) (int, string, string, string) {
+	var packageErr *PackageConcurrencyError
+	if errors.As(err, &packageErr) {
+		return http.StatusTooManyRequests, "rate_limit_error", packageConcurrencyLimitCode, packageErr.Error()
+	}
+
 	var waitQueueFullErr *WaitQueueFullError
 	if errors.As(err, &waitQueueFullErr) {
 		return http.StatusTooManyRequests, "rate_limit_error", gatewayQueueFullCode,

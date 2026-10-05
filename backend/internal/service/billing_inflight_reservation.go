@@ -247,6 +247,10 @@ func (s *BillingCacheService) reserveInflight(ctx context.Context, user *User, g
 	if group != nil && group.IsFree {
 		return nil, nil
 	}
+	// LinkCode 套餐计费先扣预付额度，不参与余额在途预留（套餐用户余额常为 0）。
+	if PackageBillingFromContext(ctx) != nil {
+		return nil, nil
+	}
 	if cfg.MaxReservationUSD > 0 && estimate > cfg.MaxReservationUSD {
 		estimate = cfg.MaxReservationUSD
 	}

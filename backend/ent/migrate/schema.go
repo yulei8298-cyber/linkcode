@@ -1249,6 +1249,56 @@ var (
 			},
 		},
 	}
+	// PackageFreezeDaysColumns holds the columns for the "package_freeze_days" table.
+	PackageFreezeDaysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "day", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "date"}},
+		{Name: "name", Type: field.TypeString, Size: 50, Default: ""},
+		{Name: "kind", Type: field.TypeString, Size: 8},
+		{Name: "source", Type: field.TypeString, Size: 8},
+	}
+	// PackageFreezeDaysTable holds the schema information for the "package_freeze_days" table.
+	PackageFreezeDaysTable = &schema.Table{
+		Name:       "package_freeze_days",
+		Columns:    PackageFreezeDaysColumns,
+		PrimaryKey: []*schema.Column{PackageFreezeDaysColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "packagefreezeday_day_source",
+				Unique:  true,
+				Columns: []*schema.Column{PackageFreezeDaysColumns[3], PackageFreezeDaysColumns[6]},
+			},
+		},
+	}
+	// PackagePlansColumns holds the columns for the "package_plans" table.
+	PackagePlansColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "group_id", Type: field.TypeInt64},
+		{Name: "name", Type: field.TypeString, Size: 50},
+		{Name: "cycle", Type: field.TypeString, Size: 10},
+		{Name: "tier", Type: field.TypeInt8},
+		{Name: "price", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
+		{Name: "quota_usd", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "validity_days", Type: field.TypeInt},
+		{Name: "for_sale", Type: field.TypeBool, Default: true},
+	}
+	// PackagePlansTable holds the schema information for the "package_plans" table.
+	PackagePlansTable = &schema.Table{
+		Name:       "package_plans",
+		Columns:    PackagePlansColumns,
+		PrimaryKey: []*schema.Column{PackagePlansColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "packageplan_group_id_cycle_tier",
+				Unique:  true,
+				Columns: []*schema.Column{PackagePlansColumns[3], PackagePlansColumns[5], PackagePlansColumns[6]},
+			},
+		},
+	}
 	// PaymentAuditLogsColumns holds the columns for the "payment_audit_logs" table.
 	PaymentAuditLogsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1949,6 +1999,7 @@ var (
 		{Name: "balance", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "frozen_balance", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "concurrency", Type: field.TypeInt, Default: 5},
+		{Name: "package_concurrency", Type: field.TypeInt, Default: 5},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
 		{Name: "username", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
@@ -1975,7 +2026,7 @@ var (
 			{
 				Name:    "user_status",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[10]},
+				Columns: []*schema.Column{UsersColumns[11]},
 			},
 			{
 				Name:    "user_deleted_at",
@@ -2100,6 +2151,85 @@ var (
 				Name:    "userattributevalue_attribute_id",
 				Unique:  false,
 				Columns: []*schema.Column{UserAttributeValuesColumns[5]},
+			},
+		},
+	}
+	// UserPackagesColumns holds the columns for the "user_packages" table.
+	UserPackagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "group_id", Type: field.TypeInt64},
+		{Name: "plan_id", Type: field.TypeInt64},
+		{Name: "order_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "name", Type: field.TypeString, Size: 50},
+		{Name: "cycle", Type: field.TypeString, Size: 10},
+		{Name: "tier", Type: field.TypeInt8},
+		{Name: "quota_usd", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "used_usd", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "starts_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "status", Type: field.TypeString, Size: 16, Default: "active"},
+		{Name: "frozen_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "frozen_seconds_total", Type: field.TypeInt64, Default: 0},
+	}
+	// UserPackagesTable holds the schema information for the "user_packages" table.
+	UserPackagesTable = &schema.Table{
+		Name:       "user_packages",
+		Columns:    UserPackagesColumns,
+		PrimaryKey: []*schema.Column{UserPackagesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userpackage_order_id",
+				Unique:  true,
+				Columns: []*schema.Column{UserPackagesColumns[6]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "order_id IS NOT NULL",
+				},
+			},
+			{
+				Name:    "userpackage_user_id_group_id_status_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserPackagesColumns[3], UserPackagesColumns[4], UserPackagesColumns[14], UserPackagesColumns[13]},
+			},
+			{
+				Name:    "userpackage_status_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserPackagesColumns[14], UserPackagesColumns[13]},
+			},
+			{
+				Name:    "userpackage_frozen_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserPackagesColumns[15]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "status = 'frozen'",
+				},
+			},
+		},
+	}
+	// UserPackageFreezesColumns holds the columns for the "user_package_freezes" table.
+	UserPackageFreezesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "package_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "frozen_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "unfrozen_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "unfreeze_reason", Type: field.TypeString, Size: 16, Default: ""},
+		{Name: "duration_seconds", Type: field.TypeInt64, Default: 0},
+	}
+	// UserPackageFreezesTable holds the schema information for the "user_package_freezes" table.
+	UserPackageFreezesTable = &schema.Table{
+		Name:       "user_package_freezes",
+		Columns:    UserPackageFreezesColumns,
+		PrimaryKey: []*schema.Column{UserPackageFreezesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userpackagefreeze_package_id_frozen_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserPackageFreezesColumns[3], UserPackageFreezesColumns[5]},
 			},
 		},
 	}
@@ -2264,6 +2394,8 @@ var (
 		IntelCheckResultsTable,
 		IntelCheckRoundsTable,
 		IntelCheckTargetsTable,
+		PackageFreezeDaysTable,
+		PackagePlansTable,
 		PaymentAuditLogsTable,
 		PaymentOrdersTable,
 		PaymentProviderInstancesTable,
@@ -2282,6 +2414,8 @@ var (
 		UserAllowedGroupsTable,
 		UserAttributeDefinitionsTable,
 		UserAttributeValuesTable,
+		UserPackagesTable,
+		UserPackageFreezesTable,
 		UserPlatformQuotasTable,
 		UserSubscriptionsTable,
 	}
@@ -2375,6 +2509,12 @@ func init() {
 	IntelCheckTargetsTable.Annotation = &entsql.Annotation{
 		Table: "intel_check_targets",
 	}
+	PackageFreezeDaysTable.Annotation = &entsql.Annotation{
+		Table: "package_freeze_days",
+	}
+	PackagePlansTable.Annotation = &entsql.Annotation{
+		Table: "package_plans",
+	}
 	PaymentAuditLogsTable.Annotation = &entsql.Annotation{
 		Table: "payment_audit_logs",
 	}
@@ -2444,6 +2584,12 @@ func init() {
 	UserAttributeValuesTable.ForeignKeys[1].RefTable = UserAttributeDefinitionsTable
 	UserAttributeValuesTable.Annotation = &entsql.Annotation{
 		Table: "user_attribute_values",
+	}
+	UserPackagesTable.Annotation = &entsql.Annotation{
+		Table: "user_packages",
+	}
+	UserPackageFreezesTable.Annotation = &entsql.Annotation{
+		Table: "user_package_freezes",
 	}
 	UserPlatformQuotasTable.ForeignKeys[0].RefTable = UsersTable
 	UserPlatformQuotasTable.Annotation = &entsql.Annotation{

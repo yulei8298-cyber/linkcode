@@ -148,6 +148,7 @@ func (r *userRepository) create(ctx context.Context, userIn *service.User, guard
 		SetRole(userIn.Role).
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
+		SetPackageConcurrency(packageConcurrencyOrDefault(userIn.PackageConcurrency)).
 		SetStatus(userIn.Status).
 		SetSignupSource(userSignupSourceOrDefault(userIn.SignupSource)).
 		SetNillableLastLoginAt(userIn.LastLoginAt).
@@ -310,6 +311,9 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User, field
 	}
 	if fields.Concurrency {
 		updateOp = updateOp.SetConcurrency(userIn.Concurrency)
+	}
+	if fields.PackageConcurrency {
+		updateOp = updateOp.SetPackageConcurrency(packageConcurrencyOrDefault(userIn.PackageConcurrency))
 	}
 	if fields.RPMLimit {
 		updateOp = updateOp.SetRpmLimit(userIn.RPMLimit)
@@ -1596,4 +1600,12 @@ func (r *userRepository) DisableTotp(ctx context.Context, userID int64) error {
 		return translatePersistenceError(err, service.ErrUserNotFound, nil)
 	}
 	return nil
+}
+
+// packageConcurrencyOrDefault 套餐并发未设置（0）或越界时回落默认值。
+func packageConcurrencyOrDefault(v int) int {
+	if v <= 0 || v > service.MaxPackageConcurrency {
+		return service.DefaultPackageConcurrency
+	}
+	return v
 }

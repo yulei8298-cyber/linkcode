@@ -27,6 +27,8 @@ func profitAuthTestAPIKey() *APIKey {
 			Email:       "profit@test.local",
 			Status:      StatusActive,
 			Concurrency: 5,
+			// 二开：套餐并发随认证快照缓存，鉴权中间件据此设置套餐并发上限。
+			PackageConcurrency: 8,
 		},
 		Group: &Group{
 			ID:                   groupID,
@@ -53,7 +55,7 @@ func TestAPIKeyAuthSnapshotProfitControlRoundtrip(t *testing.T) {
 	snapshot := svc.snapshotFromAPIKey(context.Background(), apiKey)
 	require.NotNil(t, snapshot)
 	require.Equal(t, apiKeyAuthSnapshotVersion, snapshot.Version)
-	require.Equal(t, 24, snapshot.Version, "v24 携带模型白名单与本地授权、定价策略字段")
+	require.Equal(t, 25, snapshot.Version, "v25 在 v24（模型白名单、本地授权、定价策略）基础上携带用户级套餐并发")
 
 	// 模拟 L2 缓存的完整 JSON 往返（与 apiKeyCache.SetAuthCache/GetAuthCache 同构）。
 	payload, err := json.Marshal(&APIKeyAuthCacheEntry{Snapshot: snapshot})
@@ -64,6 +66,7 @@ func TestAPIKeyAuthSnapshotProfitControlRoundtrip(t *testing.T) {
 	materialized, used, err := svc.applyAuthCacheEntry(apiKey.Key, &restored)
 	require.NoError(t, err)
 	require.True(t, used)
+	require.Equal(t, 8, materialized.User.PackageConcurrency, "套餐并发必须随快照往返")
 	require.NotNil(t, materialized.Group)
 	require.True(t, materialized.Group.Hydrated)
 	require.True(t, materialized.Group.ProfitControlEnabled)

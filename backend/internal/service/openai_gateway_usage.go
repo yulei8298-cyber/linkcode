@@ -327,10 +327,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	// Determine billing type
 	isSubscriptionBilling := subscription != nil && apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
 	isFreeBilling := apiKey.Group != nil && apiKey.Group.IsFree
-	billingType := BillingTypeBalance
-	if isSubscriptionBilling {
-		billingType = BillingTypeSubscription
-	}
+	billingType := usageBillingTypeFor(ctx, isSubscriptionBilling)
 
 	// Create usage log
 	durationMs := int(result.Duration.Milliseconds())

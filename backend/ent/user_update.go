@@ -171,6 +171,27 @@ func (_u *UserUpdate) AddConcurrency(v int) *UserUpdate {
 	return _u
 }
 
+// SetPackageConcurrency sets the "package_concurrency" field.
+func (_u *UserUpdate) SetPackageConcurrency(v int) *UserUpdate {
+	_u.mutation.ResetPackageConcurrency()
+	_u.mutation.SetPackageConcurrency(v)
+	return _u
+}
+
+// SetNillablePackageConcurrency sets the "package_concurrency" field if the given value is not nil.
+func (_u *UserUpdate) SetNillablePackageConcurrency(v *int) *UserUpdate {
+	if v != nil {
+		_u.SetPackageConcurrency(*v)
+	}
+	return _u
+}
+
+// AddPackageConcurrency adds value to the "package_concurrency" field.
+func (_u *UserUpdate) AddPackageConcurrency(v int) *UserUpdate {
+	_u.mutation.AddPackageConcurrency(v)
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *UserUpdate) SetStatus(v string) *UserUpdate {
 	_u.mutation.SetStatus(v)
@@ -1044,6 +1065,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedConcurrency(); ok {
 		_spec.AddField(user.FieldConcurrency, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.PackageConcurrency(); ok {
+		_spec.SetField(user.FieldPackageConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPackageConcurrency(); ok {
+		_spec.AddField(user.FieldPackageConcurrency, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(user.FieldStatus, field.TypeString, value)
 	}
@@ -1861,6 +1888,27 @@ func (_u *UserUpdateOne) SetNillableConcurrency(v *int) *UserUpdateOne {
 // AddConcurrency adds value to the "concurrency" field.
 func (_u *UserUpdateOne) AddConcurrency(v int) *UserUpdateOne {
 	_u.mutation.AddConcurrency(v)
+	return _u
+}
+
+// SetPackageConcurrency sets the "package_concurrency" field.
+func (_u *UserUpdateOne) SetPackageConcurrency(v int) *UserUpdateOne {
+	_u.mutation.ResetPackageConcurrency()
+	_u.mutation.SetPackageConcurrency(v)
+	return _u
+}
+
+// SetNillablePackageConcurrency sets the "package_concurrency" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillablePackageConcurrency(v *int) *UserUpdateOne {
+	if v != nil {
+		_u.SetPackageConcurrency(*v)
+	}
+	return _u
+}
+
+// AddPackageConcurrency adds value to the "package_concurrency" field.
+func (_u *UserUpdateOne) AddPackageConcurrency(v int) *UserUpdateOne {
+	_u.mutation.AddPackageConcurrency(v)
 	return _u
 }
 
@@ -2766,6 +2814,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.AddedConcurrency(); ok {
 		_spec.AddField(user.FieldConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PackageConcurrency(); ok {
+		_spec.SetField(user.FieldPackageConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPackageConcurrency(); ok {
+		_spec.AddField(user.FieldPackageConcurrency, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(user.FieldStatus, field.TypeString, value)

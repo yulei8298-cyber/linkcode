@@ -224,6 +224,10 @@ func (h *ConcurrencyHelper) DecrementAccountWaitCount(ctx context.Context, accou
 // TryAcquireUserSlot 尝试立即获取用户并发槽位。
 // 返回值: (releaseFunc, acquired, error)
 func (h *ConcurrencyHelper) TryAcquireUserSlot(ctx context.Context, userID int64, maxConcurrency int) (func(), bool, error) {
+	// 二开：套餐计费的请求占用套餐专属槽位，上限为用户的套餐并发。
+	if packageBilling := service.PackageBillingFromContext(ctx); packageBilling != nil {
+		return h.tryAcquirePackageSlot(ctx, userID, packageBilling)
+	}
 	result, err := h.concurrencyService.AcquireUserSlot(ctx, userID, maxConcurrency)
 	if err != nil {
 		return nil, false, err
@@ -282,6 +286,10 @@ func (h *ConcurrencyHelper) acquireUserSlotWithWaitTimeout(c *gin.Context, userI
 
 	if acquired {
 		return h.withAPIKeySlotFromGin(c, releaseFunc), nil
+	}
+	// 二开：套餐并发不排队，满了直接拒绝并返回中文提示。
+	if packageBilling := service.PackageBillingFromContext(ctx); packageBilling != nil {
+		return nil, &PackageConcurrencyError{Limit: packageBilling.Concurrency}
 	}
 
 	queueLimit := service.CalculateMaxWait(maxConcurrency) - maxConcurrency

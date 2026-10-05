@@ -40,6 +40,10 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if err != nil {
 		return nil, err
 	}
+	packagePlan, err := s.validatePackageOrder(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	if err := s.checkCancelRateLimit(ctx, req.UserID, cfg); err != nil {
 		return nil, err
 	}
@@ -58,6 +62,9 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if plan != nil {
 		orderAmount = plan.Price
 		limitAmount = plan.Price
+	} else if packagePlan != nil {
+		orderAmount = packagePlan.Price
+		limitAmount = packagePlan.Price
 	} else if req.OrderType == payment.OrderTypeBalance {
 		orderAmount = calculateCreditedBalance(req.Amount, cfg.BalanceRechargeMultiplier)
 	}
@@ -120,6 +127,10 @@ func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrder
 	}
 	if req.OrderType == payment.OrderTypeSubscription {
 		return s.validateSubOrder(ctx, req)
+	}
+	if req.OrderType == payment.OrderTypePackage {
+		// 套餐订单金额取套餐价，由 validatePackageOrder 校验。
+		return nil, nil
 	}
 	if math.IsNaN(req.Amount) || math.IsInf(req.Amount, 0) || req.Amount <= 0 {
 		return nil, infraerrors.BadRequest("INVALID_AMOUNT", "amount must be a positive number")
@@ -208,6 +219,8 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	}
 	if plan != nil {
 		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(psComputeValidityDays(plan.ValidityDays, plan.ValidityUnit))
+	} else if req.OrderType == payment.OrderTypePackage && req.PlanID > 0 {
+		b.SetPlanID(req.PlanID)
 	}
 	order, err := b.Save(ctx)
 	if err != nil {
@@ -468,14 +481,20 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 	if err != nil {
 		return nil, fmt.Errorf("update order with payment details: %w", err)
 	}
-	s.writeAuditLog(ctx, order.ID, "ORDER_CREATED", fmt.Sprintf("user:%d", req.UserID), map[string]any{
+	auditDetail := map[string]any{
 		"paymentAmount":  req.Amount,
 		"creditedAmount": order.Amount,
 		"payAmount":      order.PayAmount,
 		"paymentType":    req.PaymentType,
 		"orderType":      req.OrderType,
 		"paymentSource":  NormalizePaymentSource(req.PaymentSource),
-	})
+	}
+	if req.OrderType == payment.OrderTypePackage {
+		// 留痕：用户下单时同意的购买须知版本。
+		auditDetail["packagePlanId"] = req.PlanID
+		auditDetail["packageNoticeVersion"] = req.PackageNoticeVersion
+	}
+	s.writeAuditLog(ctx, order.ID, "ORDER_CREATED", fmt.Sprintf("user:%d", req.UserID), auditDetail)
 	resultType := pr.ResultType
 	if resultType == "" {
 		resultType = payment.CreatePaymentResultOrderCreated
@@ -769,6 +788,9 @@ func buildWeChatPaymentOAuthStartURL(req CreateOrderRequest, scope string) (stri
 	}
 	if req.PlanID > 0 {
 		q.Set("plan_id", strconv.FormatInt(req.PlanID, 10))
+	}
+	if req.PackageNoticeVersion > 0 {
+		q.Set("package_notice_version", strconv.Itoa(req.PackageNoticeVersion))
 	}
 	if scope = strings.TrimSpace(scope); scope != "" {
 		q.Set("scope", scope)

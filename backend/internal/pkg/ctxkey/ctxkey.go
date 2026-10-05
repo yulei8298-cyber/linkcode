@@ -65,6 +65,8 @@ const (
 
 	// DailyFreeUsageDate 记录免费额度预检时的自然日，确保跨午夜请求仍计入同一天。
 	DailyFreeUsageDate Key = "ctx_daily_free_usage_date"
+	// PackageBilling 标记本次请求按套餐计费（值为 *service.PackageBilling），由 API Key 鉴权中间件写入。
+	PackageBilling Key = "ctx_package_billing"
 
 	// IsMaxTokensOneHaikuRequest 标识当前请求是否为 max_tokens=1 + haiku 模型的探测请求
 	// 用于 ClaudeCodeOnly 验证绕过（绕过 system prompt 检查，但仍需验证 User-Agent）

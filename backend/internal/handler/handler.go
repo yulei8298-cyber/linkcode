@@ -38,6 +38,7 @@ type AdminHandlers struct {
 	ChannelMonitor         *admin.ChannelMonitorHandler
 	ChannelMonitorTemplate *admin.ChannelMonitorRequestTemplateHandler
 	IntelCheck             *admin.IntelCheckHandler
+	Package                *admin.PackageHandler
 	ContentModeration      *admin.ContentModerationHandler
 	PromptAudit            *securityaudit.PromptAdminHandler
 	Payment                *admin.PaymentHandler
@@ -68,6 +69,7 @@ type Handlers struct {
 	AvailableChannel *AvailableChannelHandler
 	PublicPricing    *PublicPricingHandler
 	IntelCheck       *IntelCheckHandler
+	Package          *PackageHandler
 	LobeHubSSO       *LobeHubSSOHandler
 	ModelPlaza       *ModelPlazaHandler
 	AsyncImage       *AsyncImageHandler

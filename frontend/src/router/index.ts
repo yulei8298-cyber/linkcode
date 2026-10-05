@@ -366,6 +366,32 @@ const routes: RouteRecordRaw[] = [
       requiresSubscription: true
     }
   },
+  // 二开：周卡 / 月卡套餐。购买走 /purchase（带 package_plan），故同样要求开启支付。
+  {
+    path: '/packages',
+    name: 'PackageShop',
+    component: () => import('@/views/user/PackageShopView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Package Shop',
+      titleKey: 'packages.shopPage.title',
+      descriptionKey: 'packages.shopPage.description',
+      requiresPayment: true
+    }
+  },
+  {
+    path: '/my-packages',
+    name: 'MyPackages',
+    component: () => import('@/views/user/MyPackagesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'My Packages',
+      titleKey: 'packages.minePage.title',
+      descriptionKey: 'packages.minePage.description'
+    }
+  },
   {
     path: '/purchase',
     name: 'PurchaseSubscription',
@@ -569,6 +595,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Model Intelligence Check',
       titleKey: 'admin.intelCheck.title',
       descriptionKey: 'admin.intelCheck.description'
+    }
+  },
+  {
+    path: '/admin/packages',
+    name: 'AdminPackages',
+    component: () => import('@/views/admin/PackagesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Package Settings',
+      titleKey: 'admin.packages.title',
+      descriptionKey: 'admin.packages.description'
     }
   },
   {

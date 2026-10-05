@@ -81,6 +81,8 @@ export interface BuildCreateOrderPayloadInput {
   paymentType: string
   orderType: OrderType
   planId?: number
+  /** 套餐订单：用户勾选同意的购买须知版本 */
+  packageNoticeVersion?: number
   origin?: string
   isMobile: boolean
   isWechatBrowser: boolean
@@ -138,6 +140,9 @@ export function buildCreateOrderPayload(input: BuildCreateOrderPayloadInput): Cr
 
   if (input.planId) {
     payload.plan_id = input.planId
+  }
+  if (input.packageNoticeVersion) {
+    payload.package_notice_version = input.packageNoticeVersion
   }
   if (normalizedOrigin) {
     payload.return_url = `${normalizedOrigin}/payment/result`
@@ -324,7 +329,7 @@ export function readPaymentRecoverySnapshot(
       countryCode: parsed.countryCode || '',
       paymentEnv: parsed.paymentEnv || '',
       payAmount: parsed.payAmount,
-      orderType: parsed.orderType === 'subscription' ? 'subscription' : 'balance',
+      orderType: parsed.orderType === 'subscription' || parsed.orderType === 'package' ? parsed.orderType : 'balance',
       paymentMode: parsed.paymentMode,
       resumeToken: parsed.resumeToken,
       alipayMobilePrecreateDeepLink: parsed.alipayMobilePrecreateDeepLink === true,

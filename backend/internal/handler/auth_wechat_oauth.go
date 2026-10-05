@@ -91,6 +91,8 @@ type wechatPaymentOAuthContext struct {
 	Amount      string `json:"amount,omitempty"`
 	OrderType   string `json:"order_type,omitempty"`
 	PlanID      int64  `json:"plan_id,omitempty"`
+	// PackageNoticeVersion 二开：套餐订单已同意的购买须知版本，随授权回跳带回下单。
+	PackageNoticeVersion int `json:"package_notice_version,omitempty"`
 }
 
 // WeChatOAuthStart starts the WeChat OAuth login flow and stores the short-lived
@@ -360,6 +362,8 @@ func (h *AuthHandler) WeChatPaymentOAuthStart(c *gin.Context) {
 		Amount:      strings.TrimSpace(c.Query("amount")),
 		OrderType:   strings.TrimSpace(c.Query("order_type")),
 		PlanID:      parseWeChatPaymentPlanID(c.Query("plan_id")),
+
+		PackageNoticeVersion: parseWeChatPaymentNoticeVersion(c.Query("package_notice_version")),
 	})
 	if err != nil {
 		response.ErrorFrom(c, infraerrors.InternalServer("OAUTH_CONTEXT_ENCODE_FAILED", "failed to encode oauth context").WithCause(err))
@@ -462,7 +466,9 @@ func (h *AuthHandler) WeChatPaymentOAuthCallback(c *gin.Context) {
 		OrderType:   paymentContext.OrderType,
 		PlanID:      paymentContext.PlanID,
 		RedirectTo:  redirectTo,
-		Scope:       scope,
+
+		PackageNoticeVersion: paymentContext.PackageNoticeVersion,
+		Scope:                scope,
 	})
 	if err != nil {
 		redirectOAuthError(c, frontendCallback, "invalid_context", "failed to encode payment resume context", "")

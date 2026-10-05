@@ -61,10 +61,12 @@ type WeChatPaymentResumeClaims struct {
 	Amount      string `json:"amt,omitempty"`
 	OrderType   string `json:"ot,omitempty"`
 	PlanID      int64  `json:"pid,omitempty"`
-	RedirectTo  string `json:"rd,omitempty"`
-	Scope       string `json:"scp,omitempty"`
-	IssuedAt    int64  `json:"iat"`
-	ExpiresAt   int64  `json:"exp,omitempty"`
+	// PackageNoticeVersion 二开：套餐订单在微信授权跳转前已同意的购买须知版本。
+	PackageNoticeVersion int    `json:"pnv,omitempty"`
+	RedirectTo           string `json:"rd,omitempty"`
+	Scope                string `json:"scp,omitempty"`
+	IssuedAt             int64  `json:"iat"`
+	ExpiresAt            int64  `json:"exp,omitempty"`
 }
 
 type PaymentResumeService struct {

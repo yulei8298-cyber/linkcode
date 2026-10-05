@@ -982,6 +982,8 @@ var ProviderSet = wire.NewSet(
 	ProvideUserPlatformQuotaUsageFlusher,
 	ProvideIntelCheckService,
 	ProvideIntelCheckRunner,
+	ProvidePackageService,
+	ProvidePackageRunner,
 )
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。

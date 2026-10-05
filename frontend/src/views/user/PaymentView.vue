@@ -6,7 +6,7 @@
       </div>
       <template v-else>
         <!-- Tab Switcher (hide during payment and subscription confirm) -->
-        <div v-if="tabs.length > 1 && paymentPhase === 'select' && !selectedPlan" class="flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-dark-800">
+        <div v-if="tabs.length > 1 && paymentPhase === 'select' && !selectedPlan && !packagePurchase" class="flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-dark-800">
           <button v-for="tab in tabs" :key="tab.key"
             class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all"
             :class="activeTab === tab.key ? 'bg-white text-gray-900 shadow dark:bg-dark-700 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
@@ -33,8 +33,49 @@
         </template>
         <!-- Tab content (select phase) -->
         <template v-else>
+          <!-- 二开：从套餐商店进入的套餐购买（已在商店读完并同意购买须知） -->
+          <template v-if="packagePurchase">
+            <PackagePurchasePanel :state="packagePurchase" />
+            <div v-if="enabledMethods.length === 0" class="card py-16 text-center">
+              <p class="text-gray-500 dark:text-gray-400">{{ t('payment.notAvailable') }}</p>
+            </div>
+            <template v-else>
+              <div class="card p-6">
+                <PaymentMethodSelector :methods="pkgMethodOptions" :selected="selectedMethod" @select="selectedMethod = $event" />
+              </div>
+              <div v-if="feeRate > 0" class="card p-6">
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">{{ t('payment.amountLabel') }}</span>
+                    <span class="text-gray-900 dark:text-white">{{ formatSelectedPaymentAmount(pkgPaymentAmount) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">{{ t('payment.fee') }} ({{ feeRate }}%)</span>
+                    <span class="text-gray-900 dark:text-white">{{ formatSelectedPaymentAmount(pkgFeeAmount) }}</span>
+                  </div>
+                  <div class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.actualPay') }}</span>
+                    <span class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatSelectedPaymentAmount(pkgTotalAmount) }}</span>
+                  </div>
+                </div>
+              </div>
+              <p v-if="errorMessage" class="text-sm text-red-600 dark:text-red-400">{{ errorMessage }}</p>
+              <button :class="['btn w-full py-3 text-base font-medium', paymentButtonClass]" :disabled="!canSubmitPackage || submitting" data-test="package-pay" @click="confirmPackage">
+                <span v-if="submitting" class="flex items-center justify-center gap-2">
+                  <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                  {{ t('common.processing') }}
+                </span>
+                <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(pkgTotalAmount) }}</span>
+              </button>
+            </template>
+            <button class="btn btn-secondary w-full" @click="cancelPackagePurchase">{{ t('packages.payment.backToShop') }}</button>
+          </template>
+          <div v-else-if="packageError" class="card py-12 text-center">
+            <p class="mb-4 text-gray-500 dark:text-gray-400">{{ packageError }}</p>
+            <button class="btn btn-secondary" @click="cancelPackagePurchase">{{ t('packages.payment.backToShop') }}</button>
+          </div>
           <!-- Neither top-up nor subscriptions available (balance recharge disabled via API while subscriptions are off) -->
-          <div v-if="tabs.length === 0" class="card py-16 text-center">
+          <div v-else-if="tabs.length === 0" class="card py-16 text-center">
             <p class="text-gray-500 dark:text-gray-400">{{ t('payment.billingUnavailable') }}</p>
           </div>
           <!-- Top-up Tab -->
@@ -294,6 +335,8 @@ import {
 import { platformAccentBarClass, platformBadgeLightClass, platformBadgeClass, platformTextClass, platformLabel } from '@/utils/platformColors'
 import SubscriptionPlanCard from '@/components/payment/SubscriptionPlanCard.vue'
 import PaymentStatusPanel from '@/components/payment/PaymentStatusPanel.vue'
+import PackagePurchasePanel from '@/components/package/shop/PackagePurchasePanel.vue'
+import { positiveIntQuery, usePackagePurchase } from '@/components/package/shop/usePackagePurchase'
 import Icon from '@/components/icons/Icon.vue'
 import { DEFAULT_PAYMENT_CURRENCY, formatPaymentAmount, normalizePaymentCurrency } from '@/components/payment/currency'
 import { planValiditySuffix as validitySuffixOf } from '@/components/payment/validity'
@@ -340,6 +383,8 @@ const paymentPhase = ref<'select' | 'paying'>('select')
 
 interface CreateOrderOptions {
   openid?: string
+  /** 套餐订单：用户在套餐商店同意的购买须知版本 */
+  packageNoticeVersion?: number
   wechatResumeToken?: string
   paymentType?: string
   isResume?: boolean
@@ -449,7 +494,7 @@ async function redirectToPaymentResult(state: PaymentRecoverySnapshot): Promise<
 
 function buildWechatOAuthAuthorizeUrl(
   authorizeUrl: string,
-  context: { paymentType: string; orderType: OrderType; planId?: number; orderAmount: number },
+  context: { paymentType: string; orderType: OrderType; planId?: number; orderAmount: number; packageNoticeVersion?: number },
 ): string {
   const normalizedUrl = authorizeUrl.trim()
   if (!normalizedUrl || typeof window === 'undefined') {
@@ -477,6 +522,12 @@ function buildWechatOAuthAuthorizeUrl(
       redirectUrl.searchParams.delete('amount')
     }
 
+    if (context.packageNoticeVersion) {
+      redirectUrl.searchParams.set('notice_version', String(context.packageNoticeVersion))
+    } else {
+      redirectUrl.searchParams.delete('notice_version')
+    }
+
     targetUrl.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`)
     return targetUrl.toString()
   } catch {
@@ -486,10 +537,15 @@ function buildWechatOAuthAuthorizeUrl(
 
 function onPaymentDone() {
   const wasSubscription = paymentState.value.orderType === 'subscription'
+  const wasPackage = paymentState.value.orderType === 'package'
   resetPayment()
   selectedPlan.value = null
   if (wasSubscription) {
     subscriptionStore.fetchActiveSubscriptions(true).catch(() => {})
+  }
+  if (wasPackage) {
+    clearPackagePurchase()
+    router.push('/my-packages')
   }
 }
 
@@ -713,6 +769,52 @@ const subMethodOptions = computed<PaymentMethodOption[]>(() => {
   })
 })
 
+// ---------- 二开：套餐购买 ----------
+const {
+  purchase: packagePurchase,
+  error: packageError,
+  load: loadPackagePurchase,
+  clear: clearPackagePurchase,
+} = usePackagePurchase({ notFound: t('packages.payment.notFound') })
+
+// 套餐价为人民币直付，与余额充值一样不做订阅汇率换算。
+const pkgPaymentAmount = computed(() => packagePurchase.value?.plan.price ?? 0)
+const pkgFeeAmount = computed(() => {
+  if (feeRate.value <= 0 || pkgPaymentAmount.value <= 0) return 0
+  return ceilPaymentAmount((pkgPaymentAmount.value * feeRate.value) / 100, selectedCurrency.value)
+})
+const pkgTotalAmount = computed(() => {
+  if (pkgFeeAmount.value <= 0) return pkgPaymentAmount.value
+  return roundPaymentAmount(pkgPaymentAmount.value + pkgFeeAmount.value, selectedCurrency.value)
+})
+const pkgMethodOptions = computed<PaymentMethodOption[]>(() =>
+  enabledMethods.value.map((type) => {
+    const ml = visibleMethods.value[type]
+    return {
+      type,
+      display_name: ml?.display_name,
+      fee_rate: ml?.fee_rate ?? 0,
+      available: ml?.available !== false && amountFitsMethod(pkgTotalAmount.value, type),
+    }
+  }),
+)
+const canSubmitPackage = computed(() =>
+  packagePurchase.value !== null
+    && amountFitsMethod(pkgTotalAmount.value, selectedMethod.value)
+    && selectedLimit.value?.available !== false
+)
+
+async function confirmPackage() {
+  const state = packagePurchase.value
+  if (!state || submitting.value) return
+  await createOrder(state.plan.price, 'package', state.plan.id, { packageNoticeVersion: state.noticeVersion })
+}
+
+function cancelPackagePurchase() {
+  clearPackagePurchase()
+  router.push('/packages')
+}
+
 const canSubmitSubscription = computed(() =>
   selectedPlan.value !== null
     && amountFitsMethod(subTotalAmount.value, selectedMethod.value)
@@ -800,6 +902,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       paymentType: requestType,
       orderType,
       planId,
+      packageNoticeVersion: options.packageNoticeVersion,
       origin: typeof window !== 'undefined' ? window.location.origin : '',
       isMobile: isMobileDevice(),
       isWechatBrowser: typeof window !== 'undefined' && /MicroMessenger/i.test(window.navigator.userAgent),
@@ -865,6 +968,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
         orderType,
         planId,
         orderAmount,
+        packageNoticeVersion: options.packageNoticeVersion,
       })
       return
     }
@@ -1100,6 +1204,9 @@ async function resumeWechatPaymentFromQuery() {
   if (resume.orderType === 'subscription' && resume.planId) {
     selectedPlan.value = checkout.value.plans.find(plan => plan.id === resume.planId) ?? null
   }
+  if (resume.orderType === 'package' && resume.planId) {
+    await loadPackagePurchase(resume.planId, resume.packageNoticeVersion ?? 0)
+  }
 
   await router.replace({ path: route.path, query: stripWechatResumeQuery(route.query) })
 
@@ -1107,6 +1214,7 @@ async function resumeWechatPaymentFromQuery() {
     await createOrder(0, resume.orderType, resume.planId, {
       wechatResumeToken: resume.wechatResumeToken,
       paymentType: resume.paymentType,
+      packageNoticeVersion: resume.packageNoticeVersion,
       isResume: true,
     })
     return
@@ -1116,6 +1224,7 @@ async function resumeWechatPaymentFromQuery() {
     await createOrder(resume.orderAmount, resume.orderType, resume.planId, {
       openid: resume.openid,
       paymentType: resume.paymentType,
+      packageNoticeVersion: resume.packageNoticeVersion,
       isResume: true,
     })
   }
@@ -1160,6 +1269,11 @@ onMounted(async () => {
       }
     }
     await resumeWechatPaymentFromQuery()
+    // 二开：从套餐商店进入（?package_plan=&notice_version=）时展示套餐确认面板
+    const packagePlanId = positiveIntQuery(route.query.package_plan)
+    if (packagePlanId && paymentPhase.value === 'select' && !packagePurchase.value) {
+      await loadPackagePurchase(packagePlanId, positiveIntQuery(route.query.notice_version))
+    }
     // balance_disabled → the tabs watcher above moves activeTab to the subscription tab (when enabled).
     // Handle renewal navigation: ?tab=subscription&group=123 (ignored when subscriptions are disabled)
     if (route.query.tab === 'subscription' && subscriptionEnabled.value) {

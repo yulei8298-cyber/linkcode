@@ -31,6 +31,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
 	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
+	"github.com/Wei-Shaw/sub2api/ent/packagefreezeday"
+	"github.com/Wei-Shaw/sub2api/ent/packageplan"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -50,6 +52,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/userpackage"
+	"github.com/Wei-Shaw/sub2api/ent/userpackagefreeze"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
@@ -731,6 +735,60 @@ func (f TraverseIntelCheckTarget) Traverse(ctx context.Context, q ent.Query) err
 	return fmt.Errorf("unexpected query type %T. expect *ent.IntelCheckTargetQuery", q)
 }
 
+// The PackageFreezeDayFunc type is an adapter to allow the use of ordinary function as a Querier.
+type PackageFreezeDayFunc func(context.Context, *ent.PackageFreezeDayQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f PackageFreezeDayFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.PackageFreezeDayQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.PackageFreezeDayQuery", q)
+}
+
+// The TraversePackageFreezeDay type is an adapter to allow the use of ordinary function as Traverser.
+type TraversePackageFreezeDay func(context.Context, *ent.PackageFreezeDayQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraversePackageFreezeDay) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraversePackageFreezeDay) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.PackageFreezeDayQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.PackageFreezeDayQuery", q)
+}
+
+// The PackagePlanFunc type is an adapter to allow the use of ordinary function as a Querier.
+type PackagePlanFunc func(context.Context, *ent.PackagePlanQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f PackagePlanFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.PackagePlanQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.PackagePlanQuery", q)
+}
+
+// The TraversePackagePlan type is an adapter to allow the use of ordinary function as Traverser.
+type TraversePackagePlan func(context.Context, *ent.PackagePlanQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraversePackagePlan) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraversePackagePlan) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.PackagePlanQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.PackagePlanQuery", q)
+}
+
 // The PaymentAuditLogFunc type is an adapter to allow the use of ordinary function as a Querier.
 type PaymentAuditLogFunc func(context.Context, *ent.PaymentAuditLogQuery) (ent.Value, error)
 
@@ -1217,6 +1275,60 @@ func (f TraverseUserAttributeValue) Traverse(ctx context.Context, q ent.Query) e
 	return fmt.Errorf("unexpected query type %T. expect *ent.UserAttributeValueQuery", q)
 }
 
+// The UserPackageFunc type is an adapter to allow the use of ordinary function as a Querier.
+type UserPackageFunc func(context.Context, *ent.UserPackageQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f UserPackageFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.UserPackageQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.UserPackageQuery", q)
+}
+
+// The TraverseUserPackage type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseUserPackage func(context.Context, *ent.UserPackageQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseUserPackage) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseUserPackage) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.UserPackageQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.UserPackageQuery", q)
+}
+
+// The UserPackageFreezeFunc type is an adapter to allow the use of ordinary function as a Querier.
+type UserPackageFreezeFunc func(context.Context, *ent.UserPackageFreezeQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f UserPackageFreezeFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.UserPackageFreezeQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.UserPackageFreezeQuery", q)
+}
+
+// The TraverseUserPackageFreeze type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseUserPackageFreeze func(context.Context, *ent.UserPackageFreezeQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseUserPackageFreeze) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseUserPackageFreeze) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.UserPackageFreezeQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.UserPackageFreezeQuery", q)
+}
+
 // The UserPlatformQuotaFunc type is an adapter to allow the use of ordinary function as a Querier.
 type UserPlatformQuotaFunc func(context.Context, *ent.UserPlatformQuotaQuery) (ent.Value, error)
 
@@ -1320,6 +1432,10 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.IntelCheckRoundQuery, predicate.IntelCheckRound, intelcheckround.OrderOption]{typ: ent.TypeIntelCheckRound, tq: q}, nil
 	case *ent.IntelCheckTargetQuery:
 		return &query[*ent.IntelCheckTargetQuery, predicate.IntelCheckTarget, intelchecktarget.OrderOption]{typ: ent.TypeIntelCheckTarget, tq: q}, nil
+	case *ent.PackageFreezeDayQuery:
+		return &query[*ent.PackageFreezeDayQuery, predicate.PackageFreezeDay, packagefreezeday.OrderOption]{typ: ent.TypePackageFreezeDay, tq: q}, nil
+	case *ent.PackagePlanQuery:
+		return &query[*ent.PackagePlanQuery, predicate.PackagePlan, packageplan.OrderOption]{typ: ent.TypePackagePlan, tq: q}, nil
 	case *ent.PaymentAuditLogQuery:
 		return &query[*ent.PaymentAuditLogQuery, predicate.PaymentAuditLog, paymentauditlog.OrderOption]{typ: ent.TypePaymentAuditLog, tq: q}, nil
 	case *ent.PaymentOrderQuery:
@@ -1356,6 +1472,10 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.UserAttributeDefinitionQuery, predicate.UserAttributeDefinition, userattributedefinition.OrderOption]{typ: ent.TypeUserAttributeDefinition, tq: q}, nil
 	case *ent.UserAttributeValueQuery:
 		return &query[*ent.UserAttributeValueQuery, predicate.UserAttributeValue, userattributevalue.OrderOption]{typ: ent.TypeUserAttributeValue, tq: q}, nil
+	case *ent.UserPackageQuery:
+		return &query[*ent.UserPackageQuery, predicate.UserPackage, userpackage.OrderOption]{typ: ent.TypeUserPackage, tq: q}, nil
+	case *ent.UserPackageFreezeQuery:
+		return &query[*ent.UserPackageFreezeQuery, predicate.UserPackageFreeze, userpackagefreeze.OrderOption]{typ: ent.TypeUserPackageFreeze, tq: q}, nil
 	case *ent.UserPlatformQuotaQuery:
 		return &query[*ent.UserPlatformQuotaQuery, predicate.UserPlatformQuota, userplatformquota.OrderOption]{typ: ent.TypeUserPlatformQuota, tq: q}, nil
 	case *ent.UserSubscriptionQuery:

@@ -507,6 +507,7 @@ export default {
       orders: 'Orders',
       balanceOrder: 'Balance Top-Up',
       subscriptionOrder: 'Subscription',
+      packageOrder: 'Package',
       paidAt: 'Paid At',
       completedAt: 'Completed At',
       expiresAt: 'Expires At',

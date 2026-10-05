@@ -531,6 +531,7 @@ export default {
       orders: '订单',
       balanceOrder: '余额充值',
       subscriptionOrder: '订阅',
+      packageOrder: '套餐',
       paidAt: '支付时间',
       completedAt: '完成时间',
       expiresAt: '过期时间',

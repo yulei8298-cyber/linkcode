@@ -113,6 +113,8 @@ type BillingCacheService struct {
 	cfg                   *config.Config
 	circuitBreaker        *billingCircuitBreaker
 	userPlatformQuotaRepo UserPlatformQuotaRepository
+	// packageStateInvalidator 二开：扣费让套餐用完时失效鉴权侧的套餐概况缓存，可为空。
+	packageStateInvalidator func(userID, groupID int64)
 
 	cacheWriteChan     chan cacheWriteTask
 	cacheWriteWg       sync.WaitGroup
@@ -750,19 +752,21 @@ func (s *BillingCacheService) CheckBillingEligibility(ctx context.Context, user 
 	// 仅不以用户余额作为调用前置条件。
 	isSubscriptionMode := group != nil && group.IsSubscriptionType() && subscription != nil
 	isFreeGroup := group != nil && group.IsFree
+	// 二开：套餐计费由鉴权中间件判定，预付额度与订阅一样不以余额、平台配额为前置条件。
+	isPackageMode := PackageBillingFromContext(ctx) != nil
 
 	if isSubscriptionMode {
 		if err := s.checkSubscriptionEligibility(ctx, user.ID, group, subscription); err != nil {
 			return err
 		}
-	} else if !isFreeGroup {
+	} else if !isFreeGroup && !isPackageMode {
 		if err := s.checkBalanceEligibility(ctx, user.ID); err != nil {
 			return err
 		}
 	}
 
-	// user × platform quota 仅在 standard（余额）模式生效；订阅模式豁免
-	if !isSubscriptionMode {
+	// user × platform quota 仅在 standard（余额）模式生效；订阅、套餐模式豁免
+	if !isSubscriptionMode && !isPackageMode {
 		if err := s.checkUserPlatformQuotaEligibility(ctx, user.ID, platform); err != nil {
 			return err
 		}

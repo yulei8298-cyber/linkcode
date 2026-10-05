@@ -1,0 +1,137 @@
+/*
+ * 套餐页面（商店 / 我的套餐 / 后台配置）共用样式。
+ * 每张卡片按「周期 × 档位」带一个主题色 --pkg-h，其余深浅层次由它派生；
+ * 底色、边框、文字仍走 lc-tokens，深浅主题跟随 html.dark。
+ */
+
+.pkg-h-violet { --pkg-h: #8b5cf6; }
+.pkg-h-orange { --pkg-h: #ff7a1a; }
+.pkg-h-green { --pkg-h: #10b981; }
+.pkg-h-rose { --pkg-h: #f43f5e; }
+.pkg-h-ice { --pkg-h: #0ea5e9; }
+
+.pkg-hue {
+  --pkg-h-text: color-mix(in oklab, var(--pkg-h) 74%, #000);
+  --pkg-h-soft: color-mix(in oklab, var(--pkg-h) 11%, transparent);
+  --pkg-h-line: color-mix(in oklab, var(--pkg-h) 38%, transparent);
+  --pkg-h-btn: color-mix(in oklab, var(--pkg-h) 88%, #000);
+}
+
+.dark .pkg-hue {
+  --pkg-h-text: color-mix(in oklab, var(--pkg-h) 92%, #fff);
+  --pkg-h-soft: color-mix(in oklab, var(--pkg-h) 15%, transparent);
+  --pkg-h-line: color-mix(in oklab, var(--pkg-h) 45%, transparent);
+}
+
+.pkg-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--lc-line);
+  border-radius: 18px;
+  background: var(--lc-surface);
+  box-shadow: 0 1px 2px rgba(20, 20, 19, 0.06), 0 8px 24px -12px rgba(20, 20, 19, 0.12);
+}
+
+.pkg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--pkg-h-line);
+  background: var(--pkg-h-soft);
+  color: var(--pkg-h-text);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pkg-icon-box {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--pkg-h-line);
+  background: var(--pkg-h-soft);
+  color: var(--pkg-h-text);
+  flex: none;
+}
+
+.pkg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 11px;
+  border: 1px solid var(--lc-line-2);
+  background: var(--lc-surface);
+  color: var(--lc-ink);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: transform 0.12s, filter 0.12s;
+}
+.pkg-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.pkg-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
+.pkg-btn-sm { height: 34px; padding: 0 13px; font-size: 13px; border-radius: 9px; }
+.pkg-btn-outline { border-color: var(--pkg-h-line); color: var(--pkg-h-text); background: transparent; }
+.pkg-btn-outline:hover:not(:disabled) { background: var(--pkg-h-soft); }
+.pkg-btn-fill { border-color: transparent; background: var(--pkg-h-btn); color: #fff; box-shadow: 0 10px 24px -12px var(--pkg-h); }
+.pkg-btn-fill:hover:not(:disabled) { filter: brightness(1.08); }
+.pkg-btn-ice { border-color: transparent; color: #fff; background: linear-gradient(135deg, #38bdf8, #6366f1); box-shadow: 0 10px 22px -12px #3b82f6; }
+.pkg-btn-warm { border-color: transparent; color: #fff; background: linear-gradient(135deg, #ff8a4c, #ff4f6d); box-shadow: 0 10px 22px -12px #ff4f6d; }
+.pkg-btn-ghost { border-color: transparent; background: transparent; color: var(--lc-ink-2); }
+.pkg-btn-ghost:hover:not(:disabled) { background: var(--lc-surface-2); color: var(--lc-ink); }
+
+.pkg-mono { font-family: var(--lc-font-mono); font-variant-numeric: tabular-nums; }
+
+.pkg-bar {
+  height: 10px;
+  border-radius: 6px;
+  background: var(--lc-surface-2);
+  border: 1px solid var(--lc-line);
+  overflow: hidden;
+}
+.pkg-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--pkg-h-btn), color-mix(in oklab, var(--pkg-h) 55%, #fff));
+}
+
+.pkg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pkg-chip-using { color: #fff; background: linear-gradient(135deg, #22c55e, #10b981); }
+.pkg-chip-queued { color: var(--lc-ink-2); background: var(--lc-surface-2); border: 1px solid var(--lc-line); }
+.pkg-chip-frozen { color: #fff; background: linear-gradient(135deg, #38bdf8, #6366f1); }
+.pkg-chip-ended { color: var(--lc-ink-3); background: var(--lc-surface-2); border: 1px solid var(--lc-line); }
+
+.pkg-amber-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(217, 119, 6, 0.4);
+  background: rgba(245, 158, 11, 0.12);
+  color: #b26a00;
+  font-size: 13.5px;
+}
+.dark .pkg-amber-banner { border-color: rgba(245, 158, 11, 0.45); background: rgba(245, 158, 11, 0.1); color: #f5b94a; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pkg-btn { transition: none; }
+}

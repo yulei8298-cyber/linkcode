@@ -28,6 +28,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
 	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
+	"github.com/Wei-Shaw/sub2api/ent/packagefreezeday"
+	"github.com/Wei-Shaw/sub2api/ent/packageplan"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -47,6 +49,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/userpackage"
+	"github.com/Wei-Shaw/sub2api/ent/userpackagefreeze"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
@@ -1513,6 +1517,76 @@ func init() {
 	intelchecktargetDescSortOrder := intelchecktargetFields[9].Descriptor()
 	// intelchecktarget.DefaultSortOrder holds the default value on creation for the sort_order field.
 	intelchecktarget.DefaultSortOrder = intelchecktargetDescSortOrder.Default.(int)
+	packagefreezedayMixin := schema.PackageFreezeDay{}.Mixin()
+	packagefreezedayMixinFields0 := packagefreezedayMixin[0].Fields()
+	_ = packagefreezedayMixinFields0
+	packagefreezedayFields := schema.PackageFreezeDay{}.Fields()
+	_ = packagefreezedayFields
+	// packagefreezedayDescCreatedAt is the schema descriptor for created_at field.
+	packagefreezedayDescCreatedAt := packagefreezedayMixinFields0[0].Descriptor()
+	// packagefreezeday.DefaultCreatedAt holds the default value on creation for the created_at field.
+	packagefreezeday.DefaultCreatedAt = packagefreezedayDescCreatedAt.Default.(func() time.Time)
+	// packagefreezedayDescUpdatedAt is the schema descriptor for updated_at field.
+	packagefreezedayDescUpdatedAt := packagefreezedayMixinFields0[1].Descriptor()
+	// packagefreezeday.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	packagefreezeday.DefaultUpdatedAt = packagefreezedayDescUpdatedAt.Default.(func() time.Time)
+	// packagefreezeday.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	packagefreezeday.UpdateDefaultUpdatedAt = packagefreezedayDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// packagefreezedayDescName is the schema descriptor for name field.
+	packagefreezedayDescName := packagefreezedayFields[1].Descriptor()
+	// packagefreezeday.DefaultName holds the default value on creation for the name field.
+	packagefreezeday.DefaultName = packagefreezedayDescName.Default.(string)
+	// packagefreezeday.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	packagefreezeday.NameValidator = packagefreezedayDescName.Validators[0].(func(string) error)
+	// packagefreezedayDescKind is the schema descriptor for kind field.
+	packagefreezedayDescKind := packagefreezedayFields[2].Descriptor()
+	// packagefreezeday.KindValidator is a validator for the "kind" field. It is called by the builders before save.
+	packagefreezeday.KindValidator = packagefreezedayDescKind.Validators[0].(func(string) error)
+	// packagefreezedayDescSource is the schema descriptor for source field.
+	packagefreezedayDescSource := packagefreezedayFields[3].Descriptor()
+	// packagefreezeday.SourceValidator is a validator for the "source" field. It is called by the builders before save.
+	packagefreezeday.SourceValidator = packagefreezedayDescSource.Validators[0].(func(string) error)
+	packageplanMixin := schema.PackagePlan{}.Mixin()
+	packageplanMixinFields0 := packageplanMixin[0].Fields()
+	_ = packageplanMixinFields0
+	packageplanFields := schema.PackagePlan{}.Fields()
+	_ = packageplanFields
+	// packageplanDescCreatedAt is the schema descriptor for created_at field.
+	packageplanDescCreatedAt := packageplanMixinFields0[0].Descriptor()
+	// packageplan.DefaultCreatedAt holds the default value on creation for the created_at field.
+	packageplan.DefaultCreatedAt = packageplanDescCreatedAt.Default.(func() time.Time)
+	// packageplanDescUpdatedAt is the schema descriptor for updated_at field.
+	packageplanDescUpdatedAt := packageplanMixinFields0[1].Descriptor()
+	// packageplan.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	packageplan.DefaultUpdatedAt = packageplanDescUpdatedAt.Default.(func() time.Time)
+	// packageplan.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	packageplan.UpdateDefaultUpdatedAt = packageplanDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// packageplanDescName is the schema descriptor for name field.
+	packageplanDescName := packageplanFields[1].Descriptor()
+	// packageplan.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	packageplan.NameValidator = func() func(string) error {
+		validators := packageplanDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// packageplanDescCycle is the schema descriptor for cycle field.
+	packageplanDescCycle := packageplanFields[2].Descriptor()
+	// packageplan.CycleValidator is a validator for the "cycle" field. It is called by the builders before save.
+	packageplan.CycleValidator = packageplanDescCycle.Validators[0].(func(string) error)
+	// packageplanDescForSale is the schema descriptor for for_sale field.
+	packageplanDescForSale := packageplanFields[7].Descriptor()
+	// packageplan.DefaultForSale holds the default value on creation for the for_sale field.
+	packageplan.DefaultForSale = packageplanDescForSale.Default.(bool)
 	paymentauditlogFields := schema.PaymentAuditLog{}.Fields()
 	_ = paymentauditlogFields
 	// paymentauditlogDescOrderID is the schema descriptor for order_id field.
@@ -2437,54 +2511,58 @@ func init() {
 	userDescConcurrency := userFields[5].Descriptor()
 	// user.DefaultConcurrency holds the default value on creation for the concurrency field.
 	user.DefaultConcurrency = userDescConcurrency.Default.(int)
+	// userDescPackageConcurrency is the schema descriptor for package_concurrency field.
+	userDescPackageConcurrency := userFields[6].Descriptor()
+	// user.DefaultPackageConcurrency holds the default value on creation for the package_concurrency field.
+	user.DefaultPackageConcurrency = userDescPackageConcurrency.Default.(int)
 	// userDescStatus is the schema descriptor for status field.
-	userDescStatus := userFields[6].Descriptor()
+	userDescStatus := userFields[7].Descriptor()
 	// user.DefaultStatus holds the default value on creation for the status field.
 	user.DefaultStatus = userDescStatus.Default.(string)
 	// user.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	user.StatusValidator = userDescStatus.Validators[0].(func(string) error)
 	// userDescUsername is the schema descriptor for username field.
-	userDescUsername := userFields[7].Descriptor()
+	userDescUsername := userFields[8].Descriptor()
 	// user.DefaultUsername holds the default value on creation for the username field.
 	user.DefaultUsername = userDescUsername.Default.(string)
 	// user.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	user.UsernameValidator = userDescUsername.Validators[0].(func(string) error)
 	// userDescNotes is the schema descriptor for notes field.
-	userDescNotes := userFields[8].Descriptor()
+	userDescNotes := userFields[9].Descriptor()
 	// user.DefaultNotes holds the default value on creation for the notes field.
 	user.DefaultNotes = userDescNotes.Default.(string)
 	// userDescTotpEnabled is the schema descriptor for totp_enabled field.
-	userDescTotpEnabled := userFields[10].Descriptor()
+	userDescTotpEnabled := userFields[11].Descriptor()
 	// user.DefaultTotpEnabled holds the default value on creation for the totp_enabled field.
 	user.DefaultTotpEnabled = userDescTotpEnabled.Default.(bool)
 	// userDescSignupSource is the schema descriptor for signup_source field.
-	userDescSignupSource := userFields[12].Descriptor()
+	userDescSignupSource := userFields[13].Descriptor()
 	// user.DefaultSignupSource holds the default value on creation for the signup_source field.
 	user.DefaultSignupSource = userDescSignupSource.Default.(string)
 	// user.SignupSourceValidator is a validator for the "signup_source" field. It is called by the builders before save.
 	user.SignupSourceValidator = userDescSignupSource.Validators[0].(func(string) error)
 	// userDescRestrictPublicGroups is the schema descriptor for restrict_public_groups field.
-	userDescRestrictPublicGroups := userFields[15].Descriptor()
+	userDescRestrictPublicGroups := userFields[16].Descriptor()
 	// user.DefaultRestrictPublicGroups holds the default value on creation for the restrict_public_groups field.
 	user.DefaultRestrictPublicGroups = userDescRestrictPublicGroups.Default.(bool)
 	// userDescBalanceNotifyEnabled is the schema descriptor for balance_notify_enabled field.
-	userDescBalanceNotifyEnabled := userFields[16].Descriptor()
+	userDescBalanceNotifyEnabled := userFields[17].Descriptor()
 	// user.DefaultBalanceNotifyEnabled holds the default value on creation for the balance_notify_enabled field.
 	user.DefaultBalanceNotifyEnabled = userDescBalanceNotifyEnabled.Default.(bool)
 	// userDescBalanceNotifyThresholdType is the schema descriptor for balance_notify_threshold_type field.
-	userDescBalanceNotifyThresholdType := userFields[17].Descriptor()
+	userDescBalanceNotifyThresholdType := userFields[18].Descriptor()
 	// user.DefaultBalanceNotifyThresholdType holds the default value on creation for the balance_notify_threshold_type field.
 	user.DefaultBalanceNotifyThresholdType = userDescBalanceNotifyThresholdType.Default.(string)
 	// userDescBalanceNotifyExtraEmails is the schema descriptor for balance_notify_extra_emails field.
-	userDescBalanceNotifyExtraEmails := userFields[19].Descriptor()
+	userDescBalanceNotifyExtraEmails := userFields[20].Descriptor()
 	// user.DefaultBalanceNotifyExtraEmails holds the default value on creation for the balance_notify_extra_emails field.
 	user.DefaultBalanceNotifyExtraEmails = userDescBalanceNotifyExtraEmails.Default.(string)
 	// userDescTotalRecharged is the schema descriptor for total_recharged field.
-	userDescTotalRecharged := userFields[20].Descriptor()
+	userDescTotalRecharged := userFields[21].Descriptor()
 	// user.DefaultTotalRecharged holds the default value on creation for the total_recharged field.
 	user.DefaultTotalRecharged = userDescTotalRecharged.Default.(float64)
 	// userDescRpmLimit is the schema descriptor for rpm_limit field.
-	userDescRpmLimit := userFields[21].Descriptor()
+	userDescRpmLimit := userFields[22].Descriptor()
 	// user.DefaultRpmLimit holds the default value on creation for the rpm_limit field.
 	user.DefaultRpmLimit = userDescRpmLimit.Default.(int)
 	userallowedgroupFields := schema.UserAllowedGroup{}.Fields()
@@ -2615,6 +2693,82 @@ func init() {
 	userattributevalueDescValue := userattributevalueFields[2].Descriptor()
 	// userattributevalue.DefaultValue holds the default value on creation for the value field.
 	userattributevalue.DefaultValue = userattributevalueDescValue.Default.(string)
+	userpackageMixin := schema.UserPackage{}.Mixin()
+	userpackageMixinFields0 := userpackageMixin[0].Fields()
+	_ = userpackageMixinFields0
+	userpackageFields := schema.UserPackage{}.Fields()
+	_ = userpackageFields
+	// userpackageDescCreatedAt is the schema descriptor for created_at field.
+	userpackageDescCreatedAt := userpackageMixinFields0[0].Descriptor()
+	// userpackage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	userpackage.DefaultCreatedAt = userpackageDescCreatedAt.Default.(func() time.Time)
+	// userpackageDescUpdatedAt is the schema descriptor for updated_at field.
+	userpackageDescUpdatedAt := userpackageMixinFields0[1].Descriptor()
+	// userpackage.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	userpackage.DefaultUpdatedAt = userpackageDescUpdatedAt.Default.(func() time.Time)
+	// userpackage.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	userpackage.UpdateDefaultUpdatedAt = userpackageDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userpackageDescName is the schema descriptor for name field.
+	userpackageDescName := userpackageFields[4].Descriptor()
+	// userpackage.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	userpackage.NameValidator = func() func(string) error {
+		validators := userpackageDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// userpackageDescCycle is the schema descriptor for cycle field.
+	userpackageDescCycle := userpackageFields[5].Descriptor()
+	// userpackage.CycleValidator is a validator for the "cycle" field. It is called by the builders before save.
+	userpackage.CycleValidator = userpackageDescCycle.Validators[0].(func(string) error)
+	// userpackageDescUsedUsd is the schema descriptor for used_usd field.
+	userpackageDescUsedUsd := userpackageFields[8].Descriptor()
+	// userpackage.DefaultUsedUsd holds the default value on creation for the used_usd field.
+	userpackage.DefaultUsedUsd = userpackageDescUsedUsd.Default.(float64)
+	// userpackageDescStatus is the schema descriptor for status field.
+	userpackageDescStatus := userpackageFields[11].Descriptor()
+	// userpackage.DefaultStatus holds the default value on creation for the status field.
+	userpackage.DefaultStatus = userpackageDescStatus.Default.(string)
+	// userpackage.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	userpackage.StatusValidator = userpackageDescStatus.Validators[0].(func(string) error)
+	// userpackageDescFrozenSecondsTotal is the schema descriptor for frozen_seconds_total field.
+	userpackageDescFrozenSecondsTotal := userpackageFields[13].Descriptor()
+	// userpackage.DefaultFrozenSecondsTotal holds the default value on creation for the frozen_seconds_total field.
+	userpackage.DefaultFrozenSecondsTotal = userpackageDescFrozenSecondsTotal.Default.(int64)
+	userpackagefreezeMixin := schema.UserPackageFreeze{}.Mixin()
+	userpackagefreezeMixinFields0 := userpackagefreezeMixin[0].Fields()
+	_ = userpackagefreezeMixinFields0
+	userpackagefreezeFields := schema.UserPackageFreeze{}.Fields()
+	_ = userpackagefreezeFields
+	// userpackagefreezeDescCreatedAt is the schema descriptor for created_at field.
+	userpackagefreezeDescCreatedAt := userpackagefreezeMixinFields0[0].Descriptor()
+	// userpackagefreeze.DefaultCreatedAt holds the default value on creation for the created_at field.
+	userpackagefreeze.DefaultCreatedAt = userpackagefreezeDescCreatedAt.Default.(func() time.Time)
+	// userpackagefreezeDescUpdatedAt is the schema descriptor for updated_at field.
+	userpackagefreezeDescUpdatedAt := userpackagefreezeMixinFields0[1].Descriptor()
+	// userpackagefreeze.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	userpackagefreeze.DefaultUpdatedAt = userpackagefreezeDescUpdatedAt.Default.(func() time.Time)
+	// userpackagefreeze.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	userpackagefreeze.UpdateDefaultUpdatedAt = userpackagefreezeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userpackagefreezeDescUnfreezeReason is the schema descriptor for unfreeze_reason field.
+	userpackagefreezeDescUnfreezeReason := userpackagefreezeFields[4].Descriptor()
+	// userpackagefreeze.DefaultUnfreezeReason holds the default value on creation for the unfreeze_reason field.
+	userpackagefreeze.DefaultUnfreezeReason = userpackagefreezeDescUnfreezeReason.Default.(string)
+	// userpackagefreeze.UnfreezeReasonValidator is a validator for the "unfreeze_reason" field. It is called by the builders before save.
+	userpackagefreeze.UnfreezeReasonValidator = userpackagefreezeDescUnfreezeReason.Validators[0].(func(string) error)
+	// userpackagefreezeDescDurationSeconds is the schema descriptor for duration_seconds field.
+	userpackagefreezeDescDurationSeconds := userpackagefreezeFields[5].Descriptor()
+	// userpackagefreeze.DefaultDurationSeconds holds the default value on creation for the duration_seconds field.
+	userpackagefreeze.DefaultDurationSeconds = userpackagefreezeDescDurationSeconds.Default.(int64)
 	userplatformquotaMixin := schema.UserPlatformQuota{}.Mixin()
 	userplatformquotaMixinHooks1 := userplatformquotaMixin[1].Hooks()
 	userplatformquota.Hooks[0] = userplatformquotaMixinHooks1[0]

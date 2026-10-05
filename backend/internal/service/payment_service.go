@@ -85,6 +85,8 @@ type CreateOrderRequest struct {
 	OrderType       string
 	PlanID          int64
 	Locale          string
+	// PackageNoticeVersion 用户勾选同意的购买须知版本（套餐订单必填，须为当前版本）。
+	PackageNoticeVersion int
 }
 
 type CreateOrderResponse struct {
@@ -133,6 +135,9 @@ type RefundPlan struct {
 	BalanceToDeduct float64
 	SubDaysToDeduct int
 	SubscriptionID  int64
+	// 二开：套餐订单退款时作废的套餐，以及作废前的状态（网关失败时据此恢复）。
+	PackageID         int64
+	PackagePrevStatus string
 }
 
 type RefundResult struct {
@@ -198,6 +203,7 @@ type PaymentService struct {
 	resumeService            *PaymentResumeService
 	affiliateService         *AffiliateService
 	notificationEmailService *NotificationEmailService
+	packageService           *PackageService // 二开：套餐订单下单校验、发货与退款作废
 }
 
 func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService) *PaymentService {

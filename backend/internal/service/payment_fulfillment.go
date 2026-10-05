@@ -221,6 +221,9 @@ func (s *PaymentService) executeFulfillment(ctx context.Context, oid int64) erro
 	if o.OrderType == payment.OrderTypeSubscription {
 		return s.ExecuteSubscriptionFulfillment(ctx, oid)
 	}
+	if o.OrderType == payment.OrderTypePackage {
+		return s.ExecutePackageFulfillment(ctx, oid)
+	}
 	return s.ExecuteBalanceFulfillment(ctx, oid)
 }
 
@@ -741,7 +744,7 @@ func affiliateRebateBaseAmount(o *dbent.PaymentOrder) float64 {
 		return 0
 	}
 	switch o.OrderType {
-	case payment.OrderTypeBalance, payment.OrderTypeSubscription:
+	case payment.OrderTypeBalance, payment.OrderTypeSubscription, payment.OrderTypePackage:
 		return o.Amount
 	default:
 		return 0

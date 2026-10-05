@@ -304,6 +304,7 @@ type APIKeyService struct {
 	cache                     APIKeyCache
 	rateLimitCacheInvalid     RateLimitCacheInvalidator // optional: invalidate Redis rate limit cache
 	concurrencyService        *ConcurrencyService
+	packageService            *PackageService // 二开：套餐计费判定，可为空
 	cfg                       *config.Config
 	authCacheL1               *ristretto.Cache
 	authNegativeCacheL1       *ristretto.Cache

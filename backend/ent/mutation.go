@@ -35,6 +35,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
 	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
+	"github.com/Wei-Shaw/sub2api/ent/packagefreezeday"
+	"github.com/Wei-Shaw/sub2api/ent/packageplan"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -54,6 +56,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/userpackage"
+	"github.com/Wei-Shaw/sub2api/ent/userpackagefreeze"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
@@ -91,6 +95,8 @@ const (
 	TypeIntelCheckResult              = "IntelCheckResult"
 	TypeIntelCheckRound               = "IntelCheckRound"
 	TypeIntelCheckTarget              = "IntelCheckTarget"
+	TypePackageFreezeDay              = "PackageFreezeDay"
+	TypePackagePlan                   = "PackagePlan"
 	TypePaymentAuditLog               = "PaymentAuditLog"
 	TypePaymentOrder                  = "PaymentOrder"
 	TypePaymentProviderInstance       = "PaymentProviderInstance"
@@ -109,6 +115,8 @@ const (
 	TypeUserAllowedGroup              = "UserAllowedGroup"
 	TypeUserAttributeDefinition       = "UserAttributeDefinition"
 	TypeUserAttributeValue            = "UserAttributeValue"
+	TypeUserPackage                   = "UserPackage"
+	TypeUserPackageFreeze             = "UserPackageFreeze"
 	TypeUserPlatformQuota             = "UserPlatformQuota"
 	TypeUserSubscription              = "UserSubscription"
 )
@@ -34342,6 +34350,1582 @@ func (m *IntelCheckTargetMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown IntelCheckTarget edge %s", name)
 }
 
+// PackageFreezeDayMutation represents an operation that mutates the PackageFreezeDay nodes in the graph.
+type PackageFreezeDayMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int64
+	created_at    *time.Time
+	updated_at    *time.Time
+	day           *time.Time
+	name          *string
+	kind          *string
+	source        *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*PackageFreezeDay, error)
+	predicates    []predicate.PackageFreezeDay
+}
+
+var _ ent.Mutation = (*PackageFreezeDayMutation)(nil)
+
+// packagefreezedayOption allows management of the mutation configuration using functional options.
+type packagefreezedayOption func(*PackageFreezeDayMutation)
+
+// newPackageFreezeDayMutation creates new mutation for the PackageFreezeDay entity.
+func newPackageFreezeDayMutation(c config, op Op, opts ...packagefreezedayOption) *PackageFreezeDayMutation {
+	m := &PackageFreezeDayMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePackageFreezeDay,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPackageFreezeDayID sets the ID field of the mutation.
+func withPackageFreezeDayID(id int64) packagefreezedayOption {
+	return func(m *PackageFreezeDayMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PackageFreezeDay
+		)
+		m.oldValue = func(ctx context.Context) (*PackageFreezeDay, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PackageFreezeDay.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPackageFreezeDay sets the old PackageFreezeDay of the mutation.
+func withPackageFreezeDay(node *PackageFreezeDay) packagefreezedayOption {
+	return func(m *PackageFreezeDayMutation) {
+		m.oldValue = func(context.Context) (*PackageFreezeDay, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PackageFreezeDayMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PackageFreezeDayMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PackageFreezeDayMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PackageFreezeDayMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().PackageFreezeDay.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *PackageFreezeDayMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *PackageFreezeDayMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the PackageFreezeDay entity.
+// If the PackageFreezeDay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackageFreezeDayMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *PackageFreezeDayMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *PackageFreezeDayMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *PackageFreezeDayMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the PackageFreezeDay entity.
+// If the PackageFreezeDay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackageFreezeDayMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *PackageFreezeDayMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetDay sets the "day" field.
+func (m *PackageFreezeDayMutation) SetDay(t time.Time) {
+	m.day = &t
+}
+
+// Day returns the value of the "day" field in the mutation.
+func (m *PackageFreezeDayMutation) Day() (r time.Time, exists bool) {
+	v := m.day
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDay returns the old "day" field's value of the PackageFreezeDay entity.
+// If the PackageFreezeDay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackageFreezeDayMutation) OldDay(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDay is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDay requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDay: %w", err)
+	}
+	return oldValue.Day, nil
+}
+
+// ResetDay resets all changes to the "day" field.
+func (m *PackageFreezeDayMutation) ResetDay() {
+	m.day = nil
+}
+
+// SetName sets the "name" field.
+func (m *PackageFreezeDayMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *PackageFreezeDayMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the PackageFreezeDay entity.
+// If the PackageFreezeDay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackageFreezeDayMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *PackageFreezeDayMutation) ResetName() {
+	m.name = nil
+}
+
+// SetKind sets the "kind" field.
+func (m *PackageFreezeDayMutation) SetKind(s string) {
+	m.kind = &s
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *PackageFreezeDayMutation) Kind() (r string, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the PackageFreezeDay entity.
+// If the PackageFreezeDay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackageFreezeDayMutation) OldKind(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *PackageFreezeDayMutation) ResetKind() {
+	m.kind = nil
+}
+
+// SetSource sets the "source" field.
+func (m *PackageFreezeDayMutation) SetSource(s string) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *PackageFreezeDayMutation) Source() (r string, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the PackageFreezeDay entity.
+// If the PackageFreezeDay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackageFreezeDayMutation) OldSource(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *PackageFreezeDayMutation) ResetSource() {
+	m.source = nil
+}
+
+// Where appends a list predicates to the PackageFreezeDayMutation builder.
+func (m *PackageFreezeDayMutation) Where(ps ...predicate.PackageFreezeDay) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the PackageFreezeDayMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *PackageFreezeDayMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.PackageFreezeDay, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *PackageFreezeDayMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *PackageFreezeDayMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (PackageFreezeDay).
+func (m *PackageFreezeDayMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PackageFreezeDayMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, packagefreezeday.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, packagefreezeday.FieldUpdatedAt)
+	}
+	if m.day != nil {
+		fields = append(fields, packagefreezeday.FieldDay)
+	}
+	if m.name != nil {
+		fields = append(fields, packagefreezeday.FieldName)
+	}
+	if m.kind != nil {
+		fields = append(fields, packagefreezeday.FieldKind)
+	}
+	if m.source != nil {
+		fields = append(fields, packagefreezeday.FieldSource)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PackageFreezeDayMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case packagefreezeday.FieldCreatedAt:
+		return m.CreatedAt()
+	case packagefreezeday.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case packagefreezeday.FieldDay:
+		return m.Day()
+	case packagefreezeday.FieldName:
+		return m.Name()
+	case packagefreezeday.FieldKind:
+		return m.Kind()
+	case packagefreezeday.FieldSource:
+		return m.Source()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PackageFreezeDayMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case packagefreezeday.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case packagefreezeday.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case packagefreezeday.FieldDay:
+		return m.OldDay(ctx)
+	case packagefreezeday.FieldName:
+		return m.OldName(ctx)
+	case packagefreezeday.FieldKind:
+		return m.OldKind(ctx)
+	case packagefreezeday.FieldSource:
+		return m.OldSource(ctx)
+	}
+	return nil, fmt.Errorf("unknown PackageFreezeDay field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PackageFreezeDayMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case packagefreezeday.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case packagefreezeday.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case packagefreezeday.FieldDay:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDay(v)
+		return nil
+	case packagefreezeday.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case packagefreezeday.FieldKind:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
+		return nil
+	case packagefreezeday.FieldSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PackageFreezeDay field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PackageFreezeDayMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PackageFreezeDayMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PackageFreezeDayMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown PackageFreezeDay numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PackageFreezeDayMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PackageFreezeDayMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PackageFreezeDayMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown PackageFreezeDay nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PackageFreezeDayMutation) ResetField(name string) error {
+	switch name {
+	case packagefreezeday.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case packagefreezeday.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case packagefreezeday.FieldDay:
+		m.ResetDay()
+		return nil
+	case packagefreezeday.FieldName:
+		m.ResetName()
+		return nil
+	case packagefreezeday.FieldKind:
+		m.ResetKind()
+		return nil
+	case packagefreezeday.FieldSource:
+		m.ResetSource()
+		return nil
+	}
+	return fmt.Errorf("unknown PackageFreezeDay field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PackageFreezeDayMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PackageFreezeDayMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PackageFreezeDayMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PackageFreezeDayMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PackageFreezeDayMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PackageFreezeDayMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PackageFreezeDayMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown PackageFreezeDay unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PackageFreezeDayMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown PackageFreezeDay edge %s", name)
+}
+
+// PackagePlanMutation represents an operation that mutates the PackagePlan nodes in the graph.
+type PackagePlanMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	group_id         *int64
+	addgroup_id      *int64
+	name             *string
+	cycle            *string
+	tier             *int8
+	addtier          *int8
+	price            *float64
+	addprice         *float64
+	quota_usd        *float64
+	addquota_usd     *float64
+	validity_days    *int
+	addvalidity_days *int
+	for_sale         *bool
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*PackagePlan, error)
+	predicates       []predicate.PackagePlan
+}
+
+var _ ent.Mutation = (*PackagePlanMutation)(nil)
+
+// packageplanOption allows management of the mutation configuration using functional options.
+type packageplanOption func(*PackagePlanMutation)
+
+// newPackagePlanMutation creates new mutation for the PackagePlan entity.
+func newPackagePlanMutation(c config, op Op, opts ...packageplanOption) *PackagePlanMutation {
+	m := &PackagePlanMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePackagePlan,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPackagePlanID sets the ID field of the mutation.
+func withPackagePlanID(id int64) packageplanOption {
+	return func(m *PackagePlanMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PackagePlan
+		)
+		m.oldValue = func(ctx context.Context) (*PackagePlan, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PackagePlan.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPackagePlan sets the old PackagePlan of the mutation.
+func withPackagePlan(node *PackagePlan) packageplanOption {
+	return func(m *PackagePlanMutation) {
+		m.oldValue = func(context.Context) (*PackagePlan, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PackagePlanMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PackagePlanMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PackagePlanMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PackagePlanMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().PackagePlan.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *PackagePlanMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *PackagePlanMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *PackagePlanMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *PackagePlanMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *PackagePlanMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *PackagePlanMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *PackagePlanMutation) SetGroupID(i int64) {
+	m.group_id = &i
+	m.addgroup_id = nil
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *PackagePlanMutation) GroupID() (r int64, exists bool) {
+	v := m.group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldGroupID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (m *PackagePlanMutation) AddGroupID(i int64) {
+	if m.addgroup_id != nil {
+		*m.addgroup_id += i
+	} else {
+		m.addgroup_id = &i
+	}
+}
+
+// AddedGroupID returns the value that was added to the "group_id" field in this mutation.
+func (m *PackagePlanMutation) AddedGroupID() (r int64, exists bool) {
+	v := m.addgroup_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *PackagePlanMutation) ResetGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+}
+
+// SetName sets the "name" field.
+func (m *PackagePlanMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *PackagePlanMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *PackagePlanMutation) ResetName() {
+	m.name = nil
+}
+
+// SetCycle sets the "cycle" field.
+func (m *PackagePlanMutation) SetCycle(s string) {
+	m.cycle = &s
+}
+
+// Cycle returns the value of the "cycle" field in the mutation.
+func (m *PackagePlanMutation) Cycle() (r string, exists bool) {
+	v := m.cycle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCycle returns the old "cycle" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldCycle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCycle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCycle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCycle: %w", err)
+	}
+	return oldValue.Cycle, nil
+}
+
+// ResetCycle resets all changes to the "cycle" field.
+func (m *PackagePlanMutation) ResetCycle() {
+	m.cycle = nil
+}
+
+// SetTier sets the "tier" field.
+func (m *PackagePlanMutation) SetTier(i int8) {
+	m.tier = &i
+	m.addtier = nil
+}
+
+// Tier returns the value of the "tier" field in the mutation.
+func (m *PackagePlanMutation) Tier() (r int8, exists bool) {
+	v := m.tier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTier returns the old "tier" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldTier(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTier: %w", err)
+	}
+	return oldValue.Tier, nil
+}
+
+// AddTier adds i to the "tier" field.
+func (m *PackagePlanMutation) AddTier(i int8) {
+	if m.addtier != nil {
+		*m.addtier += i
+	} else {
+		m.addtier = &i
+	}
+}
+
+// AddedTier returns the value that was added to the "tier" field in this mutation.
+func (m *PackagePlanMutation) AddedTier() (r int8, exists bool) {
+	v := m.addtier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTier resets all changes to the "tier" field.
+func (m *PackagePlanMutation) ResetTier() {
+	m.tier = nil
+	m.addtier = nil
+}
+
+// SetPrice sets the "price" field.
+func (m *PackagePlanMutation) SetPrice(f float64) {
+	m.price = &f
+	m.addprice = nil
+}
+
+// Price returns the value of the "price" field in the mutation.
+func (m *PackagePlanMutation) Price() (r float64, exists bool) {
+	v := m.price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrice returns the old "price" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldPrice(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrice: %w", err)
+	}
+	return oldValue.Price, nil
+}
+
+// AddPrice adds f to the "price" field.
+func (m *PackagePlanMutation) AddPrice(f float64) {
+	if m.addprice != nil {
+		*m.addprice += f
+	} else {
+		m.addprice = &f
+	}
+}
+
+// AddedPrice returns the value that was added to the "price" field in this mutation.
+func (m *PackagePlanMutation) AddedPrice() (r float64, exists bool) {
+	v := m.addprice
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPrice resets all changes to the "price" field.
+func (m *PackagePlanMutation) ResetPrice() {
+	m.price = nil
+	m.addprice = nil
+}
+
+// SetQuotaUsd sets the "quota_usd" field.
+func (m *PackagePlanMutation) SetQuotaUsd(f float64) {
+	m.quota_usd = &f
+	m.addquota_usd = nil
+}
+
+// QuotaUsd returns the value of the "quota_usd" field in the mutation.
+func (m *PackagePlanMutation) QuotaUsd() (r float64, exists bool) {
+	v := m.quota_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuotaUsd returns the old "quota_usd" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldQuotaUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuotaUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuotaUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuotaUsd: %w", err)
+	}
+	return oldValue.QuotaUsd, nil
+}
+
+// AddQuotaUsd adds f to the "quota_usd" field.
+func (m *PackagePlanMutation) AddQuotaUsd(f float64) {
+	if m.addquota_usd != nil {
+		*m.addquota_usd += f
+	} else {
+		m.addquota_usd = &f
+	}
+}
+
+// AddedQuotaUsd returns the value that was added to the "quota_usd" field in this mutation.
+func (m *PackagePlanMutation) AddedQuotaUsd() (r float64, exists bool) {
+	v := m.addquota_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuotaUsd resets all changes to the "quota_usd" field.
+func (m *PackagePlanMutation) ResetQuotaUsd() {
+	m.quota_usd = nil
+	m.addquota_usd = nil
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (m *PackagePlanMutation) SetValidityDays(i int) {
+	m.validity_days = &i
+	m.addvalidity_days = nil
+}
+
+// ValidityDays returns the value of the "validity_days" field in the mutation.
+func (m *PackagePlanMutation) ValidityDays() (r int, exists bool) {
+	v := m.validity_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidityDays returns the old "validity_days" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldValidityDays(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValidityDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValidityDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidityDays: %w", err)
+	}
+	return oldValue.ValidityDays, nil
+}
+
+// AddValidityDays adds i to the "validity_days" field.
+func (m *PackagePlanMutation) AddValidityDays(i int) {
+	if m.addvalidity_days != nil {
+		*m.addvalidity_days += i
+	} else {
+		m.addvalidity_days = &i
+	}
+}
+
+// AddedValidityDays returns the value that was added to the "validity_days" field in this mutation.
+func (m *PackagePlanMutation) AddedValidityDays() (r int, exists bool) {
+	v := m.addvalidity_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetValidityDays resets all changes to the "validity_days" field.
+func (m *PackagePlanMutation) ResetValidityDays() {
+	m.validity_days = nil
+	m.addvalidity_days = nil
+}
+
+// SetForSale sets the "for_sale" field.
+func (m *PackagePlanMutation) SetForSale(b bool) {
+	m.for_sale = &b
+}
+
+// ForSale returns the value of the "for_sale" field in the mutation.
+func (m *PackagePlanMutation) ForSale() (r bool, exists bool) {
+	v := m.for_sale
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldForSale returns the old "for_sale" field's value of the PackagePlan entity.
+// If the PackagePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PackagePlanMutation) OldForSale(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldForSale is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldForSale requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldForSale: %w", err)
+	}
+	return oldValue.ForSale, nil
+}
+
+// ResetForSale resets all changes to the "for_sale" field.
+func (m *PackagePlanMutation) ResetForSale() {
+	m.for_sale = nil
+}
+
+// Where appends a list predicates to the PackagePlanMutation builder.
+func (m *PackagePlanMutation) Where(ps ...predicate.PackagePlan) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the PackagePlanMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *PackagePlanMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.PackagePlan, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *PackagePlanMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *PackagePlanMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (PackagePlan).
+func (m *PackagePlanMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PackagePlanMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, packageplan.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, packageplan.FieldUpdatedAt)
+	}
+	if m.group_id != nil {
+		fields = append(fields, packageplan.FieldGroupID)
+	}
+	if m.name != nil {
+		fields = append(fields, packageplan.FieldName)
+	}
+	if m.cycle != nil {
+		fields = append(fields, packageplan.FieldCycle)
+	}
+	if m.tier != nil {
+		fields = append(fields, packageplan.FieldTier)
+	}
+	if m.price != nil {
+		fields = append(fields, packageplan.FieldPrice)
+	}
+	if m.quota_usd != nil {
+		fields = append(fields, packageplan.FieldQuotaUsd)
+	}
+	if m.validity_days != nil {
+		fields = append(fields, packageplan.FieldValidityDays)
+	}
+	if m.for_sale != nil {
+		fields = append(fields, packageplan.FieldForSale)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PackagePlanMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case packageplan.FieldCreatedAt:
+		return m.CreatedAt()
+	case packageplan.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case packageplan.FieldGroupID:
+		return m.GroupID()
+	case packageplan.FieldName:
+		return m.Name()
+	case packageplan.FieldCycle:
+		return m.Cycle()
+	case packageplan.FieldTier:
+		return m.Tier()
+	case packageplan.FieldPrice:
+		return m.Price()
+	case packageplan.FieldQuotaUsd:
+		return m.QuotaUsd()
+	case packageplan.FieldValidityDays:
+		return m.ValidityDays()
+	case packageplan.FieldForSale:
+		return m.ForSale()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PackagePlanMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case packageplan.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case packageplan.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case packageplan.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case packageplan.FieldName:
+		return m.OldName(ctx)
+	case packageplan.FieldCycle:
+		return m.OldCycle(ctx)
+	case packageplan.FieldTier:
+		return m.OldTier(ctx)
+	case packageplan.FieldPrice:
+		return m.OldPrice(ctx)
+	case packageplan.FieldQuotaUsd:
+		return m.OldQuotaUsd(ctx)
+	case packageplan.FieldValidityDays:
+		return m.OldValidityDays(ctx)
+	case packageplan.FieldForSale:
+		return m.OldForSale(ctx)
+	}
+	return nil, fmt.Errorf("unknown PackagePlan field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PackagePlanMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case packageplan.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case packageplan.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case packageplan.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case packageplan.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case packageplan.FieldCycle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCycle(v)
+		return nil
+	case packageplan.FieldTier:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTier(v)
+		return nil
+	case packageplan.FieldPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrice(v)
+		return nil
+	case packageplan.FieldQuotaUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuotaUsd(v)
+		return nil
+	case packageplan.FieldValidityDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidityDays(v)
+		return nil
+	case packageplan.FieldForSale:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetForSale(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PackagePlan field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PackagePlanMutation) AddedFields() []string {
+	var fields []string
+	if m.addgroup_id != nil {
+		fields = append(fields, packageplan.FieldGroupID)
+	}
+	if m.addtier != nil {
+		fields = append(fields, packageplan.FieldTier)
+	}
+	if m.addprice != nil {
+		fields = append(fields, packageplan.FieldPrice)
+	}
+	if m.addquota_usd != nil {
+		fields = append(fields, packageplan.FieldQuotaUsd)
+	}
+	if m.addvalidity_days != nil {
+		fields = append(fields, packageplan.FieldValidityDays)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PackagePlanMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case packageplan.FieldGroupID:
+		return m.AddedGroupID()
+	case packageplan.FieldTier:
+		return m.AddedTier()
+	case packageplan.FieldPrice:
+		return m.AddedPrice()
+	case packageplan.FieldQuotaUsd:
+		return m.AddedQuotaUsd()
+	case packageplan.FieldValidityDays:
+		return m.AddedValidityDays()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PackagePlanMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case packageplan.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGroupID(v)
+		return nil
+	case packageplan.FieldTier:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTier(v)
+		return nil
+	case packageplan.FieldPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPrice(v)
+		return nil
+	case packageplan.FieldQuotaUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuotaUsd(v)
+		return nil
+	case packageplan.FieldValidityDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddValidityDays(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PackagePlan numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PackagePlanMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PackagePlanMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PackagePlanMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown PackagePlan nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PackagePlanMutation) ResetField(name string) error {
+	switch name {
+	case packageplan.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case packageplan.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case packageplan.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case packageplan.FieldName:
+		m.ResetName()
+		return nil
+	case packageplan.FieldCycle:
+		m.ResetCycle()
+		return nil
+	case packageplan.FieldTier:
+		m.ResetTier()
+		return nil
+	case packageplan.FieldPrice:
+		m.ResetPrice()
+		return nil
+	case packageplan.FieldQuotaUsd:
+		m.ResetQuotaUsd()
+		return nil
+	case packageplan.FieldValidityDays:
+		m.ResetValidityDays()
+		return nil
+	case packageplan.FieldForSale:
+		m.ResetForSale()
+		return nil
+	}
+	return fmt.Errorf("unknown PackagePlan field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PackagePlanMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PackagePlanMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PackagePlanMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PackagePlanMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PackagePlanMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PackagePlanMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PackagePlanMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown PackagePlan unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PackagePlanMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown PackagePlan edge %s", name)
+}
+
 // PaymentAuditLogMutation represents an operation that mutates the PaymentAuditLog nodes in the graph.
 type PaymentAuditLogMutation struct {
 	config
@@ -53605,6 +55189,8 @@ type UserMutation struct {
 	addfrozen_balance             *float64
 	concurrency                   *int
 	addconcurrency                *int
+	package_concurrency           *int
+	addpackage_concurrency        *int
 	status                        *string
 	username                      *string
 	notes                         *string
@@ -54162,6 +55748,62 @@ func (m *UserMutation) AddedConcurrency() (r int, exists bool) {
 func (m *UserMutation) ResetConcurrency() {
 	m.concurrency = nil
 	m.addconcurrency = nil
+}
+
+// SetPackageConcurrency sets the "package_concurrency" field.
+func (m *UserMutation) SetPackageConcurrency(i int) {
+	m.package_concurrency = &i
+	m.addpackage_concurrency = nil
+}
+
+// PackageConcurrency returns the value of the "package_concurrency" field in the mutation.
+func (m *UserMutation) PackageConcurrency() (r int, exists bool) {
+	v := m.package_concurrency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPackageConcurrency returns the old "package_concurrency" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldPackageConcurrency(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPackageConcurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPackageConcurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPackageConcurrency: %w", err)
+	}
+	return oldValue.PackageConcurrency, nil
+}
+
+// AddPackageConcurrency adds i to the "package_concurrency" field.
+func (m *UserMutation) AddPackageConcurrency(i int) {
+	if m.addpackage_concurrency != nil {
+		*m.addpackage_concurrency += i
+	} else {
+		m.addpackage_concurrency = &i
+	}
+}
+
+// AddedPackageConcurrency returns the value that was added to the "package_concurrency" field in this mutation.
+func (m *UserMutation) AddedPackageConcurrency() (r int, exists bool) {
+	v := m.addpackage_concurrency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPackageConcurrency resets all changes to the "package_concurrency" field.
+func (m *UserMutation) ResetPackageConcurrency() {
+	m.package_concurrency = nil
+	m.addpackage_concurrency = nil
 }
 
 // SetStatus sets the "status" field.
@@ -55602,7 +57244,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 25)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -55629,6 +57271,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.concurrency != nil {
 		fields = append(fields, user.FieldConcurrency)
+	}
+	if m.package_concurrency != nil {
+		fields = append(fields, user.FieldPackageConcurrency)
 	}
 	if m.status != nil {
 		fields = append(fields, user.FieldStatus)
@@ -55704,6 +57349,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.FrozenBalance()
 	case user.FieldConcurrency:
 		return m.Concurrency()
+	case user.FieldPackageConcurrency:
+		return m.PackageConcurrency()
 	case user.FieldStatus:
 		return m.Status()
 	case user.FieldUsername:
@@ -55763,6 +57410,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldFrozenBalance(ctx)
 	case user.FieldConcurrency:
 		return m.OldConcurrency(ctx)
+	case user.FieldPackageConcurrency:
+		return m.OldPackageConcurrency(ctx)
 	case user.FieldStatus:
 		return m.OldStatus(ctx)
 	case user.FieldUsername:
@@ -55866,6 +57515,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetConcurrency(v)
+		return nil
+	case user.FieldPackageConcurrency:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPackageConcurrency(v)
 		return nil
 	case user.FieldStatus:
 		v, ok := value.(string)
@@ -55996,6 +57652,9 @@ func (m *UserMutation) AddedFields() []string {
 	if m.addconcurrency != nil {
 		fields = append(fields, user.FieldConcurrency)
 	}
+	if m.addpackage_concurrency != nil {
+		fields = append(fields, user.FieldPackageConcurrency)
+	}
 	if m.addbalance_notify_threshold != nil {
 		fields = append(fields, user.FieldBalanceNotifyThreshold)
 	}
@@ -56019,6 +57678,8 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedFrozenBalance()
 	case user.FieldConcurrency:
 		return m.AddedConcurrency()
+	case user.FieldPackageConcurrency:
+		return m.AddedPackageConcurrency()
 	case user.FieldBalanceNotifyThreshold:
 		return m.AddedBalanceNotifyThreshold()
 	case user.FieldTotalRecharged:
@@ -56054,6 +57715,13 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddConcurrency(v)
+		return nil
+	case user.FieldPackageConcurrency:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPackageConcurrency(v)
 		return nil
 	case user.FieldBalanceNotifyThreshold:
 		v, ok := value.(float64)
@@ -56168,6 +57836,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldConcurrency:
 		m.ResetConcurrency()
+		return nil
+	case user.FieldPackageConcurrency:
+		m.ResetPackageConcurrency()
 		return nil
 	case user.FieldStatus:
 		m.ResetStatus()
@@ -58831,6 +60502,2279 @@ func (m *UserAttributeValueMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown UserAttributeValue edge %s", name)
+}
+
+// UserPackageMutation represents an operation that mutates the UserPackage nodes in the graph.
+type UserPackageMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	user_id                 *int64
+	adduser_id              *int64
+	group_id                *int64
+	addgroup_id             *int64
+	plan_id                 *int64
+	addplan_id              *int64
+	order_id                *int64
+	addorder_id             *int64
+	name                    *string
+	cycle                   *string
+	tier                    *int8
+	addtier                 *int8
+	quota_usd               *float64
+	addquota_usd            *float64
+	used_usd                *float64
+	addused_usd             *float64
+	starts_at               *time.Time
+	expires_at              *time.Time
+	status                  *string
+	frozen_at               *time.Time
+	frozen_seconds_total    *int64
+	addfrozen_seconds_total *int64
+	clearedFields           map[string]struct{}
+	done                    bool
+	oldValue                func(context.Context) (*UserPackage, error)
+	predicates              []predicate.UserPackage
+}
+
+var _ ent.Mutation = (*UserPackageMutation)(nil)
+
+// userpackageOption allows management of the mutation configuration using functional options.
+type userpackageOption func(*UserPackageMutation)
+
+// newUserPackageMutation creates new mutation for the UserPackage entity.
+func newUserPackageMutation(c config, op Op, opts ...userpackageOption) *UserPackageMutation {
+	m := &UserPackageMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUserPackage,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUserPackageID sets the ID field of the mutation.
+func withUserPackageID(id int64) userpackageOption {
+	return func(m *UserPackageMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UserPackage
+		)
+		m.oldValue = func(ctx context.Context) (*UserPackage, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UserPackage.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUserPackage sets the old UserPackage of the mutation.
+func withUserPackage(node *UserPackage) userpackageOption {
+	return func(m *UserPackageMutation) {
+		m.oldValue = func(context.Context) (*UserPackage, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UserPackageMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UserPackageMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *UserPackageMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *UserPackageMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().UserPackage.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UserPackageMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UserPackageMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UserPackageMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *UserPackageMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *UserPackageMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *UserPackageMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *UserPackageMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *UserPackageMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *UserPackageMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *UserPackageMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *UserPackageMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *UserPackageMutation) SetGroupID(i int64) {
+	m.group_id = &i
+	m.addgroup_id = nil
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *UserPackageMutation) GroupID() (r int64, exists bool) {
+	v := m.group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldGroupID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (m *UserPackageMutation) AddGroupID(i int64) {
+	if m.addgroup_id != nil {
+		*m.addgroup_id += i
+	} else {
+		m.addgroup_id = &i
+	}
+}
+
+// AddedGroupID returns the value that was added to the "group_id" field in this mutation.
+func (m *UserPackageMutation) AddedGroupID() (r int64, exists bool) {
+	v := m.addgroup_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *UserPackageMutation) ResetGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+}
+
+// SetPlanID sets the "plan_id" field.
+func (m *UserPackageMutation) SetPlanID(i int64) {
+	m.plan_id = &i
+	m.addplan_id = nil
+}
+
+// PlanID returns the value of the "plan_id" field in the mutation.
+func (m *UserPackageMutation) PlanID() (r int64, exists bool) {
+	v := m.plan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlanID returns the old "plan_id" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldPlanID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlanID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlanID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlanID: %w", err)
+	}
+	return oldValue.PlanID, nil
+}
+
+// AddPlanID adds i to the "plan_id" field.
+func (m *UserPackageMutation) AddPlanID(i int64) {
+	if m.addplan_id != nil {
+		*m.addplan_id += i
+	} else {
+		m.addplan_id = &i
+	}
+}
+
+// AddedPlanID returns the value that was added to the "plan_id" field in this mutation.
+func (m *UserPackageMutation) AddedPlanID() (r int64, exists bool) {
+	v := m.addplan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPlanID resets all changes to the "plan_id" field.
+func (m *UserPackageMutation) ResetPlanID() {
+	m.plan_id = nil
+	m.addplan_id = nil
+}
+
+// SetOrderID sets the "order_id" field.
+func (m *UserPackageMutation) SetOrderID(i int64) {
+	m.order_id = &i
+	m.addorder_id = nil
+}
+
+// OrderID returns the value of the "order_id" field in the mutation.
+func (m *UserPackageMutation) OrderID() (r int64, exists bool) {
+	v := m.order_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrderID returns the old "order_id" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldOrderID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrderID: %w", err)
+	}
+	return oldValue.OrderID, nil
+}
+
+// AddOrderID adds i to the "order_id" field.
+func (m *UserPackageMutation) AddOrderID(i int64) {
+	if m.addorder_id != nil {
+		*m.addorder_id += i
+	} else {
+		m.addorder_id = &i
+	}
+}
+
+// AddedOrderID returns the value that was added to the "order_id" field in this mutation.
+func (m *UserPackageMutation) AddedOrderID() (r int64, exists bool) {
+	v := m.addorder_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearOrderID clears the value of the "order_id" field.
+func (m *UserPackageMutation) ClearOrderID() {
+	m.order_id = nil
+	m.addorder_id = nil
+	m.clearedFields[userpackage.FieldOrderID] = struct{}{}
+}
+
+// OrderIDCleared returns if the "order_id" field was cleared in this mutation.
+func (m *UserPackageMutation) OrderIDCleared() bool {
+	_, ok := m.clearedFields[userpackage.FieldOrderID]
+	return ok
+}
+
+// ResetOrderID resets all changes to the "order_id" field.
+func (m *UserPackageMutation) ResetOrderID() {
+	m.order_id = nil
+	m.addorder_id = nil
+	delete(m.clearedFields, userpackage.FieldOrderID)
+}
+
+// SetName sets the "name" field.
+func (m *UserPackageMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *UserPackageMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *UserPackageMutation) ResetName() {
+	m.name = nil
+}
+
+// SetCycle sets the "cycle" field.
+func (m *UserPackageMutation) SetCycle(s string) {
+	m.cycle = &s
+}
+
+// Cycle returns the value of the "cycle" field in the mutation.
+func (m *UserPackageMutation) Cycle() (r string, exists bool) {
+	v := m.cycle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCycle returns the old "cycle" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldCycle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCycle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCycle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCycle: %w", err)
+	}
+	return oldValue.Cycle, nil
+}
+
+// ResetCycle resets all changes to the "cycle" field.
+func (m *UserPackageMutation) ResetCycle() {
+	m.cycle = nil
+}
+
+// SetTier sets the "tier" field.
+func (m *UserPackageMutation) SetTier(i int8) {
+	m.tier = &i
+	m.addtier = nil
+}
+
+// Tier returns the value of the "tier" field in the mutation.
+func (m *UserPackageMutation) Tier() (r int8, exists bool) {
+	v := m.tier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTier returns the old "tier" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldTier(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTier: %w", err)
+	}
+	return oldValue.Tier, nil
+}
+
+// AddTier adds i to the "tier" field.
+func (m *UserPackageMutation) AddTier(i int8) {
+	if m.addtier != nil {
+		*m.addtier += i
+	} else {
+		m.addtier = &i
+	}
+}
+
+// AddedTier returns the value that was added to the "tier" field in this mutation.
+func (m *UserPackageMutation) AddedTier() (r int8, exists bool) {
+	v := m.addtier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTier resets all changes to the "tier" field.
+func (m *UserPackageMutation) ResetTier() {
+	m.tier = nil
+	m.addtier = nil
+}
+
+// SetQuotaUsd sets the "quota_usd" field.
+func (m *UserPackageMutation) SetQuotaUsd(f float64) {
+	m.quota_usd = &f
+	m.addquota_usd = nil
+}
+
+// QuotaUsd returns the value of the "quota_usd" field in the mutation.
+func (m *UserPackageMutation) QuotaUsd() (r float64, exists bool) {
+	v := m.quota_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuotaUsd returns the old "quota_usd" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldQuotaUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuotaUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuotaUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuotaUsd: %w", err)
+	}
+	return oldValue.QuotaUsd, nil
+}
+
+// AddQuotaUsd adds f to the "quota_usd" field.
+func (m *UserPackageMutation) AddQuotaUsd(f float64) {
+	if m.addquota_usd != nil {
+		*m.addquota_usd += f
+	} else {
+		m.addquota_usd = &f
+	}
+}
+
+// AddedQuotaUsd returns the value that was added to the "quota_usd" field in this mutation.
+func (m *UserPackageMutation) AddedQuotaUsd() (r float64, exists bool) {
+	v := m.addquota_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuotaUsd resets all changes to the "quota_usd" field.
+func (m *UserPackageMutation) ResetQuotaUsd() {
+	m.quota_usd = nil
+	m.addquota_usd = nil
+}
+
+// SetUsedUsd sets the "used_usd" field.
+func (m *UserPackageMutation) SetUsedUsd(f float64) {
+	m.used_usd = &f
+	m.addused_usd = nil
+}
+
+// UsedUsd returns the value of the "used_usd" field in the mutation.
+func (m *UserPackageMutation) UsedUsd() (r float64, exists bool) {
+	v := m.used_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsedUsd returns the old "used_usd" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldUsedUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsedUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsedUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsedUsd: %w", err)
+	}
+	return oldValue.UsedUsd, nil
+}
+
+// AddUsedUsd adds f to the "used_usd" field.
+func (m *UserPackageMutation) AddUsedUsd(f float64) {
+	if m.addused_usd != nil {
+		*m.addused_usd += f
+	} else {
+		m.addused_usd = &f
+	}
+}
+
+// AddedUsedUsd returns the value that was added to the "used_usd" field in this mutation.
+func (m *UserPackageMutation) AddedUsedUsd() (r float64, exists bool) {
+	v := m.addused_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUsedUsd resets all changes to the "used_usd" field.
+func (m *UserPackageMutation) ResetUsedUsd() {
+	m.used_usd = nil
+	m.addused_usd = nil
+}
+
+// SetStartsAt sets the "starts_at" field.
+func (m *UserPackageMutation) SetStartsAt(t time.Time) {
+	m.starts_at = &t
+}
+
+// StartsAt returns the value of the "starts_at" field in the mutation.
+func (m *UserPackageMutation) StartsAt() (r time.Time, exists bool) {
+	v := m.starts_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartsAt returns the old "starts_at" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldStartsAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartsAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartsAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartsAt: %w", err)
+	}
+	return oldValue.StartsAt, nil
+}
+
+// ResetStartsAt resets all changes to the "starts_at" field.
+func (m *UserPackageMutation) ResetStartsAt() {
+	m.starts_at = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *UserPackageMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *UserPackageMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *UserPackageMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *UserPackageMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *UserPackageMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *UserPackageMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetFrozenAt sets the "frozen_at" field.
+func (m *UserPackageMutation) SetFrozenAt(t time.Time) {
+	m.frozen_at = &t
+}
+
+// FrozenAt returns the value of the "frozen_at" field in the mutation.
+func (m *UserPackageMutation) FrozenAt() (r time.Time, exists bool) {
+	v := m.frozen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFrozenAt returns the old "frozen_at" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldFrozenAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFrozenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFrozenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFrozenAt: %w", err)
+	}
+	return oldValue.FrozenAt, nil
+}
+
+// ClearFrozenAt clears the value of the "frozen_at" field.
+func (m *UserPackageMutation) ClearFrozenAt() {
+	m.frozen_at = nil
+	m.clearedFields[userpackage.FieldFrozenAt] = struct{}{}
+}
+
+// FrozenAtCleared returns if the "frozen_at" field was cleared in this mutation.
+func (m *UserPackageMutation) FrozenAtCleared() bool {
+	_, ok := m.clearedFields[userpackage.FieldFrozenAt]
+	return ok
+}
+
+// ResetFrozenAt resets all changes to the "frozen_at" field.
+func (m *UserPackageMutation) ResetFrozenAt() {
+	m.frozen_at = nil
+	delete(m.clearedFields, userpackage.FieldFrozenAt)
+}
+
+// SetFrozenSecondsTotal sets the "frozen_seconds_total" field.
+func (m *UserPackageMutation) SetFrozenSecondsTotal(i int64) {
+	m.frozen_seconds_total = &i
+	m.addfrozen_seconds_total = nil
+}
+
+// FrozenSecondsTotal returns the value of the "frozen_seconds_total" field in the mutation.
+func (m *UserPackageMutation) FrozenSecondsTotal() (r int64, exists bool) {
+	v := m.frozen_seconds_total
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFrozenSecondsTotal returns the old "frozen_seconds_total" field's value of the UserPackage entity.
+// If the UserPackage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageMutation) OldFrozenSecondsTotal(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFrozenSecondsTotal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFrozenSecondsTotal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFrozenSecondsTotal: %w", err)
+	}
+	return oldValue.FrozenSecondsTotal, nil
+}
+
+// AddFrozenSecondsTotal adds i to the "frozen_seconds_total" field.
+func (m *UserPackageMutation) AddFrozenSecondsTotal(i int64) {
+	if m.addfrozen_seconds_total != nil {
+		*m.addfrozen_seconds_total += i
+	} else {
+		m.addfrozen_seconds_total = &i
+	}
+}
+
+// AddedFrozenSecondsTotal returns the value that was added to the "frozen_seconds_total" field in this mutation.
+func (m *UserPackageMutation) AddedFrozenSecondsTotal() (r int64, exists bool) {
+	v := m.addfrozen_seconds_total
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFrozenSecondsTotal resets all changes to the "frozen_seconds_total" field.
+func (m *UserPackageMutation) ResetFrozenSecondsTotal() {
+	m.frozen_seconds_total = nil
+	m.addfrozen_seconds_total = nil
+}
+
+// Where appends a list predicates to the UserPackageMutation builder.
+func (m *UserPackageMutation) Where(ps ...predicate.UserPackage) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the UserPackageMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserPackageMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.UserPackage, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *UserPackageMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserPackageMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (UserPackage).
+func (m *UserPackageMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UserPackageMutation) Fields() []string {
+	fields := make([]string, 0, 16)
+	if m.created_at != nil {
+		fields = append(fields, userpackage.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, userpackage.FieldUpdatedAt)
+	}
+	if m.user_id != nil {
+		fields = append(fields, userpackage.FieldUserID)
+	}
+	if m.group_id != nil {
+		fields = append(fields, userpackage.FieldGroupID)
+	}
+	if m.plan_id != nil {
+		fields = append(fields, userpackage.FieldPlanID)
+	}
+	if m.order_id != nil {
+		fields = append(fields, userpackage.FieldOrderID)
+	}
+	if m.name != nil {
+		fields = append(fields, userpackage.FieldName)
+	}
+	if m.cycle != nil {
+		fields = append(fields, userpackage.FieldCycle)
+	}
+	if m.tier != nil {
+		fields = append(fields, userpackage.FieldTier)
+	}
+	if m.quota_usd != nil {
+		fields = append(fields, userpackage.FieldQuotaUsd)
+	}
+	if m.used_usd != nil {
+		fields = append(fields, userpackage.FieldUsedUsd)
+	}
+	if m.starts_at != nil {
+		fields = append(fields, userpackage.FieldStartsAt)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, userpackage.FieldExpiresAt)
+	}
+	if m.status != nil {
+		fields = append(fields, userpackage.FieldStatus)
+	}
+	if m.frozen_at != nil {
+		fields = append(fields, userpackage.FieldFrozenAt)
+	}
+	if m.frozen_seconds_total != nil {
+		fields = append(fields, userpackage.FieldFrozenSecondsTotal)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UserPackageMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case userpackage.FieldCreatedAt:
+		return m.CreatedAt()
+	case userpackage.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case userpackage.FieldUserID:
+		return m.UserID()
+	case userpackage.FieldGroupID:
+		return m.GroupID()
+	case userpackage.FieldPlanID:
+		return m.PlanID()
+	case userpackage.FieldOrderID:
+		return m.OrderID()
+	case userpackage.FieldName:
+		return m.Name()
+	case userpackage.FieldCycle:
+		return m.Cycle()
+	case userpackage.FieldTier:
+		return m.Tier()
+	case userpackage.FieldQuotaUsd:
+		return m.QuotaUsd()
+	case userpackage.FieldUsedUsd:
+		return m.UsedUsd()
+	case userpackage.FieldStartsAt:
+		return m.StartsAt()
+	case userpackage.FieldExpiresAt:
+		return m.ExpiresAt()
+	case userpackage.FieldStatus:
+		return m.Status()
+	case userpackage.FieldFrozenAt:
+		return m.FrozenAt()
+	case userpackage.FieldFrozenSecondsTotal:
+		return m.FrozenSecondsTotal()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UserPackageMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case userpackage.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case userpackage.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case userpackage.FieldUserID:
+		return m.OldUserID(ctx)
+	case userpackage.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case userpackage.FieldPlanID:
+		return m.OldPlanID(ctx)
+	case userpackage.FieldOrderID:
+		return m.OldOrderID(ctx)
+	case userpackage.FieldName:
+		return m.OldName(ctx)
+	case userpackage.FieldCycle:
+		return m.OldCycle(ctx)
+	case userpackage.FieldTier:
+		return m.OldTier(ctx)
+	case userpackage.FieldQuotaUsd:
+		return m.OldQuotaUsd(ctx)
+	case userpackage.FieldUsedUsd:
+		return m.OldUsedUsd(ctx)
+	case userpackage.FieldStartsAt:
+		return m.OldStartsAt(ctx)
+	case userpackage.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case userpackage.FieldStatus:
+		return m.OldStatus(ctx)
+	case userpackage.FieldFrozenAt:
+		return m.OldFrozenAt(ctx)
+	case userpackage.FieldFrozenSecondsTotal:
+		return m.OldFrozenSecondsTotal(ctx)
+	}
+	return nil, fmt.Errorf("unknown UserPackage field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserPackageMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case userpackage.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case userpackage.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case userpackage.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case userpackage.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case userpackage.FieldPlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlanID(v)
+		return nil
+	case userpackage.FieldOrderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrderID(v)
+		return nil
+	case userpackage.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case userpackage.FieldCycle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCycle(v)
+		return nil
+	case userpackage.FieldTier:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTier(v)
+		return nil
+	case userpackage.FieldQuotaUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuotaUsd(v)
+		return nil
+	case userpackage.FieldUsedUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsedUsd(v)
+		return nil
+	case userpackage.FieldStartsAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartsAt(v)
+		return nil
+	case userpackage.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case userpackage.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case userpackage.FieldFrozenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFrozenAt(v)
+		return nil
+	case userpackage.FieldFrozenSecondsTotal:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFrozenSecondsTotal(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UserPackage field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UserPackageMutation) AddedFields() []string {
+	var fields []string
+	if m.adduser_id != nil {
+		fields = append(fields, userpackage.FieldUserID)
+	}
+	if m.addgroup_id != nil {
+		fields = append(fields, userpackage.FieldGroupID)
+	}
+	if m.addplan_id != nil {
+		fields = append(fields, userpackage.FieldPlanID)
+	}
+	if m.addorder_id != nil {
+		fields = append(fields, userpackage.FieldOrderID)
+	}
+	if m.addtier != nil {
+		fields = append(fields, userpackage.FieldTier)
+	}
+	if m.addquota_usd != nil {
+		fields = append(fields, userpackage.FieldQuotaUsd)
+	}
+	if m.addused_usd != nil {
+		fields = append(fields, userpackage.FieldUsedUsd)
+	}
+	if m.addfrozen_seconds_total != nil {
+		fields = append(fields, userpackage.FieldFrozenSecondsTotal)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UserPackageMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case userpackage.FieldUserID:
+		return m.AddedUserID()
+	case userpackage.FieldGroupID:
+		return m.AddedGroupID()
+	case userpackage.FieldPlanID:
+		return m.AddedPlanID()
+	case userpackage.FieldOrderID:
+		return m.AddedOrderID()
+	case userpackage.FieldTier:
+		return m.AddedTier()
+	case userpackage.FieldQuotaUsd:
+		return m.AddedQuotaUsd()
+	case userpackage.FieldUsedUsd:
+		return m.AddedUsedUsd()
+	case userpackage.FieldFrozenSecondsTotal:
+		return m.AddedFrozenSecondsTotal()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserPackageMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case userpackage.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case userpackage.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGroupID(v)
+		return nil
+	case userpackage.FieldPlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPlanID(v)
+		return nil
+	case userpackage.FieldOrderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOrderID(v)
+		return nil
+	case userpackage.FieldTier:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTier(v)
+		return nil
+	case userpackage.FieldQuotaUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuotaUsd(v)
+		return nil
+	case userpackage.FieldUsedUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUsedUsd(v)
+		return nil
+	case userpackage.FieldFrozenSecondsTotal:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFrozenSecondsTotal(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UserPackage numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UserPackageMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(userpackage.FieldOrderID) {
+		fields = append(fields, userpackage.FieldOrderID)
+	}
+	if m.FieldCleared(userpackage.FieldFrozenAt) {
+		fields = append(fields, userpackage.FieldFrozenAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UserPackageMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UserPackageMutation) ClearField(name string) error {
+	switch name {
+	case userpackage.FieldOrderID:
+		m.ClearOrderID()
+		return nil
+	case userpackage.FieldFrozenAt:
+		m.ClearFrozenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UserPackage nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UserPackageMutation) ResetField(name string) error {
+	switch name {
+	case userpackage.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case userpackage.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case userpackage.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case userpackage.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case userpackage.FieldPlanID:
+		m.ResetPlanID()
+		return nil
+	case userpackage.FieldOrderID:
+		m.ResetOrderID()
+		return nil
+	case userpackage.FieldName:
+		m.ResetName()
+		return nil
+	case userpackage.FieldCycle:
+		m.ResetCycle()
+		return nil
+	case userpackage.FieldTier:
+		m.ResetTier()
+		return nil
+	case userpackage.FieldQuotaUsd:
+		m.ResetQuotaUsd()
+		return nil
+	case userpackage.FieldUsedUsd:
+		m.ResetUsedUsd()
+		return nil
+	case userpackage.FieldStartsAt:
+		m.ResetStartsAt()
+		return nil
+	case userpackage.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case userpackage.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case userpackage.FieldFrozenAt:
+		m.ResetFrozenAt()
+		return nil
+	case userpackage.FieldFrozenSecondsTotal:
+		m.ResetFrozenSecondsTotal()
+		return nil
+	}
+	return fmt.Errorf("unknown UserPackage field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UserPackageMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UserPackageMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UserPackageMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UserPackageMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UserPackageMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UserPackageMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UserPackageMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown UserPackage unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UserPackageMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown UserPackage edge %s", name)
+}
+
+// UserPackageFreezeMutation represents an operation that mutates the UserPackageFreeze nodes in the graph.
+type UserPackageFreezeMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int64
+	created_at          *time.Time
+	updated_at          *time.Time
+	package_id          *int64
+	addpackage_id       *int64
+	user_id             *int64
+	adduser_id          *int64
+	frozen_at           *time.Time
+	unfrozen_at         *time.Time
+	unfreeze_reason     *string
+	duration_seconds    *int64
+	addduration_seconds *int64
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*UserPackageFreeze, error)
+	predicates          []predicate.UserPackageFreeze
+}
+
+var _ ent.Mutation = (*UserPackageFreezeMutation)(nil)
+
+// userpackagefreezeOption allows management of the mutation configuration using functional options.
+type userpackagefreezeOption func(*UserPackageFreezeMutation)
+
+// newUserPackageFreezeMutation creates new mutation for the UserPackageFreeze entity.
+func newUserPackageFreezeMutation(c config, op Op, opts ...userpackagefreezeOption) *UserPackageFreezeMutation {
+	m := &UserPackageFreezeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUserPackageFreeze,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUserPackageFreezeID sets the ID field of the mutation.
+func withUserPackageFreezeID(id int64) userpackagefreezeOption {
+	return func(m *UserPackageFreezeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UserPackageFreeze
+		)
+		m.oldValue = func(ctx context.Context) (*UserPackageFreeze, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UserPackageFreeze.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUserPackageFreeze sets the old UserPackageFreeze of the mutation.
+func withUserPackageFreeze(node *UserPackageFreeze) userpackagefreezeOption {
+	return func(m *UserPackageFreezeMutation) {
+		m.oldValue = func(context.Context) (*UserPackageFreeze, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UserPackageFreezeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UserPackageFreezeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *UserPackageFreezeMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *UserPackageFreezeMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().UserPackageFreeze.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UserPackageFreezeMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UserPackageFreezeMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UserPackageFreeze entity.
+// If the UserPackageFreeze object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageFreezeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UserPackageFreezeMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *UserPackageFreezeMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *UserPackageFreezeMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the UserPackageFreeze entity.
+// If the UserPackageFreeze object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageFreezeMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *UserPackageFreezeMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetPackageID sets the "package_id" field.
+func (m *UserPackageFreezeMutation) SetPackageID(i int64) {
+	m.package_id = &i
+	m.addpackage_id = nil
+}
+
+// PackageID returns the value of the "package_id" field in the mutation.
+func (m *UserPackageFreezeMutation) PackageID() (r int64, exists bool) {
+	v := m.package_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPackageID returns the old "package_id" field's value of the UserPackageFreeze entity.
+// If the UserPackageFreeze object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageFreezeMutation) OldPackageID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPackageID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPackageID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPackageID: %w", err)
+	}
+	return oldValue.PackageID, nil
+}
+
+// AddPackageID adds i to the "package_id" field.
+func (m *UserPackageFreezeMutation) AddPackageID(i int64) {
+	if m.addpackage_id != nil {
+		*m.addpackage_id += i
+	} else {
+		m.addpackage_id = &i
+	}
+}
+
+// AddedPackageID returns the value that was added to the "package_id" field in this mutation.
+func (m *UserPackageFreezeMutation) AddedPackageID() (r int64, exists bool) {
+	v := m.addpackage_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPackageID resets all changes to the "package_id" field.
+func (m *UserPackageFreezeMutation) ResetPackageID() {
+	m.package_id = nil
+	m.addpackage_id = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *UserPackageFreezeMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *UserPackageFreezeMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the UserPackageFreeze entity.
+// If the UserPackageFreeze object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageFreezeMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *UserPackageFreezeMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *UserPackageFreezeMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *UserPackageFreezeMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetFrozenAt sets the "frozen_at" field.
+func (m *UserPackageFreezeMutation) SetFrozenAt(t time.Time) {
+	m.frozen_at = &t
+}
+
+// FrozenAt returns the value of the "frozen_at" field in the mutation.
+func (m *UserPackageFreezeMutation) FrozenAt() (r time.Time, exists bool) {
+	v := m.frozen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFrozenAt returns the old "frozen_at" field's value of the UserPackageFreeze entity.
+// If the UserPackageFreeze object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageFreezeMutation) OldFrozenAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFrozenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFrozenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFrozenAt: %w", err)
+	}
+	return oldValue.FrozenAt, nil
+}
+
+// ResetFrozenAt resets all changes to the "frozen_at" field.
+func (m *UserPackageFreezeMutation) ResetFrozenAt() {
+	m.frozen_at = nil
+}
+
+// SetUnfrozenAt sets the "unfrozen_at" field.
+func (m *UserPackageFreezeMutation) SetUnfrozenAt(t time.Time) {
+	m.unfrozen_at = &t
+}
+
+// UnfrozenAt returns the value of the "unfrozen_at" field in the mutation.
+func (m *UserPackageFreezeMutation) UnfrozenAt() (r time.Time, exists bool) {
+	v := m.unfrozen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnfrozenAt returns the old "unfrozen_at" field's value of the UserPackageFreeze entity.
+// If the UserPackageFreeze object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageFreezeMutation) OldUnfrozenAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnfrozenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnfrozenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnfrozenAt: %w", err)
+	}
+	return oldValue.UnfrozenAt, nil
+}
+
+// ClearUnfrozenAt clears the value of the "unfrozen_at" field.
+func (m *UserPackageFreezeMutation) ClearUnfrozenAt() {
+	m.unfrozen_at = nil
+	m.clearedFields[userpackagefreeze.FieldUnfrozenAt] = struct{}{}
+}
+
+// UnfrozenAtCleared returns if the "unfrozen_at" field was cleared in this mutation.
+func (m *UserPackageFreezeMutation) UnfrozenAtCleared() bool {
+	_, ok := m.clearedFields[userpackagefreeze.FieldUnfrozenAt]
+	return ok
+}
+
+// ResetUnfrozenAt resets all changes to the "unfrozen_at" field.
+func (m *UserPackageFreezeMutation) ResetUnfrozenAt() {
+	m.unfrozen_at = nil
+	delete(m.clearedFields, userpackagefreeze.FieldUnfrozenAt)
+}
+
+// SetUnfreezeReason sets the "unfreeze_reason" field.
+func (m *UserPackageFreezeMutation) SetUnfreezeReason(s string) {
+	m.unfreeze_reason = &s
+}
+
+// UnfreezeReason returns the value of the "unfreeze_reason" field in the mutation.
+func (m *UserPackageFreezeMutation) UnfreezeReason() (r string, exists bool) {
+	v := m.unfreeze_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnfreezeReason returns the old "unfreeze_reason" field's value of the UserPackageFreeze entity.
+// If the UserPackageFreeze object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageFreezeMutation) OldUnfreezeReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnfreezeReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnfreezeReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnfreezeReason: %w", err)
+	}
+	return oldValue.UnfreezeReason, nil
+}
+
+// ResetUnfreezeReason resets all changes to the "unfreeze_reason" field.
+func (m *UserPackageFreezeMutation) ResetUnfreezeReason() {
+	m.unfreeze_reason = nil
+}
+
+// SetDurationSeconds sets the "duration_seconds" field.
+func (m *UserPackageFreezeMutation) SetDurationSeconds(i int64) {
+	m.duration_seconds = &i
+	m.addduration_seconds = nil
+}
+
+// DurationSeconds returns the value of the "duration_seconds" field in the mutation.
+func (m *UserPackageFreezeMutation) DurationSeconds() (r int64, exists bool) {
+	v := m.duration_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDurationSeconds returns the old "duration_seconds" field's value of the UserPackageFreeze entity.
+// If the UserPackageFreeze object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserPackageFreezeMutation) OldDurationSeconds(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDurationSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDurationSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDurationSeconds: %w", err)
+	}
+	return oldValue.DurationSeconds, nil
+}
+
+// AddDurationSeconds adds i to the "duration_seconds" field.
+func (m *UserPackageFreezeMutation) AddDurationSeconds(i int64) {
+	if m.addduration_seconds != nil {
+		*m.addduration_seconds += i
+	} else {
+		m.addduration_seconds = &i
+	}
+}
+
+// AddedDurationSeconds returns the value that was added to the "duration_seconds" field in this mutation.
+func (m *UserPackageFreezeMutation) AddedDurationSeconds() (r int64, exists bool) {
+	v := m.addduration_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDurationSeconds resets all changes to the "duration_seconds" field.
+func (m *UserPackageFreezeMutation) ResetDurationSeconds() {
+	m.duration_seconds = nil
+	m.addduration_seconds = nil
+}
+
+// Where appends a list predicates to the UserPackageFreezeMutation builder.
+func (m *UserPackageFreezeMutation) Where(ps ...predicate.UserPackageFreeze) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the UserPackageFreezeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserPackageFreezeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.UserPackageFreeze, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *UserPackageFreezeMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserPackageFreezeMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (UserPackageFreeze).
+func (m *UserPackageFreezeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UserPackageFreezeMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, userpackagefreeze.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, userpackagefreeze.FieldUpdatedAt)
+	}
+	if m.package_id != nil {
+		fields = append(fields, userpackagefreeze.FieldPackageID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, userpackagefreeze.FieldUserID)
+	}
+	if m.frozen_at != nil {
+		fields = append(fields, userpackagefreeze.FieldFrozenAt)
+	}
+	if m.unfrozen_at != nil {
+		fields = append(fields, userpackagefreeze.FieldUnfrozenAt)
+	}
+	if m.unfreeze_reason != nil {
+		fields = append(fields, userpackagefreeze.FieldUnfreezeReason)
+	}
+	if m.duration_seconds != nil {
+		fields = append(fields, userpackagefreeze.FieldDurationSeconds)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UserPackageFreezeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case userpackagefreeze.FieldCreatedAt:
+		return m.CreatedAt()
+	case userpackagefreeze.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case userpackagefreeze.FieldPackageID:
+		return m.PackageID()
+	case userpackagefreeze.FieldUserID:
+		return m.UserID()
+	case userpackagefreeze.FieldFrozenAt:
+		return m.FrozenAt()
+	case userpackagefreeze.FieldUnfrozenAt:
+		return m.UnfrozenAt()
+	case userpackagefreeze.FieldUnfreezeReason:
+		return m.UnfreezeReason()
+	case userpackagefreeze.FieldDurationSeconds:
+		return m.DurationSeconds()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UserPackageFreezeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case userpackagefreeze.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case userpackagefreeze.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case userpackagefreeze.FieldPackageID:
+		return m.OldPackageID(ctx)
+	case userpackagefreeze.FieldUserID:
+		return m.OldUserID(ctx)
+	case userpackagefreeze.FieldFrozenAt:
+		return m.OldFrozenAt(ctx)
+	case userpackagefreeze.FieldUnfrozenAt:
+		return m.OldUnfrozenAt(ctx)
+	case userpackagefreeze.FieldUnfreezeReason:
+		return m.OldUnfreezeReason(ctx)
+	case userpackagefreeze.FieldDurationSeconds:
+		return m.OldDurationSeconds(ctx)
+	}
+	return nil, fmt.Errorf("unknown UserPackageFreeze field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserPackageFreezeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case userpackagefreeze.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case userpackagefreeze.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case userpackagefreeze.FieldPackageID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPackageID(v)
+		return nil
+	case userpackagefreeze.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case userpackagefreeze.FieldFrozenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFrozenAt(v)
+		return nil
+	case userpackagefreeze.FieldUnfrozenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnfrozenAt(v)
+		return nil
+	case userpackagefreeze.FieldUnfreezeReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnfreezeReason(v)
+		return nil
+	case userpackagefreeze.FieldDurationSeconds:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDurationSeconds(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UserPackageFreeze field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UserPackageFreezeMutation) AddedFields() []string {
+	var fields []string
+	if m.addpackage_id != nil {
+		fields = append(fields, userpackagefreeze.FieldPackageID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, userpackagefreeze.FieldUserID)
+	}
+	if m.addduration_seconds != nil {
+		fields = append(fields, userpackagefreeze.FieldDurationSeconds)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UserPackageFreezeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case userpackagefreeze.FieldPackageID:
+		return m.AddedPackageID()
+	case userpackagefreeze.FieldUserID:
+		return m.AddedUserID()
+	case userpackagefreeze.FieldDurationSeconds:
+		return m.AddedDurationSeconds()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserPackageFreezeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case userpackagefreeze.FieldPackageID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPackageID(v)
+		return nil
+	case userpackagefreeze.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case userpackagefreeze.FieldDurationSeconds:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDurationSeconds(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UserPackageFreeze numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UserPackageFreezeMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(userpackagefreeze.FieldUnfrozenAt) {
+		fields = append(fields, userpackagefreeze.FieldUnfrozenAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UserPackageFreezeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UserPackageFreezeMutation) ClearField(name string) error {
+	switch name {
+	case userpackagefreeze.FieldUnfrozenAt:
+		m.ClearUnfrozenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UserPackageFreeze nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UserPackageFreezeMutation) ResetField(name string) error {
+	switch name {
+	case userpackagefreeze.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case userpackagefreeze.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case userpackagefreeze.FieldPackageID:
+		m.ResetPackageID()
+		return nil
+	case userpackagefreeze.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case userpackagefreeze.FieldFrozenAt:
+		m.ResetFrozenAt()
+		return nil
+	case userpackagefreeze.FieldUnfrozenAt:
+		m.ResetUnfrozenAt()
+		return nil
+	case userpackagefreeze.FieldUnfreezeReason:
+		m.ResetUnfreezeReason()
+		return nil
+	case userpackagefreeze.FieldDurationSeconds:
+		m.ResetDurationSeconds()
+		return nil
+	}
+	return fmt.Errorf("unknown UserPackageFreeze field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UserPackageFreezeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UserPackageFreezeMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UserPackageFreezeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UserPackageFreezeMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UserPackageFreezeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UserPackageFreezeMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UserPackageFreezeMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown UserPackageFreeze unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UserPackageFreezeMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown UserPackageFreeze edge %s", name)
 }
 
 // UserPlatformQuotaMutation represents an operation that mutates the UserPlatformQuota nodes in the graph.

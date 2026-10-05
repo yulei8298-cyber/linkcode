@@ -122,6 +122,9 @@ func RegisterAdminRoutes(
 		// 模型智力检测
 		registerIntelCheckRoutes(admin, h)
 
+		// 二开：周卡 / 月卡套餐
+		registerPackageAdminRoutes(admin, h)
+
 		// 风控中心
 		registerContentModerationRoutes(admin, h)
 

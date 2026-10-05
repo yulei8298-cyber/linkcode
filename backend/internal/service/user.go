@@ -21,8 +21,10 @@ type User struct {
 	Balance        float64
 	FrozenBalance  float64
 	Concurrency    int
-	Status         string
-	AllowedGroups  []int64
+	// PackageConcurrency 套餐请求的并发上限，对该用户所有套餐合计生效。
+	PackageConcurrency int
+	Status             string
+	AllowedGroups      []int64
 	// RestrictPublicGroups narrows the public groups this user may bind to the
 	// ones listed in AllowedGroups. False keeps the default, where every public
 	// group is bindable.

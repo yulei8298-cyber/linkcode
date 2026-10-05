@@ -215,6 +215,7 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 	}
 
 	oldConcurrency := user.Concurrency
+	oldPackageConcurrency := user.PackageConcurrency
 	oldStatus := user.Status
 	oldRole := user.Role
 	oldRPMLimit := user.RPMLimit
@@ -271,6 +272,14 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 		fields.Concurrency = true
 	}
 
+	if input.PackageConcurrency != nil {
+		if *input.PackageConcurrency < 1 || *input.PackageConcurrency > MaxPackageConcurrency {
+			return nil, infraerrors.BadRequest("INVALID_PACKAGE_CONCURRENCY", fmt.Sprintf("套餐并发须在 1~%d 之间", MaxPackageConcurrency))
+		}
+		user.PackageConcurrency = *input.PackageConcurrency
+		fields.PackageConcurrency = true
+	}
+
 	if input.RPMLimit != nil {
 		user.RPMLimit = *input.RPMLimit
 		fields.RPMLimit = true
@@ -307,7 +316,7 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 	if s.authCacheInvalidator != nil {
 		// RPMLimit 直接参与 billing_cache_service.checkRPM 的三级级联，
 		// allowed_groups 参与 API Key 专属分组授权判断；不失效缓存会让修改在一个 L2 TTL 内失去效果。
-		if user.Concurrency != oldConcurrency || user.Status != oldStatus || user.Role != oldRole || user.RPMLimit != oldRPMLimit || user.RestrictPublicGroups != oldRestrictPublicGroups || !sameInt64Set(user.AllowedGroups, oldAllowedGroups) {
+		if user.Concurrency != oldConcurrency || user.PackageConcurrency != oldPackageConcurrency || user.Status != oldStatus || user.Role != oldRole || user.RPMLimit != oldRPMLimit || user.RestrictPublicGroups != oldRestrictPublicGroups || !sameInt64Set(user.AllowedGroups, oldAllowedGroups) {
 			s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, user.ID)
 		}
 	}

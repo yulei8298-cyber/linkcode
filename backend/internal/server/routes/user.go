@@ -160,5 +160,8 @@ func RegisterUserRoutes(
 			monitorV2.GET("/errors", h.ChannelMonitorV2.Errors)
 			monitorV2.GET("/users", h.ChannelMonitorV2.Users)
 		}
+
+		// 二开：周卡 / 月卡套餐
+		registerPackageUserRoutes(authenticated, h)
 	}
 }

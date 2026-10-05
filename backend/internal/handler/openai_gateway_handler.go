@@ -258,6 +258,10 @@ func usageRecordContext(parent context.Context, base context.Context) context.Co
 	if usageDate, ok := parent.Value(ctxkey.DailyFreeUsageDate).(time.Time); ok && !usageDate.IsZero() {
 		base = context.WithValue(base, ctxkey.DailyFreeUsageDate, usageDate)
 	}
+	// 二开：套餐计费标记随计费任务传递，扣费时先扣套餐。
+	if packageBilling := service.PackageBillingFromContext(parent); packageBilling != nil {
+		base = service.WithPackageBilling(base, packageBilling)
+	}
 	return base
 }
 

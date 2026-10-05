@@ -41,6 +41,7 @@ const (
 const (
 	OrderTypeBalance      = "balance"
 	OrderTypeSubscription = "subscription"
+	OrderTypePackage      = "package" // 二开：周卡 / 月卡套餐
 )
 
 // Entity statuses shared across users, groups, etc.
@@ -52,6 +53,7 @@ const (
 const (
 	DeductionTypeBalance      = "balance"
 	DeductionTypeSubscription = "subscription"
+	DeductionTypePackage      = "package" // 二开：退款时作废对应套餐
 	DeductionTypeNone         = "none"
 )
 

@@ -131,6 +131,7 @@ func provideCleanup(
 	promptAudit *securityaudit.PromptService,
 	pluginManager *service.PluginManager,
 	intelCheckRunner *service.IntelCheckRunner,
+	packageRunner *service.PackageRunner,
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -378,6 +379,12 @@ func provideCleanup(
 			{"IntelCheckRunner", func() error {
 				if intelCheckRunner != nil {
 					intelCheckRunner.Stop()
+				}
+				return nil
+			}},
+			{"PackageRunner", func() error {
+				if packageRunner != nil {
+					packageRunner.Stop()
 				}
 				return nil
 			}},

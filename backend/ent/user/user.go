@@ -33,6 +33,8 @@ const (
 	FieldFrozenBalance = "frozen_balance"
 	// FieldConcurrency holds the string denoting the concurrency field in the database.
 	FieldConcurrency = "concurrency"
+	// FieldPackageConcurrency holds the string denoting the package_concurrency field in the database.
+	FieldPackageConcurrency = "package_concurrency"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldUsername holds the string denoting the username field in the database.
@@ -205,6 +207,7 @@ var Columns = []string{
 	FieldBalance,
 	FieldFrozenBalance,
 	FieldConcurrency,
+	FieldPackageConcurrency,
 	FieldStatus,
 	FieldUsername,
 	FieldNotes,
@@ -267,6 +270,8 @@ var (
 	DefaultFrozenBalance float64
 	// DefaultConcurrency holds the default value on creation for the "concurrency" field.
 	DefaultConcurrency int
+	// DefaultPackageConcurrency holds the default value on creation for the "package_concurrency" field.
+	DefaultPackageConcurrency int
 	// DefaultStatus holds the default value on creation for the "status" field.
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
@@ -348,6 +353,11 @@ func ByFrozenBalance(opts ...sql.OrderTermOption) OrderOption {
 // ByConcurrency orders the results by the concurrency field.
 func ByConcurrency(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConcurrency, opts...).ToFunc()
+}
+
+// ByPackageConcurrency orders the results by the package_concurrency field.
+func ByPackageConcurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPackageConcurrency, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

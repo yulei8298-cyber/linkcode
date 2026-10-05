@@ -285,6 +285,30 @@ func (f IntelCheckTargetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IntelCheckTargetMutation", m)
 }
 
+// The PackageFreezeDayFunc type is an adapter to allow the use of ordinary
+// function as PackageFreezeDay mutator.
+type PackageFreezeDayFunc func(context.Context, *ent.PackageFreezeDayMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PackageFreezeDayFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PackageFreezeDayMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PackageFreezeDayMutation", m)
+}
+
+// The PackagePlanFunc type is an adapter to allow the use of ordinary
+// function as PackagePlan mutator.
+type PackagePlanFunc func(context.Context, *ent.PackagePlanMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PackagePlanFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PackagePlanMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PackagePlanMutation", m)
+}
+
 // The PaymentAuditLogFunc type is an adapter to allow the use of ordinary
 // function as PaymentAuditLog mutator.
 type PaymentAuditLogFunc func(context.Context, *ent.PaymentAuditLogMutation) (ent.Value, error)
@@ -499,6 +523,30 @@ func (f UserAttributeValueFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserAttributeValueMutation", m)
+}
+
+// The UserPackageFunc type is an adapter to allow the use of ordinary
+// function as UserPackage mutator.
+type UserPackageFunc func(context.Context, *ent.UserPackageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserPackageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserPackageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserPackageMutation", m)
+}
+
+// The UserPackageFreezeFunc type is an adapter to allow the use of ordinary
+// function as UserPackageFreeze mutator.
+type UserPackageFreezeFunc func(context.Context, *ent.UserPackageFreezeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserPackageFreezeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserPackageFreezeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserPackageFreezeMutation", m)
 }
 
 // The UserPlatformQuotaFunc type is an adapter to allow the use of ordinary

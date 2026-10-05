@@ -38,7 +38,10 @@ type UsageBillingCommand struct {
 	ImageCount          int
 	MediaType           string
 
-	BalanceCost         float64
+	BalanceCost float64
+	// PackageGroupID 非空表示本次请求按套餐计费：BalanceCost 先从该分组的套餐里
+	// 按到期先后扣，扣不完的部分再扣余额。
+	PackageGroupID      *int64
 	SubscriptionCost    float64
 	FreeGroupID         *int64
 	FreeUsageDate       time.Time
@@ -175,6 +178,8 @@ type UsageBillingApplyResult struct {
 	NewBalance           *float64           // post-deduction balance (nil = no balance deduction)
 	BalanceOverdrafted   bool               // true when the sufficient-balance guard missed and debt was still recorded
 	QuotaState           *AccountQuotaState // post-increment quota state (nil = no quota increment)
+	PackageCost          float64            // 本次从套餐扣掉的金额
+	PackageExhausted     bool               // 本次扣费让至少一张套餐用完
 }
 
 // BatchImageBalanceHoldCommand describes an idempotent balance hold operation.

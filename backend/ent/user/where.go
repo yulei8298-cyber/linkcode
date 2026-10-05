@@ -100,6 +100,11 @@ func Concurrency(v int) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldConcurrency, v))
 }
 
+// PackageConcurrency applies equality check predicate on the "package_concurrency" field. It's identical to PackageConcurrencyEQ.
+func PackageConcurrency(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPackageConcurrency, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldStatus, v))
@@ -623,6 +628,46 @@ func ConcurrencyLT(v int) predicate.User {
 // ConcurrencyLTE applies the LTE predicate on the "concurrency" field.
 func ConcurrencyLTE(v int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldConcurrency, v))
+}
+
+// PackageConcurrencyEQ applies the EQ predicate on the "package_concurrency" field.
+func PackageConcurrencyEQ(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPackageConcurrency, v))
+}
+
+// PackageConcurrencyNEQ applies the NEQ predicate on the "package_concurrency" field.
+func PackageConcurrencyNEQ(v int) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldPackageConcurrency, v))
+}
+
+// PackageConcurrencyIn applies the In predicate on the "package_concurrency" field.
+func PackageConcurrencyIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldIn(FieldPackageConcurrency, vs...))
+}
+
+// PackageConcurrencyNotIn applies the NotIn predicate on the "package_concurrency" field.
+func PackageConcurrencyNotIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldPackageConcurrency, vs...))
+}
+
+// PackageConcurrencyGT applies the GT predicate on the "package_concurrency" field.
+func PackageConcurrencyGT(v int) predicate.User {
+	return predicate.User(sql.FieldGT(FieldPackageConcurrency, v))
+}
+
+// PackageConcurrencyGTE applies the GTE predicate on the "package_concurrency" field.
+func PackageConcurrencyGTE(v int) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldPackageConcurrency, v))
+}
+
+// PackageConcurrencyLT applies the LT predicate on the "package_concurrency" field.
+func PackageConcurrencyLT(v int) predicate.User {
+	return predicate.User(sql.FieldLT(FieldPackageConcurrency, v))
+}
+
+// PackageConcurrencyLTE applies the LTE predicate on the "package_concurrency" field.
+func PackageConcurrencyLTE(v int) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldPackageConcurrency, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

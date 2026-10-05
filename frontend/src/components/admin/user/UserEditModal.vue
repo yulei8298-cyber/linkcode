@@ -55,6 +55,19 @@
         <p class="input-hint">{{ t('admin.users.form.concurrencyHint') }}</p>
       </div>
       <div>
+        <label class="input-label">{{ t('admin.packages.userEdit.label') }}</label>
+        <input
+          v-model.number="form.package_concurrency"
+          type="number"
+          min="1"
+          max="50"
+          step="1"
+          class="input"
+          data-test="package-concurrency-input"
+        />
+        <p class="input-hint">{{ t('admin.packages.userEdit.hint') }}</p>
+      </div>
+      <div>
         <label class="input-label">{{ t('admin.users.form.rpmLimit') }}</label>
         <input
           v-model.number="form.rpm_limit"
@@ -112,13 +125,14 @@ const form = reactive({
   notes: '',
   role: 'user' as AdminUser['role'],
   concurrency: 1,
+  package_concurrency: 5,
   rpm_limit: 0,
   customAttributes: {} as UserAttributeValuesMap
 })
 
 watch(() => props.user, (u) => {
   if (u) {
-    Object.assign(form, { email: u.email, password: '', username: u.username || '', notes: u.notes || '', role: u.role || 'user', concurrency: u.concurrency, rpm_limit: u.rpm_limit ?? 0, customAttributes: {} })
+    Object.assign(form, { email: u.email, password: '', username: u.username || '', notes: u.notes || '', role: u.role || 'user', concurrency: u.concurrency, package_concurrency: u.package_concurrency ?? 5, rpm_limit: u.rpm_limit ?? 0, customAttributes: {} })
     passwordCopied.value = false
   }
 }, { immediate: true })
@@ -146,10 +160,14 @@ const handleUpdateUser = async () => {
     appStore.showError(t('admin.users.concurrencyNonNegative'))
     return
   }
+  if (!Number.isInteger(form.package_concurrency) || form.package_concurrency < 1 || form.package_concurrency > 50) {
+    appStore.showError(t('admin.packages.userEdit.invalid'))
+    return
+  }
   const userId = props.user.id
   submitting.value = true
   try {
-    const data: any = { email: form.email, username: form.username, notes: form.notes, role: form.role, concurrency: form.concurrency, rpm_limit: form.rpm_limit }
+    const data: any = { email: form.email, username: form.username, notes: form.notes, role: form.role, concurrency: form.concurrency, package_concurrency: form.package_concurrency, rpm_limit: form.rpm_limit }
     if (form.password.trim()) data.password = form.password.trim()
     // 提升为管理员属敏感操作：后端返回 STEP_UP_REQUIRED 时弹 TOTP 验证并重试
     await stepUp.run(() => adminAPI.users.update(userId, data))

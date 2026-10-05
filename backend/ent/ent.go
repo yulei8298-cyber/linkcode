@@ -35,6 +35,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
 	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
+	"github.com/Wei-Shaw/sub2api/ent/packagefreezeday"
+	"github.com/Wei-Shaw/sub2api/ent/packageplan"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -53,6 +55,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/userpackage"
+	"github.com/Wei-Shaw/sub2api/ent/userpackagefreeze"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
@@ -138,6 +142,8 @@ func checkColumn(t, c string) error {
 			intelcheckresult.Table:              intelcheckresult.ValidColumn,
 			intelcheckround.Table:               intelcheckround.ValidColumn,
 			intelchecktarget.Table:              intelchecktarget.ValidColumn,
+			packagefreezeday.Table:              packagefreezeday.ValidColumn,
+			packageplan.Table:                   packageplan.ValidColumn,
 			paymentauditlog.Table:               paymentauditlog.ValidColumn,
 			paymentorder.Table:                  paymentorder.ValidColumn,
 			paymentproviderinstance.Table:       paymentproviderinstance.ValidColumn,
@@ -156,6 +162,8 @@ func checkColumn(t, c string) error {
 			userallowedgroup.Table:              userallowedgroup.ValidColumn,
 			userattributedefinition.Table:       userattributedefinition.ValidColumn,
 			userattributevalue.Table:            userattributevalue.ValidColumn,
+			userpackage.Table:                   userpackage.ValidColumn,
+			userpackagefreeze.Table:             userpackagefreeze.ValidColumn,
 			userplatformquota.Table:             userplatformquota.ValidColumn,
 			usersubscription.Table:              usersubscription.ValidColumn,
 		})

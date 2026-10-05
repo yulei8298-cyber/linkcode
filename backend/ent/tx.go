@@ -60,6 +60,10 @@ type Tx struct {
 	IntelCheckRound *IntelCheckRoundClient
 	// IntelCheckTarget is the client for interacting with the IntelCheckTarget builders.
 	IntelCheckTarget *IntelCheckTargetClient
+	// PackageFreezeDay is the client for interacting with the PackageFreezeDay builders.
+	PackageFreezeDay *PackageFreezeDayClient
+	// PackagePlan is the client for interacting with the PackagePlan builders.
+	PackagePlan *PackagePlanClient
 	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
 	PaymentAuditLog *PaymentAuditLogClient
 	// PaymentOrder is the client for interacting with the PaymentOrder builders.
@@ -96,6 +100,10 @@ type Tx struct {
 	UserAttributeDefinition *UserAttributeDefinitionClient
 	// UserAttributeValue is the client for interacting with the UserAttributeValue builders.
 	UserAttributeValue *UserAttributeValueClient
+	// UserPackage is the client for interacting with the UserPackage builders.
+	UserPackage *UserPackageClient
+	// UserPackageFreeze is the client for interacting with the UserPackageFreeze builders.
+	UserPackageFreeze *UserPackageFreezeClient
 	// UserPlatformQuota is the client for interacting with the UserPlatformQuota builders.
 	UserPlatformQuota *UserPlatformQuotaClient
 	// UserSubscription is the client for interacting with the UserSubscription builders.
@@ -254,6 +262,8 @@ func (tx *Tx) init() {
 	tx.IntelCheckResult = NewIntelCheckResultClient(tx.config)
 	tx.IntelCheckRound = NewIntelCheckRoundClient(tx.config)
 	tx.IntelCheckTarget = NewIntelCheckTargetClient(tx.config)
+	tx.PackageFreezeDay = NewPackageFreezeDayClient(tx.config)
+	tx.PackagePlan = NewPackagePlanClient(tx.config)
 	tx.PaymentAuditLog = NewPaymentAuditLogClient(tx.config)
 	tx.PaymentOrder = NewPaymentOrderClient(tx.config)
 	tx.PaymentProviderInstance = NewPaymentProviderInstanceClient(tx.config)
@@ -272,6 +282,8 @@ func (tx *Tx) init() {
 	tx.UserAllowedGroup = NewUserAllowedGroupClient(tx.config)
 	tx.UserAttributeDefinition = NewUserAttributeDefinitionClient(tx.config)
 	tx.UserAttributeValue = NewUserAttributeValueClient(tx.config)
+	tx.UserPackage = NewUserPackageClient(tx.config)
+	tx.UserPackageFreeze = NewUserPackageFreezeClient(tx.config)
 	tx.UserPlatformQuota = NewUserPlatformQuotaClient(tx.config)
 	tx.UserSubscription = NewUserSubscriptionClient(tx.config)
 }

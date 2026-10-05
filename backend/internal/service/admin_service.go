@@ -192,6 +192,8 @@ type UpdateUserInput struct {
 	GroupRates map[int64]*float64
 	// ActorAdminID 执行本次操作的管理员ID(来自JWT)，仅用于权限敏感操作的审计日志。
 	ActorAdminID int64
+	// PackageConcurrency 二开：套餐并发，nil 表示不修改。
+	PackageConcurrency *int
 }
 
 type AdminBindAuthIdentityInput struct {

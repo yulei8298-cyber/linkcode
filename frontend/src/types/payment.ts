@@ -21,7 +21,8 @@ export type OrderStatus =
 
 export type PaymentType = 'alipay' | 'wxpay' | 'alipay_direct' | 'wxpay_direct' | 'stripe' | 'easypay' | 'airwallex'
 
-export type OrderType = 'balance' | 'subscription'
+// package：周卡 / 月卡套餐（二开）
+export type OrderType = 'balance' | 'subscription' | 'package'
 
 // ==================== Configuration ====================
 
@@ -171,6 +172,8 @@ export interface CreateOrderRequest {
   payment_type: string
   order_type: string
   plan_id?: number
+  /** 套餐订单：用户勾选同意的购买须知版本 */
+  package_notice_version?: number
   return_url?: string
   payment_source?: string
   openid?: string

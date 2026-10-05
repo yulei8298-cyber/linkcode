@@ -226,6 +226,8 @@ const orderTypeFilterOptions = computed(() => [
   { value: '', label: t('payment.admin.allOrderTypes') },
   { value: 'balance', label: t('payment.admin.balanceOrder') },
   { value: 'subscription', label: t('payment.admin.subscriptionOrder') },
+  // 二开：周卡 / 月卡套餐订单
+  { value: 'package', label: t('payment.admin.packageOrder') },
 ])
 
 function canRefundRow(order: PaymentOrder): boolean {

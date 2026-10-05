@@ -236,6 +236,8 @@ type CreateOrderRequest struct {
 	PaymentSource     string  `json:"payment_source"`
 	OrderType         string  `json:"order_type"`
 	PlanID            int64   `json:"plan_id"`
+	// PackageNoticeVersion 套餐订单：用户勾选同意的购买须知版本。
+	PackageNoticeVersion int `json:"package_notice_version"`
 	// IsMobile lets the frontend declare its mobile status directly. When
 	// nil we fall back to User-Agent heuristics (which miss iPadOS / some
 	// embedded browsers that strip the "Mobile" keyword).
@@ -286,6 +288,8 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		OrderType:       req.OrderType,
 		PlanID:          req.PlanID,
 		Locale:          c.GetHeader("Accept-Language"),
+
+		PackageNoticeVersion: req.PackageNoticeVersion,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -328,6 +332,9 @@ func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeC
 	}
 	if claims.PlanID > 0 {
 		req.PlanID = claims.PlanID
+	}
+	if claims.PackageNoticeVersion > 0 {
+		req.PackageNoticeVersion = claims.PackageNoticeVersion
 	}
 	return nil
 }

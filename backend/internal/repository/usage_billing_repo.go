@@ -179,8 +179,19 @@ func (r *usageBillingRepository) applyUsageBillingEffects(ctx context.Context, t
 		}
 	}
 
-	if cmd.BalanceCost > 0 {
-		newBalance, sufficient, err := deductUsageBillingBalance(ctx, tx, cmd.UserID, cmd.BalanceCost)
+	balanceCost := cmd.BalanceCost
+	if cmd.PackageGroupID != nil && balanceCost > 0 {
+		covered, exhausted, err := deductUsageBillingPackages(ctx, tx, cmd.UserID, *cmd.PackageGroupID, balanceCost)
+		if err != nil {
+			return err
+		}
+		result.PackageCost = covered
+		result.PackageExhausted = exhausted
+		balanceCost = service.QuantizeUsageBillingAmount(balanceCost - covered)
+	}
+
+	if balanceCost > 0 {
+		newBalance, sufficient, err := deductUsageBillingBalance(ctx, tx, cmd.UserID, balanceCost)
 		if err != nil {
 			return err
 		}

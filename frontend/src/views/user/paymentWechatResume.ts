@@ -4,9 +4,11 @@ import { normalizeVisibleMethod } from '@/components/payment/paymentFlow'
 
 export interface ParsedWechatResumeRoute {
   orderAmount: number
-  orderType: 'balance' | 'subscription'
+  orderType: 'balance' | 'subscription' | 'package'
   paymentType: string
   planId?: number
+  /** 套餐订单：授权跳转前已同意的购买须知版本 */
+  packageNoticeVersion?: number
   openid?: string
   wechatResumeToken?: string
 }
@@ -40,9 +42,17 @@ export function parseWechatResumeRoute(
   const paymentType = normalizeVisibleMethod(readQueryString(query, 'payment_type')) || 'wxpay'
   const planId = Number.parseInt(readQueryString(query, 'plan_id'), 10)
   const hasPlanId = Number.isFinite(planId) && planId > 0
-  const orderType = readQueryString(query, 'order_type') === 'subscription' || hasPlanId
-    ? 'subscription'
-    : 'balance'
+  const rawOrderType = readQueryString(query, 'order_type')
+  // 套餐订单同样带 plan_id，必须先按 order_type 识别，不能被当成订阅。
+  const orderType: ParsedWechatResumeRoute['orderType'] = rawOrderType === 'package'
+    ? 'package'
+    : rawOrderType === 'subscription' || hasPlanId
+      ? 'subscription'
+      : 'balance'
+  const noticeVersion = Number.parseInt(readQueryString(query, 'notice_version'), 10)
+  const packageNoticeVersion = orderType === 'package' && Number.isFinite(noticeVersion) && noticeVersion > 0
+    ? noticeVersion
+    : undefined
 
   if (wechatResumeToken) {
     return {
@@ -51,6 +61,7 @@ export function parseWechatResumeRoute(
       orderType,
       orderAmount: 0,
       planId: hasPlanId ? planId : undefined,
+      packageNoticeVersion,
     }
   }
 
@@ -72,6 +83,7 @@ export function parseWechatResumeRoute(
     orderType,
     orderAmount,
     planId: hasPlanId ? planId : undefined,
+    packageNoticeVersion,
   }
 }
 
@@ -86,5 +98,6 @@ export function stripWechatResumeQuery(query: LocationQuery): LocationQueryRaw {
   delete nextQuery.amount
   delete nextQuery.order_type
   delete nextQuery.plan_id
+  delete nextQuery.notice_version
   return nextQuery
 }

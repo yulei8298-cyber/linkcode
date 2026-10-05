@@ -112,6 +112,8 @@ export interface AdminUser extends User {
   restrict_public_groups?: boolean
   // 当前并发数（仅管理员列表接口返回）
   current_concurrency?: number
+  // 二开：套餐并发，对该用户所有套餐合计生效
+  package_concurrency?: number
 }
 
 export interface LoginRequest {

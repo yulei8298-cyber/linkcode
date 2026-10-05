@@ -13,6 +13,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -309,8 +310,17 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 					return
 				}
 			} else {
-				// 非订阅模式 或 订阅模式但 subscriptionService 未注入：回退到余额检查
-				if (apiKey.Group == nil || !apiKey.Group.IsFree) && apiKeyBalanceBelowAuthThreshold(apiKey.User.Balance, cfg) {
+				// 非订阅模式 或 订阅模式但 subscriptionService 未注入：回退到余额检查。
+				// 二开：普通分组有可用套餐时按套餐计费，不受余额阈值限制。
+				lowBalance := (apiKey.Group == nil || !apiKey.Group.IsFree) && apiKeyBalanceBelowAuthThreshold(apiKey.User.Balance, cfg)
+				packageBilling, packageErr := apiKeyService.ResolvePackageBilling(c.Request.Context(), apiKey, lowBalance)
+				if packageErr != nil {
+					AbortWithError(c, 403, infraerrors.Reason(packageErr), infraerrors.Message(packageErr))
+					return
+				}
+				if packageBilling != nil {
+					c.Request = c.Request.WithContext(service.WithPackageBilling(c.Request.Context(), packageBilling))
+				} else if lowBalance {
 					AbortWithError(c, 403, "INSUFFICIENT_BALANCE", "Insufficient account balance")
 					return
 				}

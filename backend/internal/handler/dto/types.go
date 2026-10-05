@@ -51,6 +51,8 @@ type AdminUser struct {
 	// RestrictPublicGroups 为 true 时，该用户仅可使用 allowed_groups 中列出的
 	// 公开分组。这是管理侧的权限开关，不下发给用户自身的接口。
 	RestrictPublicGroups bool `json:"restrict_public_groups"`
+	// PackageConcurrency 二开：套餐请求的并发上限，对该用户所有套餐合计生效。
+	PackageConcurrency int `json:"package_concurrency"`
 }
 
 type APIKey struct {

@@ -144,6 +144,20 @@ func (_c *UserCreate) SetNillableConcurrency(v *int) *UserCreate {
 	return _c
 }
 
+// SetPackageConcurrency sets the "package_concurrency" field.
+func (_c *UserCreate) SetPackageConcurrency(v int) *UserCreate {
+	_c.mutation.SetPackageConcurrency(v)
+	return _c
+}
+
+// SetNillablePackageConcurrency sets the "package_concurrency" field if the given value is not nil.
+func (_c *UserCreate) SetNillablePackageConcurrency(v *int) *UserCreate {
+	if v != nil {
+		_c.SetPackageConcurrency(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *UserCreate) SetStatus(v string) *UserCreate {
 	_c.mutation.SetStatus(v)
@@ -630,6 +644,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultConcurrency
 		_c.mutation.SetConcurrency(v)
 	}
+	if _, ok := _c.mutation.PackageConcurrency(); !ok {
+		v := user.DefaultPackageConcurrency
+		_c.mutation.SetPackageConcurrency(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := user.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -717,6 +735,9 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.Concurrency(); !ok {
 		return &ValidationError{Name: "concurrency", err: errors.New(`ent: missing required field "User.concurrency"`)}
+	}
+	if _, ok := _c.mutation.PackageConcurrency(); !ok {
+		return &ValidationError{Name: "package_concurrency", err: errors.New(`ent: missing required field "User.package_concurrency"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "User.status"`)}
@@ -828,6 +849,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Concurrency(); ok {
 		_spec.SetField(user.FieldConcurrency, field.TypeInt, value)
 		_node.Concurrency = value
+	}
+	if value, ok := _c.mutation.PackageConcurrency(); ok {
+		_spec.SetField(user.FieldPackageConcurrency, field.TypeInt, value)
+		_node.PackageConcurrency = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(user.FieldStatus, field.TypeString, value)
@@ -1277,6 +1302,24 @@ func (u *UserUpsert) AddConcurrency(v int) *UserUpsert {
 	return u
 }
 
+// SetPackageConcurrency sets the "package_concurrency" field.
+func (u *UserUpsert) SetPackageConcurrency(v int) *UserUpsert {
+	u.Set(user.FieldPackageConcurrency, v)
+	return u
+}
+
+// UpdatePackageConcurrency sets the "package_concurrency" field to the value that was provided on create.
+func (u *UserUpsert) UpdatePackageConcurrency() *UserUpsert {
+	u.SetExcluded(user.FieldPackageConcurrency)
+	return u
+}
+
+// AddPackageConcurrency adds v to the "package_concurrency" field.
+func (u *UserUpsert) AddPackageConcurrency(v int) *UserUpsert {
+	u.Add(user.FieldPackageConcurrency, v)
+	return u
+}
+
 // SetStatus sets the "status" field.
 func (u *UserUpsert) SetStatus(v string) *UserUpsert {
 	u.Set(user.FieldStatus, v)
@@ -1699,6 +1742,27 @@ func (u *UserUpsertOne) AddConcurrency(v int) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateConcurrency() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateConcurrency()
+	})
+}
+
+// SetPackageConcurrency sets the "package_concurrency" field.
+func (u *UserUpsertOne) SetPackageConcurrency(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPackageConcurrency(v)
+	})
+}
+
+// AddPackageConcurrency adds v to the "package_concurrency" field.
+func (u *UserUpsertOne) AddPackageConcurrency(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddPackageConcurrency(v)
+	})
+}
+
+// UpdatePackageConcurrency sets the "package_concurrency" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdatePackageConcurrency() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePackageConcurrency()
 	})
 }
 
@@ -2330,6 +2394,27 @@ func (u *UserUpsertBulk) AddConcurrency(v int) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateConcurrency() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateConcurrency()
+	})
+}
+
+// SetPackageConcurrency sets the "package_concurrency" field.
+func (u *UserUpsertBulk) SetPackageConcurrency(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPackageConcurrency(v)
+	})
+}
+
+// AddPackageConcurrency adds v to the "package_concurrency" field.
+func (u *UserUpsertBulk) AddPackageConcurrency(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddPackageConcurrency(v)
+	})
+}
+
+// UpdatePackageConcurrency sets the "package_concurrency" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdatePackageConcurrency() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePackageConcurrency()
 	})
 }
 

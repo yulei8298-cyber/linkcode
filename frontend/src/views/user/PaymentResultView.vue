@@ -88,8 +88,15 @@
         </div>
         <!-- Actions -->
         <div class="flex gap-3">
-          <button class="btn btn-secondary flex-1" @click="router.push('/purchase')">{{ t('payment.result.backToRecharge') }}</button>
-          <button class="btn btn-primary flex-1" @click="router.push('/orders')">{{ t('payment.result.viewOrders') }}</button>
+          <!-- 二开：套餐订单回到套餐商店 / 我的套餐 -->
+          <template v-if="isPackageOrder">
+            <button class="btn btn-secondary flex-1" @click="router.push('/packages')">{{ t('packages.payment.backToShop') }}</button>
+            <button class="btn btn-primary flex-1" @click="router.push('/my-packages')">{{ t('packages.payment.viewMine') }}</button>
+          </template>
+          <template v-else>
+            <button class="btn btn-secondary flex-1" @click="router.push('/purchase')">{{ t('payment.result.backToRecharge') }}</button>
+            <button class="btn btn-primary flex-1" @click="router.push('/orders')">{{ t('payment.result.viewOrders') }}</button>
+          </template>
         </div>
       </template>
     </div>
@@ -124,6 +131,8 @@ const authStore = useAuthStore()
 type ResolvedOrder = PaymentOrder | PublicOrderVerifyResult
 
 const order = ref<ResolvedOrder | null>(null)
+// 二开：套餐订单的结果页按钮指向套餐商店 / 我的套餐
+const isPackageOrder = computed(() => !!order.value && 'order_type' in order.value && order.value.order_type === 'package')
 const loading = ref(true)
 const currency = ref('CNY')
 

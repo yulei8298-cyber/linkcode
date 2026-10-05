@@ -255,6 +255,9 @@ func (s *PaymentService) PrepareRefund(ctx context.Context, oid int64, amt float
 }
 
 func (s *PaymentService) prepDeduct(ctx context.Context, o *dbent.PaymentOrder, p *RefundPlan, force bool) *RefundResult {
+	if o.OrderType == payment.OrderTypePackage {
+		return s.prepPackageDeduct(ctx, o, p, force)
+	}
 	if o.OrderType == payment.OrderTypeSubscription {
 		p.DeductionType = payment.DeductionTypeSubscription
 		if o.SubscriptionGroupID != nil && o.SubscriptionDays != nil {
@@ -339,6 +342,10 @@ func (s *PaymentService) ExecuteRefund(ctx context.Context, p *RefundPlan) (*Ref
 			slog.Warn("skipping subscription deduction on retry (previous rollback failed)", "orderID", p.OrderID)
 			p.SubDaysToDeduct = 0
 		}
+	}
+	if err := s.applyPackageRefundDeduction(ctx, p); err != nil {
+		s.restoreStatus(ctx, p)
+		return nil, err
 	}
 	resp, err := s.gwRefund(ctx, p)
 	if err != nil {
@@ -456,7 +463,7 @@ func (s *PaymentService) QueryAndFinalizeRefund(ctx context.Context, oid int64) 
 	if !pendingDetail.DeductionRollbackOK {
 		plan.BalanceToDeduct = 0
 		plan.SubDaysToDeduct = 0
-	} else if o.OrderType == payment.OrderTypeSubscription {
+	} else if o.OrderType == payment.OrderTypeSubscription || o.OrderType == payment.OrderTypePackage {
 		if early := s.prepDeduct(ctx, o, plan, true); early != nil {
 			return early, nil
 		}
@@ -533,6 +540,9 @@ func (s *PaymentService) refundFinalizePlan(o *dbent.PaymentOrder) *RefundPlan {
 }
 
 func (s *PaymentService) applyRefundFinalDeduction(ctx context.Context, p *RefundPlan) error {
+	if err := s.applyPackageRefundDeduction(ctx, p); err != nil {
+		return err
+	}
 	if p.DeductionType == payment.DeductionTypeBalance && p.BalanceToDeduct > 0 {
 		deducted, err := s.deductAvailableBalance(ctx, p.Order.UserID, p.BalanceToDeduct)
 		if err != nil {
@@ -694,6 +704,9 @@ func refundResponseID(resp *payment.RefundResponse) string {
 }
 
 func (s *PaymentService) RollbackRefund(ctx context.Context, p *RefundPlan, gErr error) bool {
+	if !s.rollbackPackageRefundDeduction(ctx, p, gErr) {
+		return false
+	}
 	if p.DeductionType == payment.DeductionTypeBalance && p.BalanceToDeduct > 0 {
 		if err := s.userRepo.UpdateBalance(ctx, p.Order.UserID, p.BalanceToDeduct); err != nil {
 			slog.Error("[CRITICAL] rollback failed", "orderID", p.OrderID, "amount", p.BalanceToDeduct, "error", err)

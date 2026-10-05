@@ -38,6 +38,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckresult"
 	"github.com/Wei-Shaw/sub2api/ent/intelcheckround"
 	"github.com/Wei-Shaw/sub2api/ent/intelchecktarget"
+	"github.com/Wei-Shaw/sub2api/ent/packagefreezeday"
+	"github.com/Wei-Shaw/sub2api/ent/packageplan"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -56,6 +58,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/userpackage"
+	"github.com/Wei-Shaw/sub2api/ent/userpackagefreeze"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 
@@ -113,6 +117,10 @@ type Client struct {
 	IntelCheckRound *IntelCheckRoundClient
 	// IntelCheckTarget is the client for interacting with the IntelCheckTarget builders.
 	IntelCheckTarget *IntelCheckTargetClient
+	// PackageFreezeDay is the client for interacting with the PackageFreezeDay builders.
+	PackageFreezeDay *PackageFreezeDayClient
+	// PackagePlan is the client for interacting with the PackagePlan builders.
+	PackagePlan *PackagePlanClient
 	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
 	PaymentAuditLog *PaymentAuditLogClient
 	// PaymentOrder is the client for interacting with the PaymentOrder builders.
@@ -149,6 +157,10 @@ type Client struct {
 	UserAttributeDefinition *UserAttributeDefinitionClient
 	// UserAttributeValue is the client for interacting with the UserAttributeValue builders.
 	UserAttributeValue *UserAttributeValueClient
+	// UserPackage is the client for interacting with the UserPackage builders.
+	UserPackage *UserPackageClient
+	// UserPackageFreeze is the client for interacting with the UserPackageFreeze builders.
+	UserPackageFreeze *UserPackageFreezeClient
 	// UserPlatformQuota is the client for interacting with the UserPlatformQuota builders.
 	UserPlatformQuota *UserPlatformQuotaClient
 	// UserSubscription is the client for interacting with the UserSubscription builders.
@@ -187,6 +199,8 @@ func (c *Client) init() {
 	c.IntelCheckResult = NewIntelCheckResultClient(c.config)
 	c.IntelCheckRound = NewIntelCheckRoundClient(c.config)
 	c.IntelCheckTarget = NewIntelCheckTargetClient(c.config)
+	c.PackageFreezeDay = NewPackageFreezeDayClient(c.config)
+	c.PackagePlan = NewPackagePlanClient(c.config)
 	c.PaymentAuditLog = NewPaymentAuditLogClient(c.config)
 	c.PaymentOrder = NewPaymentOrderClient(c.config)
 	c.PaymentProviderInstance = NewPaymentProviderInstanceClient(c.config)
@@ -205,6 +219,8 @@ func (c *Client) init() {
 	c.UserAllowedGroup = NewUserAllowedGroupClient(c.config)
 	c.UserAttributeDefinition = NewUserAttributeDefinitionClient(c.config)
 	c.UserAttributeValue = NewUserAttributeValueClient(c.config)
+	c.UserPackage = NewUserPackageClient(c.config)
+	c.UserPackageFreeze = NewUserPackageFreezeClient(c.config)
 	c.UserPlatformQuota = NewUserPlatformQuotaClient(c.config)
 	c.UserSubscription = NewUserSubscriptionClient(c.config)
 }
@@ -322,6 +338,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		IntelCheckResult:              NewIntelCheckResultClient(cfg),
 		IntelCheckRound:               NewIntelCheckRoundClient(cfg),
 		IntelCheckTarget:              NewIntelCheckTargetClient(cfg),
+		PackageFreezeDay:              NewPackageFreezeDayClient(cfg),
+		PackagePlan:                   NewPackagePlanClient(cfg),
 		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
 		PaymentOrder:                  NewPaymentOrderClient(cfg),
 		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
@@ -340,6 +358,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		UserAllowedGroup:              NewUserAllowedGroupClient(cfg),
 		UserAttributeDefinition:       NewUserAttributeDefinitionClient(cfg),
 		UserAttributeValue:            NewUserAttributeValueClient(cfg),
+		UserPackage:                   NewUserPackageClient(cfg),
+		UserPackageFreeze:             NewUserPackageFreezeClient(cfg),
 		UserPlatformQuota:             NewUserPlatformQuotaClient(cfg),
 		UserSubscription:              NewUserSubscriptionClient(cfg),
 	}, nil
@@ -384,6 +404,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		IntelCheckResult:              NewIntelCheckResultClient(cfg),
 		IntelCheckRound:               NewIntelCheckRoundClient(cfg),
 		IntelCheckTarget:              NewIntelCheckTargetClient(cfg),
+		PackageFreezeDay:              NewPackageFreezeDayClient(cfg),
+		PackagePlan:                   NewPackagePlanClient(cfg),
 		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
 		PaymentOrder:                  NewPaymentOrderClient(cfg),
 		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
@@ -402,6 +424,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		UserAllowedGroup:              NewUserAllowedGroupClient(cfg),
 		UserAttributeDefinition:       NewUserAttributeDefinitionClient(cfg),
 		UserAttributeValue:            NewUserAttributeValueClient(cfg),
+		UserPackage:                   NewUserPackageClient(cfg),
+		UserPackageFreeze:             NewUserPackageFreezeClient(cfg),
 		UserPlatformQuota:             NewUserPlatformQuotaClient(cfg),
 		UserSubscription:              NewUserSubscriptionClient(cfg),
 	}, nil
@@ -439,12 +463,13 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
 		c.CompositeModelRoute, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
 		c.IdentityAdoptionDecision, c.IntelCheckQuestion, c.IntelCheckResult,
-		c.IntelCheckRound, c.IntelCheckTarget, c.PaymentAuditLog, c.PaymentOrder,
-		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.IntelCheckRound, c.IntelCheckTarget, c.PackageFreezeDay, c.PackagePlan,
+		c.PaymentAuditLog, c.PaymentOrder, c.PaymentProviderInstance,
+		c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage, c.Proxy, c.RedeemCode,
+		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserPackage,
+		c.UserPackageFreeze, c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -460,12 +485,13 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
 		c.CompositeModelRoute, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
 		c.IdentityAdoptionDecision, c.IntelCheckQuestion, c.IntelCheckResult,
-		c.IntelCheckRound, c.IntelCheckTarget, c.PaymentAuditLog, c.PaymentOrder,
-		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.IntelCheckRound, c.IntelCheckTarget, c.PackageFreezeDay, c.PackagePlan,
+		c.PaymentAuditLog, c.PaymentOrder, c.PaymentProviderInstance,
+		c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage, c.Proxy, c.RedeemCode,
+		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserPackage,
+		c.UserPackageFreeze, c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -520,6 +546,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.IntelCheckRound.mutate(ctx, m)
 	case *IntelCheckTargetMutation:
 		return c.IntelCheckTarget.mutate(ctx, m)
+	case *PackageFreezeDayMutation:
+		return c.PackageFreezeDay.mutate(ctx, m)
+	case *PackagePlanMutation:
+		return c.PackagePlan.mutate(ctx, m)
 	case *PaymentAuditLogMutation:
 		return c.PaymentAuditLog.mutate(ctx, m)
 	case *PaymentOrderMutation:
@@ -556,6 +586,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UserAttributeDefinition.mutate(ctx, m)
 	case *UserAttributeValueMutation:
 		return c.UserAttributeValue.mutate(ctx, m)
+	case *UserPackageMutation:
+		return c.UserPackage.mutate(ctx, m)
+	case *UserPackageFreezeMutation:
+		return c.UserPackageFreeze.mutate(ctx, m)
 	case *UserPlatformQuotaMutation:
 		return c.UserPlatformQuota.mutate(ctx, m)
 	case *UserSubscriptionMutation:
@@ -4207,6 +4241,272 @@ func (c *IntelCheckTargetClient) mutate(ctx context.Context, m *IntelCheckTarget
 	}
 }
 
+// PackageFreezeDayClient is a client for the PackageFreezeDay schema.
+type PackageFreezeDayClient struct {
+	config
+}
+
+// NewPackageFreezeDayClient returns a client for the PackageFreezeDay from the given config.
+func NewPackageFreezeDayClient(c config) *PackageFreezeDayClient {
+	return &PackageFreezeDayClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `packagefreezeday.Hooks(f(g(h())))`.
+func (c *PackageFreezeDayClient) Use(hooks ...Hook) {
+	c.hooks.PackageFreezeDay = append(c.hooks.PackageFreezeDay, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `packagefreezeday.Intercept(f(g(h())))`.
+func (c *PackageFreezeDayClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PackageFreezeDay = append(c.inters.PackageFreezeDay, interceptors...)
+}
+
+// Create returns a builder for creating a PackageFreezeDay entity.
+func (c *PackageFreezeDayClient) Create() *PackageFreezeDayCreate {
+	mutation := newPackageFreezeDayMutation(c.config, OpCreate)
+	return &PackageFreezeDayCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PackageFreezeDay entities.
+func (c *PackageFreezeDayClient) CreateBulk(builders ...*PackageFreezeDayCreate) *PackageFreezeDayCreateBulk {
+	return &PackageFreezeDayCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PackageFreezeDayClient) MapCreateBulk(slice any, setFunc func(*PackageFreezeDayCreate, int)) *PackageFreezeDayCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PackageFreezeDayCreateBulk{err: fmt.Errorf("calling to PackageFreezeDayClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PackageFreezeDayCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PackageFreezeDayCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PackageFreezeDay.
+func (c *PackageFreezeDayClient) Update() *PackageFreezeDayUpdate {
+	mutation := newPackageFreezeDayMutation(c.config, OpUpdate)
+	return &PackageFreezeDayUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PackageFreezeDayClient) UpdateOne(_m *PackageFreezeDay) *PackageFreezeDayUpdateOne {
+	mutation := newPackageFreezeDayMutation(c.config, OpUpdateOne, withPackageFreezeDay(_m))
+	return &PackageFreezeDayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PackageFreezeDayClient) UpdateOneID(id int64) *PackageFreezeDayUpdateOne {
+	mutation := newPackageFreezeDayMutation(c.config, OpUpdateOne, withPackageFreezeDayID(id))
+	return &PackageFreezeDayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PackageFreezeDay.
+func (c *PackageFreezeDayClient) Delete() *PackageFreezeDayDelete {
+	mutation := newPackageFreezeDayMutation(c.config, OpDelete)
+	return &PackageFreezeDayDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PackageFreezeDayClient) DeleteOne(_m *PackageFreezeDay) *PackageFreezeDayDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PackageFreezeDayClient) DeleteOneID(id int64) *PackageFreezeDayDeleteOne {
+	builder := c.Delete().Where(packagefreezeday.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PackageFreezeDayDeleteOne{builder}
+}
+
+// Query returns a query builder for PackageFreezeDay.
+func (c *PackageFreezeDayClient) Query() *PackageFreezeDayQuery {
+	return &PackageFreezeDayQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePackageFreezeDay},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PackageFreezeDay entity by its id.
+func (c *PackageFreezeDayClient) Get(ctx context.Context, id int64) (*PackageFreezeDay, error) {
+	return c.Query().Where(packagefreezeday.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PackageFreezeDayClient) GetX(ctx context.Context, id int64) *PackageFreezeDay {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PackageFreezeDayClient) Hooks() []Hook {
+	return c.hooks.PackageFreezeDay
+}
+
+// Interceptors returns the client interceptors.
+func (c *PackageFreezeDayClient) Interceptors() []Interceptor {
+	return c.inters.PackageFreezeDay
+}
+
+func (c *PackageFreezeDayClient) mutate(ctx context.Context, m *PackageFreezeDayMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PackageFreezeDayCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PackageFreezeDayUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PackageFreezeDayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PackageFreezeDayDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PackageFreezeDay mutation op: %q", m.Op())
+	}
+}
+
+// PackagePlanClient is a client for the PackagePlan schema.
+type PackagePlanClient struct {
+	config
+}
+
+// NewPackagePlanClient returns a client for the PackagePlan from the given config.
+func NewPackagePlanClient(c config) *PackagePlanClient {
+	return &PackagePlanClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `packageplan.Hooks(f(g(h())))`.
+func (c *PackagePlanClient) Use(hooks ...Hook) {
+	c.hooks.PackagePlan = append(c.hooks.PackagePlan, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `packageplan.Intercept(f(g(h())))`.
+func (c *PackagePlanClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PackagePlan = append(c.inters.PackagePlan, interceptors...)
+}
+
+// Create returns a builder for creating a PackagePlan entity.
+func (c *PackagePlanClient) Create() *PackagePlanCreate {
+	mutation := newPackagePlanMutation(c.config, OpCreate)
+	return &PackagePlanCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PackagePlan entities.
+func (c *PackagePlanClient) CreateBulk(builders ...*PackagePlanCreate) *PackagePlanCreateBulk {
+	return &PackagePlanCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PackagePlanClient) MapCreateBulk(slice any, setFunc func(*PackagePlanCreate, int)) *PackagePlanCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PackagePlanCreateBulk{err: fmt.Errorf("calling to PackagePlanClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PackagePlanCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PackagePlanCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PackagePlan.
+func (c *PackagePlanClient) Update() *PackagePlanUpdate {
+	mutation := newPackagePlanMutation(c.config, OpUpdate)
+	return &PackagePlanUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PackagePlanClient) UpdateOne(_m *PackagePlan) *PackagePlanUpdateOne {
+	mutation := newPackagePlanMutation(c.config, OpUpdateOne, withPackagePlan(_m))
+	return &PackagePlanUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PackagePlanClient) UpdateOneID(id int64) *PackagePlanUpdateOne {
+	mutation := newPackagePlanMutation(c.config, OpUpdateOne, withPackagePlanID(id))
+	return &PackagePlanUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PackagePlan.
+func (c *PackagePlanClient) Delete() *PackagePlanDelete {
+	mutation := newPackagePlanMutation(c.config, OpDelete)
+	return &PackagePlanDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PackagePlanClient) DeleteOne(_m *PackagePlan) *PackagePlanDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PackagePlanClient) DeleteOneID(id int64) *PackagePlanDeleteOne {
+	builder := c.Delete().Where(packageplan.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PackagePlanDeleteOne{builder}
+}
+
+// Query returns a query builder for PackagePlan.
+func (c *PackagePlanClient) Query() *PackagePlanQuery {
+	return &PackagePlanQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePackagePlan},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PackagePlan entity by its id.
+func (c *PackagePlanClient) Get(ctx context.Context, id int64) (*PackagePlan, error) {
+	return c.Query().Where(packageplan.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PackagePlanClient) GetX(ctx context.Context, id int64) *PackagePlan {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PackagePlanClient) Hooks() []Hook {
+	return c.hooks.PackagePlan
+}
+
+// Interceptors returns the client interceptors.
+func (c *PackagePlanClient) Interceptors() []Interceptor {
+	return c.inters.PackagePlan
+}
+
+func (c *PackagePlanClient) mutate(ctx context.Context, m *PackagePlanMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PackagePlanCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PackagePlanUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PackagePlanUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PackagePlanDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PackagePlan mutation op: %q", m.Op())
+	}
+}
+
 // PaymentAuditLogClient is a client for the PaymentAuditLog schema.
 type PaymentAuditLogClient struct {
 	config
@@ -7118,6 +7418,272 @@ func (c *UserAttributeValueClient) mutate(ctx context.Context, m *UserAttributeV
 	}
 }
 
+// UserPackageClient is a client for the UserPackage schema.
+type UserPackageClient struct {
+	config
+}
+
+// NewUserPackageClient returns a client for the UserPackage from the given config.
+func NewUserPackageClient(c config) *UserPackageClient {
+	return &UserPackageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `userpackage.Hooks(f(g(h())))`.
+func (c *UserPackageClient) Use(hooks ...Hook) {
+	c.hooks.UserPackage = append(c.hooks.UserPackage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `userpackage.Intercept(f(g(h())))`.
+func (c *UserPackageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserPackage = append(c.inters.UserPackage, interceptors...)
+}
+
+// Create returns a builder for creating a UserPackage entity.
+func (c *UserPackageClient) Create() *UserPackageCreate {
+	mutation := newUserPackageMutation(c.config, OpCreate)
+	return &UserPackageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserPackage entities.
+func (c *UserPackageClient) CreateBulk(builders ...*UserPackageCreate) *UserPackageCreateBulk {
+	return &UserPackageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserPackageClient) MapCreateBulk(slice any, setFunc func(*UserPackageCreate, int)) *UserPackageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserPackageCreateBulk{err: fmt.Errorf("calling to UserPackageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserPackageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserPackageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserPackage.
+func (c *UserPackageClient) Update() *UserPackageUpdate {
+	mutation := newUserPackageMutation(c.config, OpUpdate)
+	return &UserPackageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserPackageClient) UpdateOne(_m *UserPackage) *UserPackageUpdateOne {
+	mutation := newUserPackageMutation(c.config, OpUpdateOne, withUserPackage(_m))
+	return &UserPackageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserPackageClient) UpdateOneID(id int64) *UserPackageUpdateOne {
+	mutation := newUserPackageMutation(c.config, OpUpdateOne, withUserPackageID(id))
+	return &UserPackageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserPackage.
+func (c *UserPackageClient) Delete() *UserPackageDelete {
+	mutation := newUserPackageMutation(c.config, OpDelete)
+	return &UserPackageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserPackageClient) DeleteOne(_m *UserPackage) *UserPackageDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserPackageClient) DeleteOneID(id int64) *UserPackageDeleteOne {
+	builder := c.Delete().Where(userpackage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserPackageDeleteOne{builder}
+}
+
+// Query returns a query builder for UserPackage.
+func (c *UserPackageClient) Query() *UserPackageQuery {
+	return &UserPackageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserPackage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserPackage entity by its id.
+func (c *UserPackageClient) Get(ctx context.Context, id int64) (*UserPackage, error) {
+	return c.Query().Where(userpackage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserPackageClient) GetX(ctx context.Context, id int64) *UserPackage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UserPackageClient) Hooks() []Hook {
+	return c.hooks.UserPackage
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserPackageClient) Interceptors() []Interceptor {
+	return c.inters.UserPackage
+}
+
+func (c *UserPackageClient) mutate(ctx context.Context, m *UserPackageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserPackageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserPackageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserPackageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserPackageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserPackage mutation op: %q", m.Op())
+	}
+}
+
+// UserPackageFreezeClient is a client for the UserPackageFreeze schema.
+type UserPackageFreezeClient struct {
+	config
+}
+
+// NewUserPackageFreezeClient returns a client for the UserPackageFreeze from the given config.
+func NewUserPackageFreezeClient(c config) *UserPackageFreezeClient {
+	return &UserPackageFreezeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `userpackagefreeze.Hooks(f(g(h())))`.
+func (c *UserPackageFreezeClient) Use(hooks ...Hook) {
+	c.hooks.UserPackageFreeze = append(c.hooks.UserPackageFreeze, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `userpackagefreeze.Intercept(f(g(h())))`.
+func (c *UserPackageFreezeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserPackageFreeze = append(c.inters.UserPackageFreeze, interceptors...)
+}
+
+// Create returns a builder for creating a UserPackageFreeze entity.
+func (c *UserPackageFreezeClient) Create() *UserPackageFreezeCreate {
+	mutation := newUserPackageFreezeMutation(c.config, OpCreate)
+	return &UserPackageFreezeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserPackageFreeze entities.
+func (c *UserPackageFreezeClient) CreateBulk(builders ...*UserPackageFreezeCreate) *UserPackageFreezeCreateBulk {
+	return &UserPackageFreezeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserPackageFreezeClient) MapCreateBulk(slice any, setFunc func(*UserPackageFreezeCreate, int)) *UserPackageFreezeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserPackageFreezeCreateBulk{err: fmt.Errorf("calling to UserPackageFreezeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserPackageFreezeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserPackageFreezeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserPackageFreeze.
+func (c *UserPackageFreezeClient) Update() *UserPackageFreezeUpdate {
+	mutation := newUserPackageFreezeMutation(c.config, OpUpdate)
+	return &UserPackageFreezeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserPackageFreezeClient) UpdateOne(_m *UserPackageFreeze) *UserPackageFreezeUpdateOne {
+	mutation := newUserPackageFreezeMutation(c.config, OpUpdateOne, withUserPackageFreeze(_m))
+	return &UserPackageFreezeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserPackageFreezeClient) UpdateOneID(id int64) *UserPackageFreezeUpdateOne {
+	mutation := newUserPackageFreezeMutation(c.config, OpUpdateOne, withUserPackageFreezeID(id))
+	return &UserPackageFreezeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserPackageFreeze.
+func (c *UserPackageFreezeClient) Delete() *UserPackageFreezeDelete {
+	mutation := newUserPackageFreezeMutation(c.config, OpDelete)
+	return &UserPackageFreezeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserPackageFreezeClient) DeleteOne(_m *UserPackageFreeze) *UserPackageFreezeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserPackageFreezeClient) DeleteOneID(id int64) *UserPackageFreezeDeleteOne {
+	builder := c.Delete().Where(userpackagefreeze.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserPackageFreezeDeleteOne{builder}
+}
+
+// Query returns a query builder for UserPackageFreeze.
+func (c *UserPackageFreezeClient) Query() *UserPackageFreezeQuery {
+	return &UserPackageFreezeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserPackageFreeze},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserPackageFreeze entity by its id.
+func (c *UserPackageFreezeClient) Get(ctx context.Context, id int64) (*UserPackageFreeze, error) {
+	return c.Query().Where(userpackagefreeze.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserPackageFreezeClient) GetX(ctx context.Context, id int64) *UserPackageFreeze {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UserPackageFreezeClient) Hooks() []Hook {
+	return c.hooks.UserPackageFreeze
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserPackageFreezeClient) Interceptors() []Interceptor {
+	return c.inters.UserPackageFreeze
+}
+
+func (c *UserPackageFreezeClient) mutate(ctx context.Context, m *UserPackageFreezeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserPackageFreezeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserPackageFreezeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserPackageFreezeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserPackageFreezeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserPackageFreeze mutation op: %q", m.Op())
+	}
+}
+
 // UserPlatformQuotaClient is a client for the UserPlatformQuota schema.
 type UserPlatformQuotaClient struct {
 	config
@@ -7476,11 +8042,12 @@ type (
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
 		ChannelMonitorRequestTemplate, CompositeModelRoute, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, IntelCheckQuestion,
-		IntelCheckResult, IntelCheckRound, IntelCheckTarget, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
+		IntelCheckResult, IntelCheckRound, IntelCheckTarget, PackageFreezeDay,
+		PackagePlan, PaymentAuditLog, PaymentOrder, PaymentProviderInstance,
+		PendingAuthSession, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
+		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPackage, UserPackageFreeze, UserPlatformQuota,
 		UserSubscription []ent.Hook
 	}
 	inters struct {
@@ -7489,11 +8056,12 @@ type (
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
 		ChannelMonitorRequestTemplate, CompositeModelRoute, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, IntelCheckQuestion,
-		IntelCheckResult, IntelCheckRound, IntelCheckTarget, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
+		IntelCheckResult, IntelCheckRound, IntelCheckTarget, PackageFreezeDay,
+		PackagePlan, PaymentAuditLog, PaymentOrder, PaymentProviderInstance,
+		PendingAuthSession, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
+		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPackage, UserPackageFreeze, UserPlatformQuota,
 		UserSubscription []ent.Interceptor
 	}
 )
