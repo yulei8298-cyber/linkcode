@@ -359,7 +359,13 @@ func (h *PaymentHandler) GetMyOrders(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Paginated(c, sanitizePaymentOrdersForResponse(orders), int64(total), page, pageSize)
+	items := sanitizePaymentOrdersForResponse(orders)
+	if details := h.paymentService.PackageOrderDetails(c.Request.Context(), orders); len(details) > 0 {
+		for i := range items {
+			items[i].Package = details[items[i].ID]
+		}
+	}
+	response.Paginated(c, items, int64(total), page, pageSize)
 }
 
 // GetOrder returns a single order for the authenticated user.
@@ -648,6 +654,8 @@ type PaymentOrderResult struct {
 	RefundRequestReason *string    `json:"refund_request_reason,omitempty"`
 	PlanID              *int64     `json:"plan_id,omitempty"`
 	ProviderInstanceID  *string    `json:"provider_instance_id,omitempty"`
+	// Package 套餐订单的补充信息（买了什么、套餐当前状态），仅订单列表返回。
+	Package *service.PackageOrderDetail `json:"package,omitempty"`
 }
 
 func sanitizePaymentOrdersForResponse(orders []*dbent.PaymentOrder) []PaymentOrderResult {

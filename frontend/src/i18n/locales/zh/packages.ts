@@ -75,7 +75,7 @@ export default {
       empty: '还没有生效中的套餐',
       goShop: '去套餐商店',
       endedTitle: '已结束',
-      endedHint: '用完或到期即作废，记录保留 30 天',
+      endedHint: '用完、到期或作废的套餐记录永久保留；付款记录可在「我的订单」查看',
       remaining: '剩余',
       usedPct: '已用 {n}%',
       boughtAt: '购买',

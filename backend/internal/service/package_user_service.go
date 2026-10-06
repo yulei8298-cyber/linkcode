@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 )
@@ -45,7 +46,7 @@ func (s *PackageService) GetMine(ctx context.Context, userID int64) (*PackageMin
 	if err != nil {
 		return nil, err
 	}
-	pkgs, err := s.repo.ListUserPackages(ctx, userID, now.Add(-PackageHistoryRetention))
+	pkgs, err := s.repo.ListUserPackages(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +79,9 @@ func (s *PackageService) GetMine(ctx context.Context, userID int64) (*PackageMin
 			out.Ended = append(out.Ended, view)
 		}
 	}
+
+	// 历史记录按购买时间倒序，最近买的排在最前。
+	sort.SliceStable(out.Ended, func(i, j int) bool { return out.Ended[i].CreatedAt.After(out.Ended[j].CreatedAt) })
 
 	days, err := s.repo.ListFreezeDays(ctx, now, now.AddDate(0, 0, packageNextFreezableLookahead))
 	if err != nil {
@@ -171,11 +175,6 @@ func (s *PackageService) unfreezeOne(ctx context.Context, packageID int64, userI
 	}
 	s.InvalidateGroupState(pkg.UserID, pkg.GroupID)
 	return pkg, nil
-}
-
-// AdminListUserPackages 管理端查看某用户的套餐（含 30 天内已结束的）。
-func (s *PackageService) AdminListUserPackages(ctx context.Context, userID int64) ([]UserPackage, error) {
-	return s.repo.ListUserPackages(ctx, userID, s.now().Add(-PackageHistoryRetention))
 }
 
 // AdminVoid 管理员作废一张套餐（剩余额度作废，不退余额）。

@@ -174,19 +174,41 @@ func (h *PackageHandler) SyncHolidays(c *gin.Context) {
 
 // ---------- 用户套餐 ----------
 
-// ListUserPackages GET /api/v1/admin/packages/user-packages?user_id=
+// ListUserPackages GET /api/v1/admin/packages/user-packages?keyword=&status=&cycle=&group_id=&page=&page_size=
 func (h *PackageHandler) ListUserPackages(c *gin.Context) {
-	userID, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
-	if err != nil || userID <= 0 {
-		response.ErrorFrom(c, infraerrors.BadRequest("INVALID_USER_ID", "用户 ID 不合法"))
-		return
+	groupID := int64(0)
+	if raw := c.Query("group_id"); raw != "" {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || id < 0 {
+			response.ErrorFrom(c, infraerrors.BadRequest("INVALID_GROUP_ID", "分组 ID 不合法"))
+			return
+		}
+		groupID = id
 	}
-	pkgs, err := h.packageService.AdminListUserPackages(c.Request.Context(), userID)
+	page, pageSize := response.ParsePagination(c)
+	result, err := h.packageService.AdminListPackages(c.Request.Context(), service.AdminPackageFilter{
+		Keyword:  c.Query("keyword"),
+		Status:   c.Query("status"),
+		Cycle:    c.Query("cycle"),
+		GroupID:  groupID,
+		Page:     page,
+		PageSize: pageSize,
+	})
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, pkgs)
+	response.Success(c, result)
+}
+
+// UserPackageStats GET /api/v1/admin/packages/user-packages/stats
+func (h *PackageHandler) UserPackageStats(c *gin.Context) {
+	stats, err := h.packageService.AdminPackageStats(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, stats)
 }
 
 // UnfreezeUserPackage POST /api/v1/admin/packages/user-packages/:id/unfreeze

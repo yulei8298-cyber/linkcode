@@ -159,3 +159,13 @@ export function usedPercent(used: number, quota: number): number {
   if (!(quota > 0)) return 0
   return Math.min(100, Math.max(0, Math.round((used / quota) * 100)))
 }
+
+/** 套餐状态对应的徽章样式（全局 badge-* 类）。 */
+export const PACKAGE_STATUS_BADGE: Record<string, string> = {
+  active: 'badge-success',
+  frozen: 'badge-purple',
+  exhausted: 'badge-warning',
+  expired: 'badge-gray',
+  voided: 'badge-danger',
+}
+

@@ -98,8 +98,59 @@ export async function syncHolidays(): Promise<PackageHolidaySyncState> {
   return data
 }
 
-export async function listUserPackages(userId: number): Promise<UserPackage[]> {
-  const { data } = await apiClient.get<UserPackage[]>('/admin/packages/user-packages', { params: { user_id: userId } })
+/** 管理端「用户套餐」列表项：套餐本身加上用户、分组名与实付金额。 */
+export interface AdminUserPackage extends UserPackage {
+  user_email: string
+  username: string
+  group_name: string
+  /** 实付金额（元）；管理员手工发放、没有订单时为 0 */
+  paid_amount: number
+  remaining_usd: number
+  frozen_seconds: number
+  /** 这张套餐（按周卡 / 月卡）的累计冻结上限（天） */
+  max_freeze_days: number
+}
+
+export interface AdminUserPackageParams {
+  /** 用户邮箱、用户名；纯数字时同时匹配用户 ID */
+  keyword?: string
+  status?: string
+  cycle?: string
+  group_id?: number
+  page?: number
+  page_size?: number
+}
+
+export interface AdminUserPackagePage {
+  items: AdminUserPackage[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
+}
+
+export interface AdminUserPackageStats {
+  total: number
+  active: number
+  frozen: number
+  exhausted: number
+  expired: number
+  voided: number
+  /** 生效中（active + frozen）套餐的总额度与已用额度 */
+  live_quota_usd: number
+  live_used_usd: number
+  recent_sold: number
+  recent_revenue: number
+  window_days: number
+}
+
+export async function listUserPackages(params: AdminUserPackageParams): Promise<AdminUserPackagePage> {
+  const { data } = await apiClient.get<AdminUserPackagePage>('/admin/packages/user-packages', { params })
+  return data
+}
+
+export async function getUserPackageStats(): Promise<AdminUserPackageStats> {
+  const { data } = await apiClient.get<AdminUserPackageStats>('/admin/packages/user-packages/stats')
   return data
 }
 
@@ -124,6 +175,7 @@ export const packagesAdminAPI = {
   deleteHoliday,
   syncHolidays,
   listUserPackages,
+  getUserPackageStats,
   unfreezeUserPackage,
   voidUserPackage,
 }

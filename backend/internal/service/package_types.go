@@ -37,9 +37,6 @@ const (
 	DefaultPackageMaxFreezeDayWeek  = 7
 	DefaultPackageMaxFreezeDayMonth = 15
 	MaxPackageMaxFreezeDay          = 60
-
-	// PackageHistoryRetention 「我的套餐」展示已结束套餐的时间范围。
-	PackageHistoryRetention = 30 * 24 * time.Hour
 )
 
 // PackageValidityDays 按周期返回有效天数。
@@ -75,6 +72,7 @@ var (
 	ErrPackageHolidayInvalid  = infraerrors.BadRequest("PACKAGE_HOLIDAY_INVALID", "名称或日期范围不合法（单次最多 60 天）")
 	ErrPackageHolidayNotFound = infraerrors.NotFound("PACKAGE_HOLIDAY_NOT_FOUND", "没有找到这段手动添加的日期")
 	ErrPackageMonthInvalid    = infraerrors.BadRequest("PACKAGE_MONTH_INVALID", "月份格式应为 YYYY-MM")
+	ErrPackageInvalidFilter   = infraerrors.BadRequest("PACKAGE_INVALID_FILTER", "筛选条件不合法")
 	ErrPackageFrozenNoBalance = infraerrors.Forbidden("PACKAGE_FROZEN", "套餐已冻结，且余额不足。请在「我的套餐」中解冻，或充值后再试。")
 )
 
@@ -186,7 +184,13 @@ type PackageRepository interface {
 	CreateUserPackage(ctx context.Context, pkg *UserPackage) (*UserPackage, error)
 	GetUserPackage(ctx context.Context, id int64) (*UserPackage, error)
 	GetUserPackageByOrderID(ctx context.Context, orderID int64) (*UserPackage, error)
-	ListUserPackages(ctx context.Context, userID int64, endedSince time.Time) ([]UserPackage, error)
+	// ListPackagesByOrderIDs 批量按订单查套餐，供订单列表展示套餐状态。
+	ListPackagesByOrderIDs(ctx context.Context, orderIDs []int64) ([]UserPackage, error)
+	// ListUserPackages 返回用户的全部套餐（含已结束的历史记录），按到期时间升序。
+	ListUserPackages(ctx context.Context, userID int64) ([]UserPackage, error)
+	// AdminListPackages / AdminPackageStats 管理端跨用户总览。
+	AdminListPackages(ctx context.Context, filter AdminPackageFilter) ([]AdminPackageRow, int64, error)
+	AdminPackageStats(ctx context.Context, since time.Time) (*AdminPackageStats, error)
 	GetGroupState(ctx context.Context, userID, groupID int64, now time.Time) (*PackageGroupState, error)
 	FreezePackage(ctx context.Context, packageID, userID int64, now time.Time, caps PackageFreezeCaps) (*UserPackage, error)
 	UnfreezePackage(ctx context.Context, in PackageUnfreezeInput) (*UserPackage, error)

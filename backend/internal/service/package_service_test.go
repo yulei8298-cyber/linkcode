@@ -27,6 +27,14 @@ type packageRepoFake struct {
 
 	userPackages map[int64]*UserPackage
 	createCalls  int
+
+	byOrder     []UserPackage
+	allPackages []UserPackage
+
+	adminFilter AdminPackageFilter
+	adminRows   []AdminPackageRow
+	adminTotal  int64
+	statsSince  time.Time
 }
 
 func newPackageRepoFake() *packageRepoFake {
@@ -91,6 +99,10 @@ func (f *packageRepoFake) GetGroupState(_ context.Context, _, _ int64, _ time.Ti
 type packageGroupRepoFake struct {
 	GroupRepository
 	groups map[int64]*Group
+}
+
+func (f *packageGroupRepoFake) GetByIDLite(ctx context.Context, id int64) (*Group, error) {
+	return f.GetByID(ctx, id)
 }
 
 func (f *packageGroupRepoFake) GetByID(_ context.Context, id int64) (*Group, error) {
@@ -354,4 +366,157 @@ func TestPackageHolidaySyncDue(t *testing.T) {
 	require.False(t, packageHolidaySyncDue(&today, now))
 	early := packageDate(t, "2026-10-04 02:00")
 	require.False(t, packageHolidaySyncDue(&yesterday, early), "凌晨同步时刻之前不执行")
+}
+
+func (f *packageRepoFake) AdminListPackages(_ context.Context, filter AdminPackageFilter) ([]AdminPackageRow, int64, error) {
+	f.adminFilter = filter
+	return f.adminRows, f.adminTotal, nil
+}
+
+func (f *packageRepoFake) AdminPackageStats(_ context.Context, since time.Time) (*AdminPackageStats, error) {
+	f.statsSince = since
+	return &AdminPackageStats{Total: 3, WindowDays: AdminPackageSalesWindowDays}, nil
+}
+
+func TestPackageAdminList_NormalizesFilterAndPaging(t *testing.T) {
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+	ctx := context.Background()
+
+	_, err := svc.AdminListPackages(ctx, AdminPackageFilter{Keyword: "  alice  ", Page: 0, PageSize: 0})
+	require.NoError(t, err)
+	require.Equal(t, AdminPackageFilter{Keyword: "alice", Page: 1, PageSize: AdminPackagePageSizeDefault}, repo.adminFilter, "空白关键词去掉，分页取默认值")
+
+	_, err = svc.AdminListPackages(ctx, AdminPackageFilter{Page: 3, PageSize: 5000, Status: PackageStatusFrozen, Cycle: PackageCycleMonth, GroupID: 7})
+	require.NoError(t, err)
+	require.Equal(t, AdminPackagePageSizeMax, repo.adminFilter.PageSize, "分页大小收敛到上限")
+	require.Equal(t, 3, repo.adminFilter.Page)
+
+	for _, bad := range []AdminPackageFilter{{Status: "bogus"}, {Cycle: "year"}} {
+		_, err = svc.AdminListPackages(ctx, bad)
+		require.ErrorIs(t, err, ErrPackageInvalidFilter, "非法筛选直接拒绝，不静默忽略")
+	}
+}
+
+func TestPackageAdminList_BuildsItemsWithDerivedFields(t *testing.T) {
+	now := packageDate(t, "2026-10-06 12:00")
+	frozenAt := now.Add(-36 * time.Hour)
+	repo := newPackageRepoFake()
+	repo.adminTotal = 41
+	repo.adminRows = []AdminPackageRow{
+		{
+			UserPackage: UserPackage{ID: 1, UserID: 9, Cycle: PackageCycleMonth, QuotaUSD: 40, UsedUSD: 15.5, Status: PackageStatusFrozen, FrozenAt: &frozenAt, FrozenSecondsTotal: 3600},
+			UserEmail:   "a@example.com", Username: "alice", GroupName: "GPT-Pro", PaidAmount: 3,
+		},
+		{UserPackage: UserPackage{ID: 2, UserID: 10, Cycle: PackageCycleWeek, QuotaUSD: 10, UsedUSD: 12, Status: PackageStatusExhausted}},
+	}
+	svc := newPackageServiceForTest(repo, now)
+
+	page, err := svc.AdminListPackages(context.Background(), AdminPackageFilter{Page: 2, PageSize: 20})
+	require.NoError(t, err)
+	require.EqualValues(t, 41, page.Total)
+	require.Equal(t, 3, page.Pages, "41 条每页 20 条共 3 页")
+	require.Len(t, page.Items, 2)
+
+	frozen := page.Items[0]
+	require.Equal(t, "a@example.com", frozen.UserEmail)
+	require.InDelta(t, 24.5, frozen.RemainingUSD, 1e-9)
+	require.Equal(t, int64(3600+36*3600), frozen.FrozenSeconds, "冻结中的套餐计入当前这一段")
+	require.Equal(t, 15, frozen.MaxFreezeDays, "月卡取月卡的冻结上限")
+	require.Equal(t, 3.0, frozen.PaidAmount)
+
+	used := page.Items[1]
+	require.Zero(t, used.RemainingUSD, "用超额度时剩余为 0，不为负")
+	require.Equal(t, 7, used.MaxFreezeDays, "周卡取周卡的冻结上限")
+}
+
+func TestPackageAdminStats_UsesSalesWindow(t *testing.T) {
+	now := packageDate(t, "2026-10-06 12:00")
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, now)
+	stats, err := svc.AdminPackageStats(context.Background())
+	require.NoError(t, err)
+	require.EqualValues(t, 3, stats.Total)
+	require.Equal(t, now.AddDate(0, 0, -AdminPackageSalesWindowDays), repo.statsSince)
+}
+
+func (f *packageRepoFake) ListPlans(context.Context, *int64, bool) ([]PackagePlan, error) {
+	out := make([]PackagePlan, 0, len(f.plans))
+	for _, p := range f.plans {
+		out = append(out, *p)
+	}
+	return out, nil
+}
+
+func (f *packageRepoFake) ListPackagesByOrderIDs(_ context.Context, orderIDs []int64) ([]UserPackage, error) {
+	want := map[int64]bool{}
+	for _, id := range orderIDs {
+		want[id] = true
+	}
+	var out []UserPackage
+	for _, p := range f.byOrder {
+		if p.OrderID != nil && want[*p.OrderID] {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
+func (f *packageRepoFake) ListUserPackages(context.Context, int64) ([]UserPackage, error) {
+	return f.allPackages, nil
+}
+
+func TestPackageOrderDetails_ShippedUsesPackageSnapshotOthersFallBackToPlan(t *testing.T) {
+	now := packageDate(t, "2026-10-06 12:00")
+	frozenAt := now.Add(-48 * time.Hour)
+	repo := newPackageRepoFake()
+	repo.plans[1] = &PackagePlan{ID: 1, GroupID: 7, Name: "摸鱼周卡(新名)", Cycle: PackageCycleWeek, Tier: 1, QuotaUSD: 10}
+	repo.byOrder = []UserPackage{{
+		ID: 5, GroupID: 7, OrderID: ptrInt64(101), Name: "摸鱼周卡", Cycle: PackageCycleWeek, Tier: 1, QuotaUSD: 10, UsedUSD: 4,
+		Status: PackageStatusFrozen, FrozenAt: &frozenAt, FrozenSecondsTotal: 3600,
+	}}
+	svc := newPackageServiceForTest(repo, now)
+
+	details, err := svc.OrderDetails(context.Background(), []PackageOrderRef{
+		{OrderID: 101, PlanID: 1},  // 已发货
+		{OrderID: 102, PlanID: 1},  // 已取消，没有套餐
+		{OrderID: 103, PlanID: 99}, // 套餐配置已被删除
+	})
+	require.NoError(t, err)
+
+	shipped := details[101]
+	require.Equal(t, "摸鱼周卡", shipped.PlanName, "已发货的订单取套餐快照里的名字，不受之后改名影响")
+	require.Equal(t, "Claude", shipped.GroupName)
+	require.NotNil(t, shipped.UserPackage)
+	require.Equal(t, PackageStatusFrozen, shipped.UserPackage.Status)
+	require.InDelta(t, 6, shipped.UserPackage.RemainingUSD, 1e-9)
+	require.Equal(t, int64(3600+48*3600), shipped.UserPackage.FrozenSeconds)
+	require.Equal(t, 7, shipped.UserPackage.MaxFreezeDays)
+
+	pending := details[102]
+	require.Equal(t, "摸鱼周卡(新名)", pending.PlanName, "没有发货时回落到下单时的套餐配置")
+	require.Nil(t, pending.UserPackage)
+
+	require.NotContains(t, details, int64(103), "套餐配置已删除且没有发货，没有详情可展示")
+
+	empty, err := svc.OrderDetails(context.Background(), nil)
+	require.NoError(t, err)
+	require.Empty(t, empty)
+}
+
+func TestPackageGetMine_KeepsFullHistoryNewestFirst(t *testing.T) {
+	now := packageDate(t, "2026-10-06 12:00")
+	repo := newPackageRepoFake()
+	repo.allPackages = []UserPackage{
+		{ID: 1, GroupID: 7, Name: "半年前的卡", Cycle: PackageCycleWeek, QuotaUSD: 10, UsedUSD: 10, Status: PackageStatusExhausted, CreatedAt: now.AddDate(0, -6, 0), ExpiresAt: now.AddDate(0, -6, 7)},
+		{ID: 2, GroupID: 7, Name: "上周的卡", Cycle: PackageCycleWeek, QuotaUSD: 10, Status: PackageStatusExpired, CreatedAt: now.AddDate(0, 0, -9), ExpiresAt: now.AddDate(0, 0, -2)},
+		{ID: 3, GroupID: 7, Name: "生效中", Cycle: PackageCycleWeek, QuotaUSD: 10, Status: PackageStatusActive, CreatedAt: now.AddDate(0, 0, -1), ExpiresAt: now.AddDate(0, 0, 6)},
+	}
+	svc := newPackageServiceForTest(repo, now)
+
+	mine, err := svc.GetMine(context.Background(), 1)
+	require.NoError(t, err)
+	require.Len(t, mine.Active, 1)
+	require.Len(t, mine.Ended, 2, "半年前结束的套餐也保留，不再只显示 30 天内的")
+	require.Equal(t, []string{"上周的卡", "半年前的卡"}, []string{mine.Ended[0].Name, mine.Ended[1].Name}, "历史按购买时间倒序")
 }

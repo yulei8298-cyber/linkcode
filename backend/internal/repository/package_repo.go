@@ -165,16 +165,28 @@ func (r *packageRepository) GetUserPackageByOrderID(ctx context.Context, orderID
 	return userPackageToService(row), nil
 }
 
-// ListUserPackages 返回生效中（active / frozen）的全部套餐，以及 endedSince 之后结束的套餐。
-func (r *packageRepository) ListUserPackages(ctx context.Context, userID int64, endedSince time.Time) ([]service.UserPackage, error) {
+// ListPackagesByOrderIDs 批量按订单查套餐。
+func (r *packageRepository) ListPackagesByOrderIDs(ctx context.Context, orderIDs []int64) ([]service.UserPackage, error) {
+	if len(orderIDs) == 0 {
+		return []service.UserPackage{}, nil
+	}
 	rows, err := clientFromContext(ctx, r.client).UserPackage.Query().
-		Where(
-			userpackage.UserIDEQ(userID),
-			userpackage.Or(
-				userpackage.StatusIn(service.PackageStatusActive, service.PackageStatusFrozen),
-				userpackage.UpdatedAtGTE(endedSince),
-			),
-		).
+		Where(userpackage.OrderIDIn(orderIDs...)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]service.UserPackage, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, *userPackageToService(row))
+	}
+	return out, nil
+}
+
+// ListUserPackages 返回用户的全部套餐，已结束的历史记录也一并返回。
+func (r *packageRepository) ListUserPackages(ctx context.Context, userID int64) ([]service.UserPackage, error) {
+	rows, err := clientFromContext(ctx, r.client).UserPackage.Query().
+		Where(userpackage.UserIDEQ(userID)).
 		Order(dbent.Asc(userpackage.FieldExpiresAt), dbent.Asc(userpackage.FieldID)).
 		All(ctx)
 	if err != nil {

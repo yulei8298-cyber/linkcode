@@ -6,6 +6,9 @@
     <template #cell-out_trade_no="{ value }">
       <span class="text-sm text-gray-900 dark:text-white">{{ value }}</span>
     </template>
+    <template v-if="showDetail" #cell-content="{ row }">
+      <OrderContentCell :order="row" />
+    </template>
     <template v-if="showUser" #cell-user_email="{ value, row }">
       <div class="text-sm">
         <span class="text-gray-900 dark:text-white">{{ value || row.user_name || '#' + row.user_id }}</span>
@@ -45,6 +48,7 @@ import type { PaymentOrder } from '@/types/payment'
 import type { Column } from '@/components/common/types'
 import DataTable from '@/components/common/DataTable.vue'
 import OrderStatusBadge from '@/components/payment/OrderStatusBadge.vue'
+import OrderContentCell from '@/components/payment/OrderContentCell.vue'
 import { currencySymbol } from '@/components/payment/currency'
 
 const { t } = useI18n()
@@ -53,6 +57,8 @@ const props = defineProps<{
   orders: PaymentOrder[]
   loading: boolean
   showUser?: boolean
+  /** 显示「订单内容」列：买了什么，套餐订单还带套餐当前的使用情况 */
+  showDetail?: boolean
 }>()
 
 function formatDate(dateStr: string) { return new Date(dateStr).toLocaleString() }
@@ -70,6 +76,9 @@ const columns = computed((): Column[] => {
   ]
   if (props.showUser) {
     cols.push({ key: 'user_email', label: t('payment.admin.colUser') })
+  }
+  if (props.showDetail) {
+    cols.push({ key: 'content', label: t('payment.orders.content.title') })
   }
   cols.push(
     { key: 'pay_amount', label: t('payment.orders.payAmount') },

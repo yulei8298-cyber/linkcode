@@ -75,7 +75,7 @@ export default {
       empty: 'No active packages yet',
       goShop: 'Go to package shop',
       endedTitle: 'Ended',
-      endedHint: 'Void when used up or expired; kept for 30 days',
+      endedHint: 'Used-up, expired or voided packages are kept permanently; payments are listed under My Orders',
       remaining: 'remaining',
       usedPct: '{n}% used',
       boughtAt: 'Bought',

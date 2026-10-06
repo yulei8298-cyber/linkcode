@@ -36,6 +36,7 @@ func registerPackageAdminRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		packages.POST("/holidays/sync", h.Admin.Package.SyncHolidays)
 
 		packages.GET("/user-packages", h.Admin.Package.ListUserPackages)
+		packages.GET("/user-packages/stats", h.Admin.Package.UserPackageStats)
 		packages.POST("/user-packages/:id/unfreeze", h.Admin.Package.UnfreezeUserPackage)
 		packages.POST("/user-packages/:id/void", h.Admin.Package.VoidUserPackage)
 	}

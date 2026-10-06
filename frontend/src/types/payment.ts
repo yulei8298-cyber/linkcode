@@ -2,6 +2,8 @@
  * Payment System Type Definitions
  */
 
+import type { UserPackageView } from '@/api/packages'
+
 // ==================== Enums / Union Types ====================
 
 export type OrderStatus =
@@ -105,6 +107,19 @@ export interface PaymentOrder {
   refund_request_reason?: string
   plan_id?: number
   provider_instance_id?: string
+  /** 套餐订单的补充信息（仅订单列表返回） */
+  package?: PackageOrderDetail
+}
+
+/** 订单列表里套餐订单的详情：买了什么，以及套餐现在的使用情况。 */
+export interface PackageOrderDetail {
+  plan_name: string
+  cycle: 'week' | 'month'
+  tier: number
+  quota_usd: number
+  group_name: string
+  /** 已发货时对应套餐的当前状态；未付款、已取消时没有 */
+  user_package?: UserPackageView
 }
 
 // ==================== Plans & Channels ====================
