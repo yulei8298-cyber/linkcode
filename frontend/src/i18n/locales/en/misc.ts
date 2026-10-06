@@ -387,7 +387,7 @@ export default {
     tabSubscribe: 'Subscribe',
     noPlans: 'No subscription plans available',
     notAvailable: 'Top-up is currently unavailable',
-    billingUnavailable: 'Neither top-up nor subscriptions are currently available. Please contact the administrator.',
+    billingUnavailable: 'Top-up and subscriptions are not available. Please buy a package in the package shop.',
     confirmSubscription: 'Confirm Subscription',
     confirmCancel: 'Are you sure you want to cancel this order?',
     amountTooLow: 'Minimum amount is {min}',

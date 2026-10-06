@@ -27,7 +27,7 @@ export function resolveDocumentTitle(routeTitle: unknown, siteName?: string, tit
 export interface RouteTitleOptions {
   /**
    * 站点计费模式（见 utils/billingMode.ts）。/purchase 的标题与描述随之切换：
-   * 仅充值 → 「充值」，仅订阅 → 「订阅」，缺省/两者都有 → 「充值/订阅」。
+   * 仅充值 → 「充值」，仅订阅 → 「订阅」，仅套餐 → 「确认购买套餐」，缺省/两者都有 → 「充值/订阅」。
    */
   billingMode?: SiteBillingMode
 }
@@ -54,6 +54,9 @@ export function resolveRouteMetaKeys(
     }
     if (options.billingMode === 'subscription_only') {
       return { titleKey: 'nav.subscribe', descriptionKey: 'purchase.subscriptionDescription' }
+    }
+    if (options.billingMode === 'packages_only') {
+      return { titleKey: 'packages.payment.confirmTitle', descriptionKey: 'packages.shopPage.description' }
     }
   }
   return {

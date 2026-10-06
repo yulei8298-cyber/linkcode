@@ -12,14 +12,11 @@ describe('resolveSiteBillingMode', () => {
     expect(resolveSiteBillingMode({})).toBe('recharge_and_subscription')
   })
 
-  it('maps the two backend switches onto the three modes', () => {
+  it('maps the two backend switches onto the four modes', () => {
     expect(resolveSiteBillingMode({ subscription_enabled: true, payment_balance_disabled: false })).toBe('recharge_and_subscription')
     expect(resolveSiteBillingMode({ subscription_enabled: false, payment_balance_disabled: false })).toBe('recharge_only')
     expect(resolveSiteBillingMode({ subscription_enabled: true, payment_balance_disabled: true })).toBe('subscription_only')
-  })
-
-  it('treats the API-only "both disabled" combination as recharge only', () => {
-    expect(resolveSiteBillingMode({ subscription_enabled: false, payment_balance_disabled: true })).toBe('recharge_only')
+    expect(resolveSiteBillingMode({ subscription_enabled: false, payment_balance_disabled: true })).toBe('packages_only')
   })
 
   it('round-trips every mode through billingModeToSettings', () => {
@@ -28,10 +25,7 @@ describe('resolveSiteBillingMode', () => {
     }
   })
 
-  it('never produces the both-disabled combination', () => {
-    for (const mode of SITE_BILLING_MODES) {
-      const settings = billingModeToSettings(mode)
-      expect(settings.subscription_enabled || !settings.payment_balance_disabled).toBe(true)
-    }
+  it('packages_only turns both recharge and subscription off', () => {
+    expect(billingModeToSettings('packages_only')).toEqual({ subscription_enabled: false, payment_balance_disabled: true })
   })
 })

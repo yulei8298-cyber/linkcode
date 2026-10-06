@@ -411,7 +411,7 @@ export default {
     tabSubscribe: '订阅',
     noPlans: '暂无可用订阅套餐',
     notAvailable: '充值功能暂未开放',
-    billingUnavailable: '充值与订阅均暂未开放，请联系管理员。',
+    billingUnavailable: '余额充值与订阅暂未开放，请前往套餐商店购买套餐。',
     confirmSubscription: '确认订阅',
     confirmCancel: '确定要取消此订单吗？',
     amountTooLow: '最低金额为 {min}',

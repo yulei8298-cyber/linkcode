@@ -792,6 +792,7 @@ const flagAvailableChannels = makeSidebarFlag(FeatureFlags.availableChannels)
 const flagSubscription = makeSidebarFlag(FeatureFlags.subscription)
 
 // 购买入口文案随站点计费模式切换：仅充值 → 「充值」，仅订阅 → 「订阅」，否则「充值/订阅」。
+const isPackagesOnly = computed(() => resolveSiteBillingMode(appStore.cachedPublicSettings) === 'packages_only')
 const purchaseNavLabel = computed(() => {
   switch (resolveSiteBillingMode(appStore.cachedPublicSettings)) {
     case 'recharge_only':
@@ -830,7 +831,7 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     { path: '/packages', label: t('packages.nav.shop'), icon: GiftIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/my-packages', label: t('packages.nav.mine'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true, featureFlag: flagSubscription },
-    { path: '/purchase', label: purchaseNavLabel.value, icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
+    { path: '/purchase', label: purchaseNavLabel.value, icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: () => (isPackagesOnly.value ? false : flagPayment()) },
     { path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/affiliate', label: t('nav.affiliate'), icon: UsersIcon, hideInSimpleMode: true, featureFlag: flagAffiliate },

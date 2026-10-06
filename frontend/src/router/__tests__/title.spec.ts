@@ -89,6 +89,13 @@ describe('resolveRouteMetaKeys', () => {
     })
   })
 
+  it('仅套餐时 /purchase 是套餐下单确认页', () => {
+    expect(resolveRouteMetaKeys(purchaseRoute, { billingMode: 'packages_only' })).toEqual({
+      titleKey: 'packages.payment.confirmTitle',
+      descriptionKey: 'packages.shopPage.description'
+    })
+  })
+
   it('站点类型不影响其他路由', () => {
     const route = { name: 'Subscriptions', meta: { titleKey: 'userSubscriptions.title' } }
     expect(resolveRouteMetaKeys(route, { billingMode: 'recharge_only' })).toEqual({

@@ -53,11 +53,13 @@ export default {
             rechargeAndSubscription: '充值 & 订阅',
             rechargeOnly: '仅充值',
             subscriptionOnly: '仅订阅',
+            packagesOnly: '仅套餐',
           },
           hints: {
             rechargeAndSubscription: '用户端同时提供余额充值与订阅套餐。',
             rechargeOnly: '用户端隐藏「我的订阅」、购买页订阅套餐、顶栏订阅进度与用量页「计费类型」筛选，直接访问「我的订阅」会跳回仪表盘；管理端侧边栏同时隐藏「订阅管理」入口（页面仍可通过地址访问）。已有订阅的计费与兑换码发放的订阅不受影响。',
             subscriptionOnly: '用户端购买页只保留订阅套餐，侧边栏入口显示为「订阅」，余额充值下单会被拒绝；兑换码、返利等余额入账不受影响。',
+            packagesOnly: '用户端只保留套餐商店：隐藏余额充值、订阅与侧边栏「充值/订阅」入口，余额充值下单会被拒绝，套餐下单不受影响；兑换码、返利等余额入账不受影响。',
           },
         },
         modelPlaza: {

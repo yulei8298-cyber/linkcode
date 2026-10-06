@@ -53,11 +53,13 @@ export default {
             rechargeAndSubscription: 'Recharge & Subscription',
             rechargeOnly: 'Recharge only',
             subscriptionOnly: 'Subscription only',
+            packagesOnly: 'Packages only',
           },
           hints: {
             rechargeAndSubscription: 'Users can both top up their balance and buy subscription plans.',
             rechargeOnly: 'Hides "My Subscriptions", the purchase-page subscription tab, the header subscription badge and the usage billing-type filter; direct visits to "My Subscriptions" return to the dashboard. The admin sidebar also hides the "Subscription Management" entry (the page stays reachable by URL). Existing subscription billing and redeem-code subscriptions are unaffected.',
             subscriptionOnly: 'The purchase page only offers subscription plans and the sidebar entry reads "Subscription"; balance top-up orders are rejected. Redeem codes, affiliate payouts and other balance credits are unaffected.',
+            packagesOnly: 'Only the package shop is offered: balance top-up, subscriptions and the sidebar "Top up / Subscribe" entry are hidden, and balance top-up orders are rejected while package orders still work. Redeem codes and referral credits are unaffected.',
           },
         },
         modelPlaza: {

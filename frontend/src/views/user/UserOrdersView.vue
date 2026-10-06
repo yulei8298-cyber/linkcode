@@ -9,7 +9,7 @@
             <button @click="fetchOrders" :disabled="loading" class="btn btn-secondary" :title="t('common.refresh')">
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
             </button>
-            <button class="btn btn-primary" @click="router.push('/purchase')">{{ t('payment.result.backToRecharge') }}</button>
+            <button class="btn btn-primary" @click="router.push(packagesOnly ? '/packages' : '/purchase')">{{ packagesOnly ? t('packages.payment.backToShop') : t('payment.result.backToRecharge') }}</button>
           </div>
         </div>
       </div>
@@ -85,6 +85,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores'
+import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
 import { paymentAPI } from '@/api/payment'
 import { extractI18nErrorMessage } from '@/utils/apiError'
 import type { PaymentOrder } from '@/types/payment'
@@ -98,6 +99,7 @@ import OrderTable from '@/components/payment/OrderTable.vue'
 const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStore()
+const packagesOnly = computed(() => resolveSiteBillingMode(appStore.cachedPublicSettings) === 'packages_only')
 
 const loading = ref(false)
 const actionLoading = ref(false)

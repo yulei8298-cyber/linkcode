@@ -77,6 +77,7 @@
           <!-- Neither top-up nor subscriptions available (balance recharge disabled via API while subscriptions are off) -->
           <div v-else-if="tabs.length === 0" class="card py-16 text-center">
             <p class="text-gray-500 dark:text-gray-400">{{ t('payment.billingUnavailable') }}</p>
+            <button class="btn btn-primary mt-5" @click="router.push('/packages')">{{ t('packages.payment.backToShop') }}</button>
           </div>
           <!-- Top-up Tab -->
           <template v-else-if="activeTab === 'recharge'">

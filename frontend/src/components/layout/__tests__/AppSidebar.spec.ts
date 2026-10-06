@@ -104,6 +104,8 @@ describe('AppSidebar subscription feature flag', () => {
   it('derives the purchase entry label from the site billing mode', () => {
     expect(componentSource).toContain("import { resolveSiteBillingMode } from '@/utils/siteBillingMode'")
     expect(componentSource).toMatch(/case 'recharge_only':\s*return t\('nav\.recharge'\)/)
+    // 仅套餐：侧边栏不再显示「充值/订阅」入口，购买只走套餐商店
+    expect(componentSource).toMatch(/path: '\/purchase'[^\n]*isPackagesOnly\.value \? false/)
     expect(componentSource).toMatch(/case 'subscription_only':\s*return t\('nav\.subscribe'\)/)
     expect(componentSource).toMatch(/path: '\/purchase'[^\n]*label: purchaseNavLabel\.value/)
   })
