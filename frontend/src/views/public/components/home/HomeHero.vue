@@ -133,7 +133,7 @@ h1 em { font-style: normal; color: var(--lc-accent); }
 .hh-lead { max-width: 34em; margin: 22px auto 0; color: var(--lc-ink-2); font-size: 17px; line-height: 1.75; }
 .hh-cta { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 34px; }
 
-.hh-window { max-width: 1080px; margin: 64px auto 0; overflow: hidden; border: 1px solid var(--lc-line-2); border-radius: 16px; background: var(--lc-surface); box-shadow: inset 0 1px 0 var(--lc-hi), var(--lc-shadow-win); text-align: left; }
+.hh-window { max-width: max(1080px, 62vw); margin: 64px auto 0; overflow: hidden; border: 1px solid var(--lc-line-2); border-radius: 16px; background: var(--lc-surface); box-shadow: inset 0 1px 0 var(--lc-hi), var(--lc-shadow-win); text-align: left; }
 .hh-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; height: 42px; padding: 0 18px; border-bottom: 1px solid var(--lc-line); color: var(--lc-ink-3); font: 12px var(--lc-font-mono); }
 .hh-bar span:last-child { display: inline-flex; align-items: center; gap: 8px; }
 .hh-route { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 220px minmax(0, 1fr); gap: 72px; align-items: center; padding: 36px 40px; background-image: radial-gradient(var(--lc-dot) 1px, transparent 1px); background-size: 18px 18px; }

@@ -11,7 +11,8 @@
   letter-spacing: 0;
 }
 
-.lc-wrap { width: min(1200px, calc(100% - 48px)); margin: 0 auto; }
+/* 门户内容宽度随屏幕按比例放大（约 86%），最窄 1200px；不铺满是为了大屏上文字行不至于过长。 */
+.lc-wrap { width: var(--lc-portal-width); margin: 0 auto; }
 .lc-mono { font-family: var(--lc-font-mono); font-variant-numeric: tabular-nums; }
 
 /* ---------- 社群条 ---------- */

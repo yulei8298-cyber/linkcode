@@ -5,6 +5,9 @@
  * 只有 Tailwind 难以表达的层次（柔光、顶边高光、代码区）才直接引用这些变量。
  */
 :root {
+  /* 门户页内容宽度：随视口按比例放大（约 86%），不低于 1200px，并始终留出左右 24px */
+  --lc-portal-width: min(calc(100% - 48px), max(1200px, 86vw));
+
   --lc-bg: #f6f6f3;
   --lc-bg-2: #efefeb;
   --lc-surface: #ffffff;

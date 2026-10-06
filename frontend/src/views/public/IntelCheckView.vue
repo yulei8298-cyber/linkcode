@@ -281,7 +281,7 @@ onBeforeUnmount(() => abortController?.abort())
 
 /* 门户形态给页面留出左右留白；后台形态由 AppLayout 的内容区负责。 */
 .ic-root.ic-portal {
-  width: min(1200px, calc(100% - 48px));
+  width: var(--lc-portal-width);
   margin: 0 auto;
   padding: 40px 0 72px;
 }

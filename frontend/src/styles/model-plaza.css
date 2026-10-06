@@ -12,7 +12,6 @@
   color: var(--plaza-text);
   width: 100%;
   min-width: 0;
-  max-width: 1200px;
   margin-inline: auto;
 }
 .model-plaza button, .model-plaza input, .model-plaza select { font: inherit; }
