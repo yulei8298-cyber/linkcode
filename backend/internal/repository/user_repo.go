@@ -944,10 +944,11 @@ func (r *userRepository) DeductAvailableBalance(ctx context.Context, id int64, a
 // AdjustBalance 原子地把 delta 累加到余额上，结果为负时整条语句不生效。
 // 相比"读余额 → 算新值 → 整行写回"，这里把读与写压进同一条 UPDATE，
 // 并发的计费扣款不会被旧快照覆盖。
+// 正向调整视为充值，同步计入累计充值（total_recharged）；扣减不回退累计值。
 func (r *userRepository) AdjustBalance(ctx context.Context, id int64, delta float64) (service.BalanceChange, error) {
 	const updateSQL = `
 		UPDATE users
-		SET balance = balance + $1, updated_at = NOW()
+		SET balance = balance + $1, total_recharged = total_recharged + GREATEST($1, 0), updated_at = NOW()
 		WHERE id = $2 AND deleted_at IS NULL AND balance + $1 >= 0
 		RETURNING balance - $1, balance
 	`
@@ -968,6 +969,7 @@ func (r *userRepository) AdjustBalance(ctx context.Context, id int64, delta floa
 }
 
 // SetBalance 原子地把余额置为 value，并返回变更前后的值。
+// 调高的差额视为充值计入累计充值，调低不回退累计值。
 func (r *userRepository) SetBalance(ctx context.Context, id int64, value float64) (service.BalanceChange, error) {
 	if value < 0 {
 		// 连同当前余额一起返回，便于上层给出可读的错误信息。
@@ -979,7 +981,7 @@ func (r *userRepository) SetBalance(ctx context.Context, id int64, value float64
 	}
 	const updateSQL = `
 		UPDATE users AS u
-		SET balance = $1, updated_at = NOW()
+		SET balance = $1, total_recharged = u.total_recharged + GREATEST($1 - prev.balance, 0), updated_at = NOW()
 		FROM (SELECT id, balance FROM users WHERE id = $2 AND deleted_at IS NULL) AS prev
 		WHERE u.id = prev.id AND u.deleted_at IS NULL
 		RETURNING prev.balance, u.balance

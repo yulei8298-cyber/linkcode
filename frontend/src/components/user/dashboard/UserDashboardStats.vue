@@ -7,7 +7,7 @@
       <p class="dash-kpi-meta">{{ t('common.available') }}</p>
     </div>
 
-    <!-- 累计充值：来自用户的 total_recharged，含兑换码与返利转入的入账 -->
+    <!-- 累计充值：来自用户的 total_recharged，含兑换码、返利转入与管理员加款 -->
     <div v-if="!isSimple" class="card dash-kpi-card" data-test="total-recharged">
       <dt>{{ t('dashboard.totalRecharged') }}</dt>
       <dd>${{ formatBalance(totalRecharged) }}</dd>

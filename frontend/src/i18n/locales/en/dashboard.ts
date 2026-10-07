@@ -9,7 +9,7 @@ export default {
     welcomeMessage: "Welcome back! Here's an overview of your account.",
     balance: 'Balance',
     totalRecharged: 'Total top-ups',
-    totalRechargedHint: 'Includes redeem codes and referral transfers',
+    totalRechargedHint: 'Includes redeem codes, referral transfers and admin top-ups',
     apiKeys: 'API Keys',
     todayRequests: 'Today Requests',
     todayCost: 'Today Cost',

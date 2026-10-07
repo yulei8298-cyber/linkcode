@@ -189,3 +189,35 @@ func (s *UserRepoSuite) TestSetBalance_UserNotFound() {
 	_, err := s.repo.SetBalance(s.ctx, 99999999, 1)
 	s.Require().ErrorIs(err, service.ErrUserNotFound)
 }
+
+func (s *UserRepoSuite) TestAdjustBalance_PositiveDeltaCountsAsRecharge() {
+	user := s.mustCreateUser(&service.User{Email: "adjust-balance-recharged@example.com"})
+	s.Require().NoError(s.repo.UpdateBalance(s.ctx, user.ID, 10), "seed balance and recharge total")
+
+	_, err := s.repo.AdjustBalance(s.ctx, user.ID, 5)
+	s.Require().NoError(err, "AdjustBalance add")
+	_, err = s.repo.AdjustBalance(s.ctx, user.ID, -3)
+	s.Require().NoError(err, "AdjustBalance subtract")
+	_, err = s.repo.AdjustBalance(s.ctx, user.ID, -100)
+	s.Require().ErrorIs(err, service.ErrBalanceNegative)
+
+	got, err := s.repo.GetByID(s.ctx, user.ID)
+	s.Require().NoError(err, "GetByID")
+	s.Require().InDelta(12, got.Balance, 1e-9)
+	s.Require().InDelta(15, got.TotalRecharged, 1e-9, "only the accepted positive delta is a recharge")
+}
+
+func (s *UserRepoSuite) TestSetBalance_IncreaseCountsAsRecharge() {
+	user := s.mustCreateUser(&service.User{Email: "set-balance-recharged@example.com"})
+	s.Require().NoError(s.repo.UpdateBalance(s.ctx, user.ID, 7), "seed balance and recharge total")
+
+	_, err := s.repo.SetBalance(s.ctx, user.ID, 10)
+	s.Require().NoError(err, "SetBalance up")
+	_, err = s.repo.SetBalance(s.ctx, user.ID, 4)
+	s.Require().NoError(err, "SetBalance down")
+
+	got, err := s.repo.GetByID(s.ctx, user.ID)
+	s.Require().NoError(err, "GetByID")
+	s.Require().InDelta(4, got.Balance, 1e-9)
+	s.Require().InDelta(10, got.TotalRecharged, 1e-9, "raising adds the difference, lowering keeps the total")
+}
