@@ -1,5 +1,8 @@
 <template>
-  <article class="plaza-model-card">
+  <article class="plaza-model-card" :class="{ 'plaza-model-card-exclusive': exclusive }">
+    <span v-if="exclusive" class="plaza-exclusive-price" :class="{ 'is-enterprise': group.enterprise_rate }" data-test="exclusive-price">
+      {{ group.enterprise_rate ? t('modelPlaza.cards.enterprisePrice') : t('modelPlaza.cards.exclusivePrice') }}
+    </span>
     <div class="plaza-card-heading">
       <span class="plaza-provider-icon"><PlatformIcon :platform="model.platform as GroupPlatform" size="lg" /></span>
       <div class="plaza-model-identity"><h3>{{ model.name }}</h3><p>{{ plazaProvider(model.platform) }}</p></div>
@@ -29,13 +32,14 @@ import Icon from '@/components/icons/Icon.vue'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import type { GroupPlatform } from '@/types'
 import type { ModelPlazaGroup, PlazaModel } from '@/api/modelPlaza'
-import { plazaCardPricing, plazaProvider } from '@/utils/modelPlazaPricing'
+import { plazaCardPricing, plazaHasExclusiveRate, plazaProvider } from '@/utils/modelPlazaPricing'
 import { REASONING_EFFORT_LEVELS } from '@/constants/channel'
 
 const props = defineProps<{ model: PlazaModel; group: ModelPlazaGroup }>()
 defineEmits<{ details: [model: PlazaModel] }>()
 const { t } = useI18n()
 const quote = computed(() => plazaCardPricing(props.model, props.group))
+const exclusive = computed(() => plazaHasExclusiveRate(props.group))
 const billingLabel = computed(() => t(quote.value.token ? 'modelPlaza.cards.tokenBilling' : quote.value.mode === 'image' ? 'modelPlaza.table.perImage' : 'modelPlaza.table.perRequest'))
 const unit = computed(() => t(quote.value.token ? 'modelPlaza.cards.perMillion' : quote.value.mode === 'image' ? 'modelPlaza.table.perUnitImage' : 'modelPlaza.table.perUnitRequest'))
 const specialRules = computed(() => {

@@ -324,6 +324,12 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 					AbortWithError(c, 403, "INSUFFICIENT_BALANCE", "Insufficient account balance")
 					return
 				}
+				// 二开：企业尊享用户按量使用时可享受企业倍率；套餐请求不享受。
+				if packageBilling == nil {
+					if enterpriseRate := apiKeyService.ResolveEnterpriseRate(c.Request.Context(), apiKey); enterpriseRate != nil {
+						c.Request = c.Request.WithContext(service.WithEnterpriseRate(c.Request.Context(), enterpriseRate))
+					}
+				}
 			}
 		}
 

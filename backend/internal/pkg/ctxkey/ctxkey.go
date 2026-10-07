@@ -67,6 +67,9 @@ const (
 	DailyFreeUsageDate Key = "ctx_daily_free_usage_date"
 	// PackageBilling 标记本次请求按套餐计费（值为 *service.PackageBilling），由 API Key 鉴权中间件写入。
 	PackageBilling Key = "ctx_package_billing"
+	// EnterpriseRate 企业尊享用户按量（扣余额）请求的企业倍率（值为 *service.EnterpriseRate），
+	// 由 API Key 鉴权中间件在不走套餐时写入；套餐请求不会带这个标记。
+	EnterpriseRate Key = "ctx_enterprise_rate"
 
 	// IsMaxTokensOneHaikuRequest 标识当前请求是否为 max_tokens=1 + haiku 模型的探测请求
 	// 用于 ClaudeCodeOnly 验证绕过（绕过 system prompt 检查，但仍需验证 User-Agent）

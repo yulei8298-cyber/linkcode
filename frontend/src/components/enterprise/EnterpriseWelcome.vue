@@ -34,8 +34,8 @@ const enterpriseStore = useEnterpriseStore()
 const route = useRoute()
 
 // 只在控制台页面提示：路由默认需要登录，首页、门户页等公开页显式标了 requiresAuth: false。
-// 应用刚启动、路由还没解析完成时 matched 为空，不算控制台，避免在首页一闪而过。
-const inConsole = computed(() => route.matched.length > 0 && route.meta.requiresAuth !== false)
+// 应用刚启动、路由还没解析完成时 matched 为空，不算控制台，避免在首页一闪而过；404 页也不算。
+const inConsole = computed(() => route.matched.length > 0 && route.name !== 'NotFound' && route.meta.requiresAuth !== false)
 
 const visible = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined

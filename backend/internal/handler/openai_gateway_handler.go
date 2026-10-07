@@ -262,6 +262,10 @@ func usageRecordContext(parent context.Context, base context.Context) context.Co
 	if packageBilling := service.PackageBillingFromContext(parent); packageBilling != nil {
 		base = service.WithPackageBilling(base, packageBilling)
 	}
+	// 二开：企业倍率随计费任务传递，扣费按企业倍率计算。
+	if enterpriseRate := service.EnterpriseRateFromContext(parent); enterpriseRate != nil {
+		base = service.WithEnterpriseRate(base, enterpriseRate)
+	}
 	return base
 }
 

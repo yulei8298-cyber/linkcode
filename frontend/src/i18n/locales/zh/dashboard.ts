@@ -706,6 +706,10 @@ export default {
       peakPricing: '高峰倍率',
       imageRate: '图片独立倍率',
       personalRate: '你的专属倍率 ×{rate}（分组默认 ×{defaultRate}）',
+      enterpriseRate: '企业尊享按量倍率 ×{rate}（分组默认 ×{defaultRate}），使用套餐时仍按原倍率',
+      exclusivePrice: '专属价格',
+      enterprisePrice: '企业专属价',
+      onlyExclusive: '仅看专属价格',
       pricingNote: '默认基准价来自官方目录，实际单价 = 基准价 × 生效倍率。自定义定价、阶梯、分时及高峰规则以价格明细为准。',
       standardPriceNote: '卡片展示标准时段的基础档单价，以下列出完整计费规则。',
       retry: '重新加载'

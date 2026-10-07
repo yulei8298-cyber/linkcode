@@ -33,6 +33,7 @@ type packageRepoFake struct {
 
 	enterpriseSpent    float64
 	enterpriseOverride string
+	spentCalls         int
 
 	adminFilter AdminPackageFilter
 	adminRows   []AdminPackageRow
@@ -525,6 +526,7 @@ func TestPackageGetMine_KeepsFullHistoryNewestFirst(t *testing.T) {
 }
 
 func (f *packageRepoFake) EnterpriseSpent(context.Context, int64) (float64, error) {
+	f.spentCalls++
 	return f.enterpriseSpent, nil
 }
 
@@ -615,4 +617,85 @@ func TestSetEnterpriseMode_StoresOnOffAndClearsOnAuto(t *testing.T) {
 
 	_, err = svc.SetEnterpriseMode(ctx, 1, "forever")
 	require.ErrorIs(t, err, ErrEnterpriseInvalid)
+}
+
+func TestApplyEnterpriseRate_TakesLowerOnlyForSameGroup(t *testing.T) {
+	ctx := WithEnterpriseRate(context.Background(), &EnterpriseRate{GroupID: 7, Multiplier: 0.28})
+	require.Equal(t, 0.28, ApplyEnterpriseRate(ctx, 7, 0.3), "企业倍率更低时用企业倍率")
+	require.Equal(t, 0.2, ApplyEnterpriseRate(ctx, 7, 0.2), "个人专属倍率更低时保留个人专属倍率")
+	require.Equal(t, 0.3, ApplyEnterpriseRate(ctx, 8, 0.3), "别的分组不受影响")
+	require.Equal(t, 0.3, ApplyEnterpriseRate(context.Background(), 7, 0.3), "没有企业倍率（如套餐请求）原样返回")
+}
+
+func TestGatewayRateResolvers_ApplyEnterpriseRate(t *testing.T) {
+	ctx := WithEnterpriseRate(context.Background(), &EnterpriseRate{GroupID: 7, Multiplier: 0.28})
+	require.Equal(t, 0.28, (&GatewayService{}).ResolveUserGroupRateMultiplier(ctx, 1, 7, 0.3))
+	require.Equal(t, 0.28, (&OpenAIGatewayService{}).ResolveUserGroupRateMultiplier(ctx, 1, 7, 0.3))
+	require.Equal(t, 0.3, (&GatewayService{}).ResolveUserGroupRateMultiplier(context.Background(), 1, 7, 0.3), "套餐请求不带企业倍率，仍按原倍率")
+}
+
+func TestEnterpriseSettings_GroupRateValidation(t *testing.T) {
+	base := EnterpriseSettings{Enabled: true, Threshold: 3000}
+	ok := base
+	ok.GroupRates = []EnterpriseGroupRate{{GroupID: 7, Multiplier: 0.28}, {GroupID: 8, Multiplier: 1.2}}
+	require.NoError(t, ok.Validate())
+	rate, found := ok.GroupRate(7)
+	require.True(t, found)
+	require.Equal(t, 0.28, rate)
+
+	for name, rates := range map[string][]EnterpriseGroupRate{
+		"重复分组":  {{GroupID: 7, Multiplier: 0.28}, {GroupID: 7, Multiplier: 0.2}},
+		"倍率为 0": {{GroupID: 7, Multiplier: 0}},
+		"倍率过大":  {{GroupID: 7, Multiplier: 101}},
+		"分组不合法": {{GroupID: 0, Multiplier: 0.28}},
+	} {
+		bad := base
+		bad.GroupRates = rates
+		require.Error(t, bad.Validate(), name)
+	}
+}
+
+func TestResolveEnterpriseRate_CachesAndInvalidates(t *testing.T) {
+	ctx := context.Background()
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+	repo.enterpriseSpent = 5000
+	_, err := svc.UpdateEnterpriseSettings(ctx, EnterpriseSettings{Enabled: true, Threshold: 3000, GroupRates: []EnterpriseGroupRate{{GroupID: 7, Multiplier: 0.28}}})
+	require.NoError(t, err)
+
+	require.Nil(t, svc.ResolveEnterpriseRate(ctx, 1, 8), "没配企业倍率的分组直接返回")
+	require.Zero(t, repo.spentCalls, "没配置的分组不查用户累计")
+
+	rate := svc.ResolveEnterpriseRate(ctx, 1, 7)
+	require.Equal(t, &EnterpriseRate{GroupID: 7, Multiplier: 0.28}, rate)
+	svc.ResolveEnterpriseRate(ctx, 1, 7)
+	require.Equal(t, 1, repo.spentCalls, "用户身份有缓存，不会每个请求都查库")
+
+	// 管理员手动关闭后立即失效。
+	_, err = svc.SetEnterpriseMode(ctx, 1, EnterpriseModeOff)
+	require.NoError(t, err)
+	require.Nil(t, svc.ResolveEnterpriseRate(ctx, 1, 7))
+
+	// 改配置（去掉分组倍率）也立即生效。
+	_, err = svc.SetEnterpriseMode(ctx, 1, EnterpriseModeAuto)
+	require.NoError(t, err)
+	_, err = svc.UpdateEnterpriseSettings(ctx, EnterpriseSettings{Enabled: true, Threshold: 3000})
+	require.NoError(t, err)
+	require.Nil(t, svc.ResolveEnterpriseRate(ctx, 1, 7))
+	require.Nil(t, svc.EnterpriseGroupRates(ctx, 1))
+}
+
+func TestEnterpriseGroupRates_NotEnterpriseOrDisabled(t *testing.T) {
+	ctx := context.Background()
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+	repo.enterpriseSpent = 100
+	_, err := svc.UpdateEnterpriseSettings(ctx, EnterpriseSettings{Enabled: true, Threshold: 3000, GroupRates: []EnterpriseGroupRate{{GroupID: 7, Multiplier: 0.28}}})
+	require.NoError(t, err)
+	require.Nil(t, svc.EnterpriseGroupRates(ctx, 1), "累计不够不享受")
+
+	repo.enterpriseOverride = EnterpriseModeOn
+	_, err = svc.UpdateEnterpriseSettings(ctx, EnterpriseSettings{Enabled: false, Threshold: 3000, GroupRates: []EnterpriseGroupRate{{GroupID: 7, Multiplier: 0.28}}})
+	require.NoError(t, err)
+	require.Nil(t, svc.EnterpriseGroupRates(ctx, 1), "总开关关闭后连手动开通的也不享受")
 }

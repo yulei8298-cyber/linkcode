@@ -65,6 +65,8 @@ export interface ModelPlazaGroup {
   rate_multiplier: number
   /** 登录且管理员为该用户配了专属倍率时返回；生效倍率 = user_rate ?? rate_multiplier。 */
   user_rate_multiplier?: number
+  /** true 表示 user_rate_multiplier 来自企业尊享的企业倍率：仅按量使用时生效，使用套餐时仍按原倍率。 */
+  enterprise_rate?: boolean
   peak_rate_enabled: boolean
   peak_start: string
   peak_end: string

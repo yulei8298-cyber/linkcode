@@ -83,11 +83,13 @@ type modelPlazaGroup struct {
 	SubscriptionType   string   `json:"subscription_type"`
 	RateMultiplier     float64  `json:"rate_multiplier"`
 	UserRateMultiplier *float64 `json:"user_rate_multiplier,omitempty"`
-	PeakRateEnabled    bool     `json:"peak_rate_enabled"`
-	PeakStart          string   `json:"peak_start"`
-	PeakEnd            string   `json:"peak_end"`
-	PeakRateMultiplier float64  `json:"peak_rate_multiplier"`
-	IsExclusive        bool     `json:"is_exclusive"`
+	// EnterpriseRate 为 true 表示 user_rate_multiplier 来自企业尊享的企业倍率（仅按量使用时生效，套餐仍按原倍率）。
+	EnterpriseRate     bool    `json:"enterprise_rate,omitempty"`
+	PeakRateEnabled    bool    `json:"peak_rate_enabled"`
+	PeakStart          string  `json:"peak_start"`
+	PeakEnd            string  `json:"peak_end"`
+	PeakRateMultiplier float64 `json:"peak_rate_multiplier"`
+	IsExclusive        bool    `json:"is_exclusive"`
 	// 生图独立倍率：为 true 时图片计费模型的实付倍率取 ImageRateMultiplier，
 	// 不取分组/用户专属倍率。
 	ImageRateIndependent bool    `json:"image_rate_independent"`
@@ -134,6 +136,7 @@ func (h *ModelPlazaHandler) Get(c *gin.Context) {
 	var allowedGroups map[int64]struct{}
 	var restrictPublicGroups bool
 	var userRates map[int64]float64
+	var enterpriseGroups map[int64]bool
 	if authed {
 		allowedGroups, restrictPublicGroups, err = h.apiKeyService.GetUserGroupVisibility(c.Request.Context(), subject.UserID)
 		if err != nil {
@@ -147,18 +150,51 @@ func (h *ModelPlazaHandler) Get(c *gin.Context) {
 			slog.Warn("model_plaza_user_rates_failed", "error", err, "user_id", subject.UserID)
 			userRates = nil
 		}
+		// 企业尊享用户的企业倍率：和个人专属倍率取更低的，与按量计费口径一致。
+		userRates, enterpriseGroups = mergeEnterpriseRates(userRates, h.apiKeyService.EnterpriseGroupRates(c.Request.Context(), subject.UserID), groups)
 	}
 
 	visible := filterPlazaVisibleGroups(groups, allowedGroups, restrictPublicGroups)
 
 	out := make([]modelPlazaGroup, 0, len(visible))
 	for i := range visible {
-		out = append(out, toModelPlazaGroupDTO(&visible[i], userRates))
+		dto := toModelPlazaGroupDTO(&visible[i], userRates)
+		dto.EnterpriseRate = enterpriseGroups[dto.ID]
+		out = append(out, dto)
 	}
 	response.Success(c, modelPlazaResponse{
 		Description: rt.Description,
 		Groups:      out,
 	})
+}
+
+// mergeEnterpriseRates 把企业倍率并入用户专属倍率：某分组的企业倍率低于该用户在此分组的
+// 现行倍率（个人专属倍率，没有则分组默认倍率）时，用企业倍率，并记下这些分组。
+func mergeEnterpriseRates(userRates map[int64]float64, enterpriseRates map[int64]float64, groups []service.PlazaGroup) (map[int64]float64, map[int64]bool) {
+	if len(enterpriseRates) == 0 {
+		return userRates, nil
+	}
+	merged := make(map[int64]float64, len(userRates)+len(enterpriseRates))
+	for id, rate := range userRates {
+		merged[id] = rate
+	}
+	marked := make(map[int64]bool, len(enterpriseRates))
+	for i := range groups {
+		g := &groups[i]
+		enterprise, ok := enterpriseRates[g.ID]
+		if !ok {
+			continue
+		}
+		current, hasPersonal := merged[g.ID]
+		if !hasPersonal {
+			current = g.RateMultiplier
+		}
+		if enterprise < current {
+			merged[g.ID] = enterprise
+			marked[g.ID] = true
+		}
+	}
+	return merged, marked
 }
 
 // filterPlazaVisibleGroups 按登录态裁剪分组可见性。

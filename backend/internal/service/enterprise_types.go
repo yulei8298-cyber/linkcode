@@ -21,6 +21,7 @@ const (
 	// DefaultEnterpriseThreshold 自动获得企业尊享所需的累计消费。
 	DefaultEnterpriseThreshold = 3000.0
 	enterpriseThresholdMax     = 100_000_000.0
+	enterpriseRateMax          = 100.0
 
 	// EnterpriseModeAuto / On / Off 单个用户的开通方式。auto 即没有手动覆盖。
 	EnterpriseModeAuto = "auto"
@@ -37,16 +38,48 @@ type EnterpriseSettings struct {
 	// Threshold 自动获得所需的累计消费：已完成订单的实付人民币（套餐、订阅、余额充值）
 	// 加兑换码入账的余额（美元额度），数值直接相加。
 	Threshold float64 `json:"threshold"`
+	// GroupRates 各分组的企业倍率：企业尊享用户按量使用该分组时，取它与分组/个人专属倍率中更低的；
+	// 套餐请求不受影响。没有配置的分组没有企业优惠。
+	GroupRates []EnterpriseGroupRate `json:"group_rates"`
+}
+
+// EnterpriseGroupRate 某分组的企业倍率。
+type EnterpriseGroupRate struct {
+	GroupID    int64   `json:"group_id"`
+	Multiplier float64 `json:"multiplier"`
 }
 
 func DefaultEnterpriseSettings() EnterpriseSettings {
-	return EnterpriseSettings{Enabled: true, Threshold: DefaultEnterpriseThreshold}
+	return EnterpriseSettings{Enabled: true, Threshold: DefaultEnterpriseThreshold, GroupRates: []EnterpriseGroupRate{}}
+}
+
+// GroupRate 某分组的企业倍率，没有配置时返回 false。
+func (s EnterpriseSettings) GroupRate(groupID int64) (float64, bool) {
+	for _, r := range s.GroupRates {
+		if r.GroupID == groupID {
+			return r.Multiplier, true
+		}
+	}
+	return 0, false
 }
 
 // Validate 校验管理端提交的配置。
 func (s EnterpriseSettings) Validate() error {
 	if math.IsNaN(s.Threshold) || math.IsInf(s.Threshold, 0) || s.Threshold <= 0 || s.Threshold > enterpriseThresholdMax {
 		return errors.New("累计消费门槛必须大于 0")
+	}
+	seen := make(map[int64]bool, len(s.GroupRates))
+	for _, r := range s.GroupRates {
+		if r.GroupID <= 0 {
+			return errors.New("企业倍率的分组不合法")
+		}
+		if seen[r.GroupID] {
+			return errors.New("同一个分组只能配置一个企业倍率")
+		}
+		seen[r.GroupID] = true
+		if math.IsNaN(r.Multiplier) || math.IsInf(r.Multiplier, 0) || r.Multiplier <= 0 || r.Multiplier > enterpriseRateMax {
+			return fmt.Errorf("企业倍率必须大于 0 且不超过 %v", enterpriseRateMax)
+		}
 	}
 	return nil
 }
@@ -85,6 +118,9 @@ func loadEnterpriseSettings(ctx context.Context, repo SettingRepository) (Enterp
 	}
 	if err := json.Unmarshal([]byte(raw), &settings); err != nil || settings.Validate() != nil {
 		return DefaultEnterpriseSettings(), nil
+	}
+	if settings.GroupRates == nil {
+		settings.GroupRates = []EnterpriseGroupRate{}
 	}
 	return settings, nil
 }

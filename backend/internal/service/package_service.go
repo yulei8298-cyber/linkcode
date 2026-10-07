@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
@@ -13,6 +14,8 @@ import (
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
+
+	gocache "github.com/patrickmn/go-cache"
 )
 
 const (
@@ -34,6 +37,10 @@ type PackageService struct {
 
 	stateCache *ristretto.Cache
 	stateGroup singleflight.Group
+
+	// 企业尊享配置与用户身份缓存，首次使用时创建。
+	enterpriseCache     *gocache.Cache
+	enterpriseCacheOnce sync.Once
 }
 
 // NewPackageService 创建套餐服务。

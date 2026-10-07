@@ -19,6 +19,11 @@ export function plazaGroupRate(group: ModelPlazaGroup): number {
   return group.user_rate_multiplier ?? group.rate_multiplier
 }
 
+/** 该分组对当前用户是否是专属价格：有专属 / 企业倍率且比分组默认倍率更低。 */
+export function plazaHasExclusiveRate(group: ModelPlazaGroup): boolean {
+  return group.user_rate_multiplier != null && group.user_rate_multiplier < group.rate_multiplier
+}
+
 export function plazaProvider(platform: string): string {
   return ({ openai: 'OpenAI', anthropic: 'Anthropic', claude: 'Anthropic',
     gemini: 'Google', google: 'Google', antigravity: 'Antigravity',

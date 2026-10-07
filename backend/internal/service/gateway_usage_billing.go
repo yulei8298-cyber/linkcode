@@ -27,7 +27,8 @@ func (s *GatewayService) getUserGroupRateMultiplier(ctx context.Context, userID,
 			"service.gateway",
 		)
 	}
-	return resolver.Resolve(ctx, userID, groupID, groupDefaultMultiplier)
+	// 二开：企业尊享按量请求取企业倍率与分组/个人专属倍率中更低的（套餐请求上下文里没有企业倍率）。
+	return ApplyEnterpriseRate(ctx, groupID, resolver.Resolve(ctx, userID, groupID, groupDefaultMultiplier))
 }
 
 // ResolveUserGroupRateMultiplier resolves the same cached multiplier used by usage billing.

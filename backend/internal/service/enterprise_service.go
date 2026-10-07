@@ -15,9 +15,14 @@ func (s *PackageService) UpdateEnterpriseSettings(ctx context.Context, in Enterp
 	if err := in.Validate(); err != nil {
 		return EnterpriseSettings{}, ErrEnterpriseInvalid.WithMetadata(map[string]string{"reason": err.Error()})
 	}
+	if in.GroupRates == nil {
+		in.GroupRates = []EnterpriseGroupRate{}
+	}
 	if err := saveEnterpriseSettings(ctx, s.settingRepo, in); err != nil {
 		return EnterpriseSettings{}, fmt.Errorf("save enterprise settings: %w", err)
 	}
+	// 门槛或开关变化会影响所有用户的身份，整体清空。
+	s.enterpriseCacheStore().Flush()
 	return in, nil
 }
 
@@ -66,5 +71,6 @@ func (s *PackageService) SetEnterpriseMode(ctx context.Context, userID int64, mo
 	if err := s.repo.SetEnterpriseOverride(ctx, userID, stored); err != nil {
 		return nil, err
 	}
+	s.invalidateEnterprise(userID)
 	return s.EnterpriseStatus(ctx, userID)
 }

@@ -12,9 +12,9 @@ const authState = reactive({ isAuthenticated: true, user: { username: 'yuxixi', 
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => authState }))
 
 // 当前路由：控制台页面 requiresAuth 缺省（默认需要登录），首页显式为 false
-const routeState = reactive({ matched: [{}] as unknown[], meta: {} as Record<string, unknown> })
+const routeState = reactive({ matched: [{}] as unknown[], meta: {} as Record<string, unknown>, name: 'Dashboard' as string })
 vi.mock('vue-router', () => ({ useRoute: () => routeState }))
-const goConsole = () => Object.assign(routeState, { matched: [{}], meta: {} })
+const goConsole = () => Object.assign(routeState, { matched: [{}], meta: {}, name: 'Dashboard' })
 const goHome = () => Object.assign(routeState, { matched: [{}], meta: { requiresAuth: false } })
 
 const getEnterpriseStatus = vi.hoisted(() => vi.fn())
@@ -137,4 +137,14 @@ describe('企业尊享欢迎提示', () => {
     await nextTick()
     expect(wrapper.find('[data-test="enterprise-welcome"]').exists()).toBe(false)
   })
+
+  it('404 页面不弹', async () => {
+    getEnterpriseStatus.mockResolvedValue(status(true))
+    Object.assign(routeState, { matched: [{}], meta: {}, name: 'NotFound' })
+    const wrapper = mount(EnterpriseWelcome)
+    await useEnterpriseStore().fetch()
+    await nextTick()
+    expect(wrapper.find('[data-test="enterprise-welcome"]').exists()).toBe(false)
+  })
 })
+

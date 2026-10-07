@@ -120,7 +120,8 @@ func (s *OpenAIGatewayService) ResolveUserGroupRateMultiplier(ctx context.Contex
 	if resolver == nil {
 		resolver = newUserGroupRateResolver(nil, nil, resolveUserGroupRateCacheTTL(s.cfg), nil, "service.openai_gateway")
 	}
-	return resolver.Resolve(ctx, userID, groupID, groupDefaultMultiplier)
+	// 二开：企业尊享按量请求取企业倍率与分组/个人专属倍率中更低的（套餐请求上下文里没有企业倍率）。
+	return ApplyEnterpriseRate(ctx, groupID, resolver.Resolve(ctx, userID, groupID, groupDefaultMultiplier))
 }
 
 // openAIUsagePricingAt 返回本次用量记录使用的定价时刻：优先请求级 PricingAt

@@ -229,3 +229,10 @@ func TestOpenAIGatewayHandlerSubmitOpenAIUsageRecordTask_SearchCountUsesMandator
 
 	require.True(t, called.Load(), "search surcharge usage task must be mandatory when async submit is dropped")
 }
+
+func TestUsageRecordContextPreservesEnterpriseRate(t *testing.T) {
+	rate := &service.EnterpriseRate{GroupID: 7, Multiplier: 0.28}
+	parent := service.WithEnterpriseRate(context.Background(), rate)
+	require.Equal(t, rate, service.EnterpriseRateFromContext(usageRecordContext(parent, context.Background())))
+	require.Nil(t, service.EnterpriseRateFromContext(usageRecordContext(context.Background(), context.Background())))
+}

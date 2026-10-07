@@ -150,10 +150,17 @@ export async function listUserPackages(params: AdminUserPackageParams): Promise<
   return data
 }
 
-/** 企业尊享全局设置：总开关与自动获得的累计消费门槛。 */
+/** 某分组的企业倍率：企业尊享用户按量使用时取它与分组 / 个人专属倍率中更低的，套餐不受影响。 */
+export interface EnterpriseGroupRate {
+  group_id: number
+  multiplier: number
+}
+
+/** 企业尊享全局设置：总开关、自动获得的累计消费门槛、各分组企业倍率。 */
 export interface EnterpriseSettings {
   enabled: boolean
   threshold: number
+  group_rates: EnterpriseGroupRate[]
 }
 
 export async function getEnterpriseSettings(): Promise<EnterpriseSettings> {

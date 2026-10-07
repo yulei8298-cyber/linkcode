@@ -15,3 +15,19 @@ func (s *APIKeyService) ResolvePackageBilling(ctx context.Context, apiKey *APIKe
 	}
 	return s.packageService.ResolvePackageBilling(ctx, apiKey.User, apiKey.Group, lowBalance)
 }
+
+// ResolveEnterpriseRate 本次请求不走套餐时，判定能否享受企业倍率；不能时返回 nil。
+func (s *APIKeyService) ResolveEnterpriseRate(ctx context.Context, apiKey *APIKey) *EnterpriseRate {
+	if s == nil || s.packageService == nil || apiKey == nil || apiKey.GroupID == nil {
+		return nil
+	}
+	return s.packageService.ResolveEnterpriseRate(ctx, apiKey.UserID, *apiKey.GroupID)
+}
+
+// EnterpriseGroupRates 用户可享受的各分组企业倍率，供模型广场展示专属价格；不是企业用户时返回 nil。
+func (s *APIKeyService) EnterpriseGroupRates(ctx context.Context, userID int64) map[int64]float64 {
+	if s == nil || s.packageService == nil {
+		return nil
+	}
+	return s.packageService.EnterpriseGroupRates(ctx, userID)
+}

@@ -262,3 +262,22 @@ func TestFilterPlazaVisibleGroups_SubscribedExclusiveGroup(t *testing.T) {
 		require.Equal(t, int64(42), visible[0].ID)
 	}
 }
+
+func TestMergeEnterpriseRates_TakesLowerAndMarksGroups(t *testing.T) {
+	groups := []service.PlazaGroup{{ID: 1, RateMultiplier: 0.3}, {ID: 2, RateMultiplier: 0.3}, {ID: 3, RateMultiplier: 0.5}}
+	personal := map[int64]float64{2: 0.2}
+	enterprise := map[int64]float64{1: 0.28, 2: 0.28, 4: 0.1}
+
+	merged, marked := mergeEnterpriseRates(personal, enterprise, groups)
+	require.Equal(t, 0.28, merged[1], "没有个人专属倍率：企业倍率低于分组倍率时用企业倍率")
+	require.Equal(t, 0.2, merged[2], "个人专属倍率更低时保留个人专属倍率")
+	require.NotContains(t, merged, int64(3), "没有企业倍率的分组不变")
+	require.True(t, marked[1])
+	require.False(t, marked[2])
+	require.Equal(t, 0.2, personal[2], "不修改传入的个人专属倍率")
+	require.NotContains(t, personal, int64(1))
+
+	same, none := mergeEnterpriseRates(personal, nil, groups)
+	require.Equal(t, personal, same)
+	require.Nil(t, none)
+}

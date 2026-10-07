@@ -43,6 +43,11 @@
             </label>
           </div>
         </details>
+        <label v-if="exclusiveModelCount" class="plaza-exclusive-toggle" data-test="only-exclusive">
+          <input v-model="onlyExclusive" type="checkbox" />
+          {{ t('modelPlaza.cards.onlyExclusive') }}
+          <span>{{ exclusiveModelCount }}</span>
+        </label>
         <span class="plaza-result-count" aria-live="polite">{{ t('modelPlaza.cards.modelCount', { count: modelCount }) }}</span>
       </div>
       <div v-if="!modelCount" class="plaza-state">{{ t('modelPlaza.noSearchResult') }}</div>
@@ -50,7 +55,8 @@
         <div v-if="selectedGroupId === 'all' || group.description || group.user_rate_multiplier != null || group.subscription_type === 'subscription'" class="plaza-group-summary">
           <h2 v-if="selectedGroupId === 'all'">{{ group.name }} <span class="plaza-rate">× {{ plazaGroupRate(group) }}</span></h2>
           <p v-if="group.description">{{ group.description }}</p>
-          <p v-if="group.user_rate_multiplier != null">{{ t('modelPlaza.cards.personalRate', { rate: plazaGroupRate(group), defaultRate: group.rate_multiplier }) }}</p>
+          <p v-if="group.enterprise_rate">{{ t('modelPlaza.cards.enterpriseRate', { rate: plazaGroupRate(group), defaultRate: group.rate_multiplier }) }}</p>
+          <p v-else-if="group.user_rate_multiplier != null">{{ t('modelPlaza.cards.personalRate', { rate: plazaGroupRate(group), defaultRate: group.rate_multiplier }) }}</p>
           <p v-if="group.subscription_type === 'subscription'">{{ t('modelPlaza.badges.subscription') }}</p>
         </div>
         <div class="plaza-model-grid">
@@ -79,7 +85,7 @@ import PlazaModelCard from './PlazaModelCard.vue'
 import PlazaGroupSection from './PlazaGroupSection.vue'
 import type { ModelPlazaGroup, ModelPlazaResponse, PlazaModel } from '@/api/modelPlaza'
 import { useAuthStore } from '@/stores/auth'
-import { plazaGroupRate, plazaProvider, sortPlazaModels } from '@/utils/modelPlazaPricing'
+import { plazaGroupRate, plazaHasExclusiveRate, plazaProvider, sortPlazaModels } from '@/utils/modelPlazaPricing'
 import '@/styles/model-plaza.css'
 
 const props = defineProps<{ response: ModelPlazaResponse | null; loading: boolean; error?: boolean; embedded?: boolean; portal?: boolean }>()
@@ -91,6 +97,7 @@ const selectedGroupId = ref<number | 'all' | null>(null)
 const selectedPlatform = ref('all')
 const selectedRate = ref<number | 'all'>('all')
 const searchQuery = ref('')
+const onlyExclusive = ref(false)
 const dialog = ref<HTMLDialogElement | null>(null)
 const selectedDetail = ref<{ group: ModelPlazaGroup; model: PlazaModel } | null>(null)
 const descriptionHtml = computed(() => DOMPurify.sanitize(marked.parse(props.response?.description?.trim() ?? '') as string))
@@ -104,11 +111,13 @@ watch(platforms, list => { if (!list.includes(selectedPlatform.value)) selectedP
 watch(rates, list => { if (selectedRate.value !== 'all' && !list.includes(selectedRate.value)) selectedRate.value = 'all' })
 const filteredGroups = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
-  return groups.value.filter(g => (selectedGroupId.value === 'all' || g.id === selectedGroupId.value) && (selectedRate.value === 'all' || plazaGroupRate(g) === selectedRate.value))
+  return groups.value.filter(g => (selectedGroupId.value === 'all' || g.id === selectedGroupId.value) && (selectedRate.value === 'all' || plazaGroupRate(g) === selectedRate.value) && (!onlyExclusive.value || plazaHasExclusiveRate(g)))
     .map(g => ({ ...g, models: sortPlazaModels(g.models.filter(m => (selectedPlatform.value === 'all' || m.platform === selectedPlatform.value) && `${m.name} ${m.platform} ${plazaProvider(m.platform)}`.toLowerCase().includes(query))) }))
     .filter(g => g.models.length > 0)
 })
 const modelCount = computed(() => filteredGroups.value.reduce((sum, g) => sum + g.models.length, 0))
+// 有专属价格（个人专属倍率或企业倍率更低）的模型数，为 0 时不显示「仅看专属价格」。
+const exclusiveModelCount = computed(() => groups.value.filter(plazaHasExclusiveRate).reduce((sum, g) => sum + g.models.length, 0))
 async function openDetails(group: ModelPlazaGroup, model: PlazaModel) {
   selectedDetail.value = { group, model }
   await nextTick()

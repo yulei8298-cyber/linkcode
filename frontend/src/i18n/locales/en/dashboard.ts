@@ -701,6 +701,10 @@ export default {
       peakPricing: 'Peak rate',
       imageRate: 'Image rate',
       personalRate: 'Your rate ×{rate} (group default ×{defaultRate})',
+      enterpriseRate: 'Enterprise pay-as-you-go rate ×{rate} (group default ×{defaultRate}); packages still use the default rate',
+      exclusivePrice: 'Exclusive price',
+      enterprisePrice: 'Enterprise price',
+      onlyExclusive: 'Exclusive prices only',
       pricingNote: 'Default base prices come from the official catalog. Price = base price × effective rate. See details for custom prices, tiers, schedules and peak rates.',
       standardPriceNote: 'Cards show the base tier during standard hours. Full billing rules are listed below.',
       retry: 'Reload'
