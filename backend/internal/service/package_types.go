@@ -184,6 +184,10 @@ type PackageRepository interface {
 	CreateUserPackage(ctx context.Context, pkg *UserPackage) (*UserPackage, error)
 	GetUserPackage(ctx context.Context, id int64) (*UserPackage, error)
 	GetUserPackageByOrderID(ctx context.Context, orderID int64) (*UserPackage, error)
+	// 企业尊享：累计消费、手动覆盖（mode 空串表示去掉覆盖）。
+	EnterpriseSpent(ctx context.Context, userID int64) (float64, error)
+	GetEnterpriseOverride(ctx context.Context, userID int64) (string, error)
+	SetEnterpriseOverride(ctx context.Context, userID int64, mode string) error
 	// ListPackagesByOrderIDs 批量按订单查套餐，供订单列表展示套餐状态。
 	ListPackagesByOrderIDs(ctx context.Context, orderIDs []int64) ([]UserPackage, error)
 	// ListUserPackages 返回用户的全部套餐（含已结束的历史记录），按到期时间升序。

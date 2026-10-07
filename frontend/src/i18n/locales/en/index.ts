@@ -7,6 +7,7 @@ import admin from './admin'
 import misc from './misc'
 import infiniteCanvas from './infiniteCanvas'
 import packages from './packages'
+import enterprise from './enterprise'
 
 export default {
   ...landing,
@@ -18,4 +19,5 @@ export default {
   ...misc,
   ...infiniteCanvas,
   ...packages,
+  ...enterprise,
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -83,4 +84,100 @@ func TestAdminPackageHandler_Stats(t *testing.T) {
 	require.EqualValues(t, 5, data["total"])
 	require.EqualValues(t, 3, data["active"])
 	require.EqualValues(t, service.AdminPackageSalesWindowDays, data["window_days"])
+}
+
+type enterpriseSettingStub struct {
+	service.SettingRepository
+	saved string
+}
+
+func (s *enterpriseSettingStub) GetValue(context.Context, string) (string, error) {
+	if s.saved == "" {
+		return "", service.ErrSettingNotFound
+	}
+	return s.saved, nil
+}
+
+func (s *enterpriseSettingStub) Set(_ context.Context, _, value string) error {
+	s.saved = value
+	return nil
+}
+
+type enterpriseRepoStub struct {
+	service.PackageRepository
+	spent    float64
+	override string
+}
+
+func (s *enterpriseRepoStub) EnterpriseSpent(context.Context, int64) (float64, error) {
+	return s.spent, nil
+}
+func (s *enterpriseRepoStub) GetEnterpriseOverride(context.Context, int64) (string, error) {
+	return s.override, nil
+}
+func (s *enterpriseRepoStub) SetEnterpriseOverride(_ context.Context, _ int64, mode string) error {
+	s.override = mode
+	return nil
+}
+
+func newEnterpriseRouter(repo *enterpriseRepoStub, settings *enterpriseSettingStub) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	h := NewPackageHandler(service.NewPackageService(repo, settings, nil, nil))
+	r := gin.New()
+	r.GET("/enterprise/settings", h.GetEnterpriseSettings)
+	r.PUT("/enterprise/settings", h.UpdateEnterpriseSettings)
+	r.GET("/enterprise/users/:id", h.GetUserEnterprise)
+	r.PUT("/enterprise/users/:id", h.SetUserEnterprise)
+	return r
+}
+
+func serveJSON(r *gin.Engine, method, path, body string) (*httptest.ResponseRecorder, map[string]any) {
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	var out map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &out)
+	return w, out
+}
+
+func TestEnterpriseHandler_SettingsRoundTripAndValidation(t *testing.T) {
+	r := newEnterpriseRouter(&enterpriseRepoStub{}, &enterpriseSettingStub{})
+
+	w, body := serveJSON(r, http.MethodGet, "/enterprise/settings", "")
+	require.Equal(t, http.StatusOK, w.Code)
+	data := body["data"].(map[string]any)
+	require.Equal(t, true, data["enabled"])
+	require.EqualValues(t, 3000, data["threshold"])
+
+	w, _ = serveJSON(r, http.MethodPut, "/enterprise/settings", `{"enabled":true,"threshold":0}`)
+	require.Equal(t, http.StatusBadRequest, w.Code, "门槛必须大于 0")
+
+	w, _ = serveJSON(r, http.MethodPut, "/enterprise/settings", `{"enabled":false,"threshold":1500}`)
+	require.Equal(t, http.StatusOK, w.Code)
+	_, body = serveJSON(r, http.MethodGet, "/enterprise/settings", "")
+	data = body["data"].(map[string]any)
+	require.Equal(t, false, data["enabled"])
+	require.EqualValues(t, 1500, data["threshold"])
+}
+
+func TestEnterpriseHandler_UserOverride(t *testing.T) {
+	repo := &enterpriseRepoStub{spent: 100}
+	r := newEnterpriseRouter(repo, &enterpriseSettingStub{})
+
+	w, body := serveJSON(r, http.MethodPut, "/enterprise/users/7", `{"mode":"on"}`)
+	require.Equal(t, http.StatusOK, w.Code)
+	data := body["data"].(map[string]any)
+	require.Equal(t, true, data["enterprise"])
+	require.Equal(t, "on", data["mode"])
+	require.EqualValues(t, 100, data["total"])
+
+	w, _ = serveJSON(r, http.MethodPut, "/enterprise/users/7", `{"mode":"forever"}`)
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	w, _ = serveJSON(r, http.MethodGet, "/enterprise/users/abc", "")
+	require.Equal(t, http.StatusBadRequest, w.Code)
+
+	_, body = serveJSON(r, http.MethodPut, "/enterprise/users/7", `{"mode":"auto"}`)
+	require.Empty(t, repo.override)
+	require.Equal(t, false, body["data"].(map[string]any)["enterprise"], "累计只有 100，回到自动后不是企业尊享")
 }

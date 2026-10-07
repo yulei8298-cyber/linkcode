@@ -22,14 +22,17 @@
         <BrandLogo v-if="settingsLoaded" :logo-url="siteLogo" :size="30" :show-name="false" />
       </router-link>
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
-        <router-link
-          :to="homePath"
-          class="sidebar-brand-title text-lg font-bold text-gray-900 transition-opacity hover:opacity-80 dark:text-white"
-          @click="handleMenuItemClick(homePath)"
-        >
-          <BrandWordmark v-if="isLinkCodeSite" :height="16" />
-          <template v-else>{{ siteName }}</template>
-        </router-link>
+        <div class="sidebar-brand-row">
+          <router-link
+            :to="homePath"
+            class="sidebar-brand-title text-lg font-bold text-gray-900 transition-opacity hover:opacity-80 dark:text-white"
+            @click="handleMenuItemClick(homePath)"
+          >
+            <BrandWordmark v-if="isLinkCodeSite" :height="16" />
+            <template v-else>{{ siteName }}</template>
+          </router-link>
+          <EnterpriseBadge v-if="enterpriseStore.isEnterprise" />
+        </div>
         <!-- Version Badge -->
         <VersionBadge :version="siteVersion" />
       </div>
@@ -264,10 +267,11 @@
 import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
+import { useAdminSettingsStore, useAppStore, useAuthStore, useEnterpriseStore, useOnboardingStore } from '@/stores'
 import VersionBadge from '@/components/common/VersionBadge.vue'
 import BrandLogo from '@/components/brand/BrandLogo.vue'
 import BrandWordmark from '@/components/brand/BrandWordmark.vue'
+import EnterpriseBadge from '@/components/enterprise/EnterpriseBadge.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
 import { sanitizeUrl } from '@/utils/url'
@@ -322,6 +326,7 @@ const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
+const enterpriseStore = useEnterpriseStore()
 const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const adminSettingsStore = useAdminSettingsStore()
@@ -1180,7 +1185,15 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.sidebar-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .sidebar-brand-title {
+  flex: 0 1 auto;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;

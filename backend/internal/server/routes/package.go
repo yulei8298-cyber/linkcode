@@ -9,6 +9,8 @@ import (
 // registerPackageUserRoutes 注册用户端套餐路由（挂在已鉴权的用户路由组下）。
 // 下单走 /payment/orders（order_type=package），这里只有商店、我的套餐与冻结。
 func registerPackageUserRoutes(authenticated *gin.RouterGroup, h *handler.Handlers) {
+	authenticated.GET("/user/enterprise", h.Package.EnterpriseStatus)
+
 	packages := authenticated.Group("/packages")
 	{
 		packages.GET("/shop", h.Package.Shop)
@@ -34,6 +36,11 @@ func registerPackageAdminRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		packages.POST("/holidays", h.Admin.Package.AddHoliday)
 		packages.POST("/holidays/delete", h.Admin.Package.DeleteHoliday)
 		packages.POST("/holidays/sync", h.Admin.Package.SyncHolidays)
+
+		packages.GET("/enterprise/settings", h.Admin.Package.GetEnterpriseSettings)
+		packages.PUT("/enterprise/settings", h.Admin.Package.UpdateEnterpriseSettings)
+		packages.GET("/enterprise/users/:id", h.Admin.Package.GetUserEnterprise)
+		packages.PUT("/enterprise/users/:id", h.Admin.Package.SetUserEnterprise)
 
 		packages.GET("/user-packages", h.Admin.Package.ListUserPackages)
 		packages.GET("/user-packages/stats", h.Admin.Package.UserPackageStats)

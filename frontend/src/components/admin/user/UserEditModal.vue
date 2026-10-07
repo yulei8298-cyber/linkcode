@@ -67,6 +67,7 @@
         />
         <p class="input-hint">{{ t('admin.packages.userEdit.hint') }}</p>
       </div>
+      <UserEnterpriseField :user-id="show ? (user?.id ?? null) : null" />
       <div>
         <label class="input-label">{{ t('admin.users.form.rpmLimit') }}</label>
         <input
@@ -105,6 +106,7 @@ import type { AdminUser, UserAttributeValuesMap } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
 import UserAttributeForm from '@/components/user/UserAttributeForm.vue'
+import UserEnterpriseField from '@/components/admin/user/UserEnterpriseField.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useStepUp, isStepUpBlocked, isStepUpCancelled, stepUpBlockReason } from '@/composables/useStepUp'
 import TotpStepUpDialog from '@/components/auth/TotpStepUpDialog.vue'

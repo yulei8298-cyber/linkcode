@@ -6,7 +6,8 @@ import NavigationProgress from '@/components/common/NavigationProgress.vue'
 import AdminComplianceDialog from '@/components/admin/AdminComplianceDialog.vue'
 import { resolveRouteDocumentTitle } from '@/router/title'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
-import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useAdminComplianceStore, useAdminSettingsStore } from '@/stores'
+import EnterpriseWelcome from '@/components/enterprise/EnterpriseWelcome.vue'
+import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useAdminComplianceStore, useAdminSettingsStore, useEnterpriseStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
 import { updateFavicon } from '@/utils/branding'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
@@ -20,6 +21,7 @@ const subscriptionStore = useSubscriptionStore()
 const announcementStore = useAnnouncementStore()
 const adminComplianceStore = useAdminComplianceStore()
 const adminSettingsStore = useAdminSettingsStore()
+const enterpriseStore = useEnterpriseStore()
 
 function updateDocumentTitle() {
   const customMenuItems = [
@@ -114,6 +116,9 @@ watch(
         announcementStore.fetchAnnouncements()
       }
 
+      // 企业尊享：登录或恢复登录态后拉取一次，企业用户会弹出欢迎提示
+      void enterpriseStore.fetch()
+
       // Register visibility change listener
       document.addEventListener('visibilitychange', onVisibilityChange)
     } else {
@@ -121,6 +126,7 @@ watch(
       subscriptionStore.clear()
       announcementStore.reset()
       adminComplianceStore.reset()
+      enterpriseStore.reset()
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   },
@@ -170,5 +176,6 @@ onMounted(async () => {
   </RouterView>
   <Toast />
   <AnnouncementPopup />
+  <EnterpriseWelcome />
   <AdminComplianceDialog />
 </template>

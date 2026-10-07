@@ -31,6 +31,9 @@ type packageRepoFake struct {
 	byOrder     []UserPackage
 	allPackages []UserPackage
 
+	enterpriseSpent    float64
+	enterpriseOverride string
+
 	adminFilter AdminPackageFilter
 	adminRows   []AdminPackageRow
 	adminTotal  int64
@@ -519,4 +522,97 @@ func TestPackageGetMine_KeepsFullHistoryNewestFirst(t *testing.T) {
 	require.Len(t, mine.Active, 1)
 	require.Len(t, mine.Ended, 2, "半年前结束的套餐也保留，不再只显示 30 天内的")
 	require.Equal(t, []string{"上周的卡", "半年前的卡"}, []string{mine.Ended[0].Name, mine.Ended[1].Name}, "历史按购买时间倒序")
+}
+
+func (f *packageRepoFake) EnterpriseSpent(context.Context, int64) (float64, error) {
+	return f.enterpriseSpent, nil
+}
+
+func (f *packageRepoFake) GetEnterpriseOverride(context.Context, int64) (string, error) {
+	return f.enterpriseOverride, nil
+}
+
+func (f *packageRepoFake) SetEnterpriseOverride(_ context.Context, _ int64, mode string) error {
+	f.enterpriseOverride = mode
+	return nil
+}
+
+func TestEnterpriseStatus_AutoByThresholdWithManualOverrides(t *testing.T) {
+	ctx := context.Background()
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+
+	// 默认门槛 3000：差一点不算，达到即算。
+	repo.enterpriseSpent = 2999.99
+	st, err := svc.EnterpriseStatus(ctx, 1)
+	require.NoError(t, err)
+	require.False(t, st.Enterprise)
+	require.Equal(t, EnterpriseModeAuto, st.Mode)
+	require.Equal(t, DefaultEnterpriseThreshold, st.Threshold)
+
+	repo.enterpriseSpent = 3000
+	st, _ = svc.EnterpriseStatus(ctx, 1)
+	require.True(t, st.Enterprise, "恰好达到门槛就自动获得")
+
+	// 手动关闭优先于累计；手动开通优先于累计。
+	repo.enterpriseOverride = EnterpriseModeOff
+	st, _ = svc.EnterpriseStatus(ctx, 1)
+	require.False(t, st.Enterprise)
+	repo.enterpriseSpent = 10
+	repo.enterpriseOverride = EnterpriseModeOn
+	st, _ = svc.EnterpriseStatus(ctx, 1)
+	require.True(t, st.Enterprise)
+	require.Equal(t, 10.0, st.Total, "手动开通时仍返回真实累计，便于后台核对")
+}
+
+func TestEnterpriseStatus_GlobalSwitchOffHidesEveryone(t *testing.T) {
+	ctx := context.Background()
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+	repo.enterpriseSpent = 99999
+	repo.enterpriseOverride = EnterpriseModeOn
+
+	_, err := svc.UpdateEnterpriseSettings(ctx, EnterpriseSettings{Enabled: false, Threshold: 3000})
+	require.NoError(t, err)
+	st, err := svc.EnterpriseStatus(ctx, 1)
+	require.NoError(t, err)
+	require.False(t, st.Enterprise, "总开关关闭后，连手动开通的用户也不显示")
+	require.False(t, st.Enabled)
+}
+
+func TestEnterpriseSettings_ValidationAndThresholdChange(t *testing.T) {
+	ctx := context.Background()
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+
+	for _, bad := range []float64{0, -1, 1e12} {
+		_, err := svc.UpdateEnterpriseSettings(ctx, EnterpriseSettings{Enabled: true, Threshold: bad})
+		require.ErrorIs(t, err, ErrEnterpriseInvalid, "门槛 %v 不合法", bad)
+	}
+
+	_, err := svc.UpdateEnterpriseSettings(ctx, EnterpriseSettings{Enabled: true, Threshold: 500})
+	require.NoError(t, err)
+	repo.enterpriseSpent = 600
+	st, _ := svc.EnterpriseStatus(ctx, 1)
+	require.True(t, st.Enterprise, "门槛调低后立即生效")
+	require.Equal(t, 500.0, st.Threshold)
+}
+
+func TestSetEnterpriseMode_StoresOnOffAndClearsOnAuto(t *testing.T) {
+	ctx := context.Background()
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+
+	st, err := svc.SetEnterpriseMode(ctx, 1, EnterpriseModeOn)
+	require.NoError(t, err)
+	require.True(t, st.Enterprise)
+	require.Equal(t, EnterpriseModeOn, repo.enterpriseOverride)
+
+	st, err = svc.SetEnterpriseMode(ctx, 1, EnterpriseModeAuto)
+	require.NoError(t, err)
+	require.Empty(t, repo.enterpriseOverride, "auto 表示去掉手动覆盖")
+	require.Equal(t, EnterpriseModeAuto, st.Mode)
+
+	_, err = svc.SetEnterpriseMode(ctx, 1, "forever")
+	require.ErrorIs(t, err, ErrEnterpriseInvalid)
 }

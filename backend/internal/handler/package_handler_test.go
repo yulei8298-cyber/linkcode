@@ -18,8 +18,9 @@ import (
 
 type packageHandlerRepoStub struct {
 	service.PackageRepository
-	frozenID   int64
-	freezeDays []service.PackageFreezeDay
+	frozenID        int64
+	enterpriseSpent float64
+	freezeDays      []service.PackageFreezeDay
 }
 
 func (s *packageHandlerRepoStub) ListPlans(context.Context, *int64, bool) ([]service.PackagePlan, error) {
@@ -28,6 +29,14 @@ func (s *packageHandlerRepoStub) ListPlans(context.Context, *int64, bool) ([]ser
 
 func (s *packageHandlerRepoStub) ListFreezeDays(context.Context, time.Time, time.Time) ([]service.PackageFreezeDay, error) {
 	return s.freezeDays, nil
+}
+
+func (s *packageHandlerRepoStub) EnterpriseSpent(context.Context, int64) (float64, error) {
+	return s.enterpriseSpent, nil
+}
+
+func (s *packageHandlerRepoStub) GetEnterpriseOverride(context.Context, int64) (string, error) {
+	return "", nil
 }
 
 func (s *packageHandlerRepoStub) FreezePackage(_ context.Context, id, userID int64, now time.Time, _ service.PackageFreezeCaps) (*service.UserPackage, error) {
@@ -62,6 +71,7 @@ func newPackageTestRouter(repo *packageHandlerRepoStub) *gin.Engine {
 		c.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 42, Concurrency: 3})
 		c.Next()
 	})
+	r.GET("/user/enterprise", h.EnterpriseStatus)
 	r.GET("/packages/shop", h.Shop)
 	r.GET("/packages/calendar", h.Calendar)
 	r.POST("/packages/:id/freeze", h.Freeze)
@@ -114,4 +124,18 @@ func TestPackageHandler_FreezeValidatesIDAndCalendar(t *testing.T) {
 	w, _ = servePackageRequest(newPackageTestRouter(repo), http.MethodPost, "/packages/11/freeze")
 	require.Equal(t, http.StatusOK, w.Code)
 	require.Equal(t, int64(11), repo.frozenID)
+}
+
+func TestPackageHandler_EnterpriseStatusUsesCurrentUser(t *testing.T) {
+	repo := &packageHandlerRepoStub{enterpriseSpent: 3500}
+	w, body := servePackageRequest(newPackageTestRouter(repo), http.MethodGet, "/user/enterprise")
+	require.Equal(t, http.StatusOK, w.Code)
+	data := body["data"].(map[string]any)
+	require.Equal(t, true, data["enterprise"])
+	require.Equal(t, "auto", data["mode"])
+	require.EqualValues(t, 3500, data["total"])
+
+	repo = &packageHandlerRepoStub{enterpriseSpent: 100}
+	_, body = servePackageRequest(newPackageTestRouter(repo), http.MethodGet, "/user/enterprise")
+	require.Equal(t, false, body["data"].(map[string]any)["enterprise"])
 }

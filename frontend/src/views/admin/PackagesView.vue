@@ -23,6 +23,7 @@
       <PackagePlansTab v-if="activeTab === 'plans'" />
       <PackageNoticeTab v-else-if="activeTab === 'notice'" />
       <PackageFreezeTab v-else-if="activeTab === 'freeze'" />
+      <EnterpriseTab v-else-if="activeTab === 'enterprise'" />
       <UserPackagesTab v-else />
     </div>
   </AppLayout>
@@ -36,9 +37,10 @@ import PackagePlansTab from './packages/PackagePlansTab.vue'
 import PackageNoticeTab from './packages/PackageNoticeTab.vue'
 import PackageFreezeTab from './packages/PackageFreezeTab.vue'
 import UserPackagesTab from './packages/UserPackagesTab.vue'
+import EnterpriseTab from './packages/EnterpriseTab.vue'
 import '@/components/package/package.css'
 
-type TabKey = 'plans' | 'notice' | 'freeze' | 'userPackages'
+type TabKey = 'plans' | 'notice' | 'freeze' | 'userPackages' | 'enterprise'
 
 const { t } = useI18n()
 const activeTab = ref<TabKey>('plans')
@@ -48,5 +50,6 @@ const tabs = computed<{ value: TabKey; label: string }[]>(() => [
   { value: 'notice', label: t('admin.packages.tabs.notice') },
   { value: 'freeze', label: t('admin.packages.tabs.freeze') },
   { value: 'userPackages', label: t('admin.packages.tabs.userPackages') },
+  { value: 'enterprise', label: t('admin.packages.tabs.enterprise') },
 ])
 </script>

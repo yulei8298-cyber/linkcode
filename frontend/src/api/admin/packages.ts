@@ -5,6 +5,7 @@
 
 import { apiClient } from '../client'
 import type { PackageCycle, PackagePlan, PackageTier, UserPackage } from '../packages'
+import type { EnterpriseMode, EnterpriseStatus } from '../enterprise'
 
 export interface PackagePlanInput {
   id?: number
@@ -149,6 +150,32 @@ export async function listUserPackages(params: AdminUserPackageParams): Promise<
   return data
 }
 
+/** 企业尊享全局设置：总开关与自动获得的累计消费门槛。 */
+export interface EnterpriseSettings {
+  enabled: boolean
+  threshold: number
+}
+
+export async function getEnterpriseSettings(): Promise<EnterpriseSettings> {
+  const { data } = await apiClient.get<EnterpriseSettings>('/admin/packages/enterprise/settings')
+  return data
+}
+
+export async function updateEnterpriseSettings(settings: EnterpriseSettings): Promise<EnterpriseSettings> {
+  const { data } = await apiClient.put<EnterpriseSettings>('/admin/packages/enterprise/settings', settings)
+  return data
+}
+
+export async function getUserEnterprise(userId: number): Promise<EnterpriseStatus> {
+  const { data } = await apiClient.get<EnterpriseStatus>(`/admin/packages/enterprise/users/${userId}`)
+  return data
+}
+
+export async function setUserEnterprise(userId: number, mode: EnterpriseMode): Promise<EnterpriseStatus> {
+  const { data } = await apiClient.put<EnterpriseStatus>(`/admin/packages/enterprise/users/${userId}`, { mode })
+  return data
+}
+
 export async function getUserPackageStats(): Promise<AdminUserPackageStats> {
   const { data } = await apiClient.get<AdminUserPackageStats>('/admin/packages/user-packages/stats')
   return data
@@ -176,6 +203,10 @@ export const packagesAdminAPI = {
   syncHolidays,
   listUserPackages,
   getUserPackageStats,
+  getEnterpriseSettings,
+  updateEnterpriseSettings,
+  getUserEnterprise,
+  setUserEnterprise,
   unfreezeUserPackage,
   voidUserPackage,
 }
