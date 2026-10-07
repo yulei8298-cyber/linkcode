@@ -699,3 +699,22 @@ func TestEnterpriseGroupRates_NotEnterpriseOrDisabled(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, svc.EnterpriseGroupRates(ctx, 1), "总开关关闭后连手动开通的也不享受")
 }
+
+func TestRefreshEnterpriseAfterOrderChange_DropsCachedStatus(t *testing.T) {
+	ctx := context.Background()
+	repo := newPackageRepoFake()
+	pkgSvc := newPackageServiceForTest(repo, time.Now())
+	repo.enterpriseSpent = 5000
+	_, err := pkgSvc.UpdateEnterpriseSettings(ctx, EnterpriseSettings{Enabled: true, Threshold: 3000, GroupRates: []EnterpriseGroupRate{{GroupID: 7, Multiplier: 0.28}}})
+	require.NoError(t, err)
+	require.NotNil(t, pkgSvc.ResolveEnterpriseRate(ctx, 1, 7))
+
+	// 全额退款后累计不再达标：订单状态变化后立即失效缓存，不用等 TTL。
+	repo.enterpriseSpent = 1000
+	require.NotNil(t, pkgSvc.ResolveEnterpriseRate(ctx, 1, 7), "缓存未失效前仍按旧身份")
+	(&PaymentService{packageService: pkgSvc}).refreshEnterpriseAfterOrderChange(1)
+	require.Nil(t, pkgSvc.ResolveEnterpriseRate(ctx, 1, 7))
+
+	// 没有注入套餐服务时不报错。
+	(&PaymentService{}).refreshEnterpriseAfterOrderChange(1)
+}

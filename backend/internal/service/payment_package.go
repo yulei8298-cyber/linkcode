@@ -140,3 +140,12 @@ func (s *PaymentService) rollbackPackageRefundDeduction(ctx context.Context, p *
 	p.PackagePrevStatus = ""
 	return true
 }
+
+// refreshEnterpriseAfterOrderChange 订单完成或退款完成后，立即让该用户的企业尊享身份缓存失效，
+// 下一次请求按新的累计消费重新判定（达标立即享受，退款后不再达标立即取消）。
+func (s *PaymentService) refreshEnterpriseAfterOrderChange(userID int64) {
+	if s == nil || s.packageService == nil || userID <= 0 {
+		return
+	}
+	s.packageService.invalidateEnterprise(userID)
+}

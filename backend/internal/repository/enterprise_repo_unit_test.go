@@ -14,14 +14,15 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
-func TestEnterpriseSpent_CompletedOrdersPlusUserRedeemedBalanceCodes(t *testing.T) {
+func TestEnterpriseSpent_NetOfRefundsPlusUserRedeemedBalanceCodes(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	// 订单只算已完成；兑换码只算用户自己兑换的余额码，且排除订单入账生成的 PAY- 码与管理员赠送。
-	mock.ExpectQuery(`(?s)FROM payment_orders WHERE user_id = \$1 AND status = \$2.*type = 'balance' AND status = 'used' AND code NOT LIKE 'PAY-%'`).
-		WithArgs(int64(7), payment.OrderStatusCompleted).
+	// 已收款的订单（含退款流程中的）都计入，部分 / 全额退款扣掉退款部分；
+	// 兑换码只算用户自己兑换的余额码（排除订单入账生成的 PAY- 码），管理员充值加、管理员退款减；结果最低为 0。
+	mock.ExpectQuery(`(?s)SELECT GREATEST\(0,.*WHEN status IN \(\$3, \$4\).*pay_amount \* GREATEST\(0, 1 - refund_amount / amount\).*WHERE user_id = \$1 AND status = ANY\(\$2\).*\(type = 'balance' AND code NOT LIKE 'PAY-%'\) OR type = 'admin_balance'`).
+		WithArgs(int64(7), pq.Array(enterprisePaidStatuses), payment.OrderStatusPartiallyRefunded, payment.OrderStatusRefunded).
 		WillReturnRows(sqlmock.NewRows([]string{"total"}).AddRow(3120.5))
 
 	total, err := (&packageRepository{db: db}).EnterpriseSpent(context.Background(), 7)

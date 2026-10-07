@@ -429,6 +429,7 @@ func (s *PaymentService) markCompleted(ctx context.Context, o *dbent.PaymentOrde
 		})
 		s.dispatchPaymentFulfillmentNotification(o, auditAction)
 	}
+	s.refreshEnterpriseAfterOrderChange(o.UserID)
 	return nil
 }
 
