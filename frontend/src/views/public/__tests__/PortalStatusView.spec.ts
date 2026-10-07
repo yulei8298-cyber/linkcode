@@ -93,13 +93,13 @@ describe('PortalStatusView', () => {
     wrapper.unmount()
   })
 
-  it('shows the same latest 60 checks as the console from oldest to newest', async () => {
+  it('shows the same latest 72 checks as the console from oldest to newest', async () => {
     const item = monitor(1, 'operational')
-    item.timeline = Array.from({ length: 65 }, (_, index) => ({
-      status: index === 0 ? 'failed' as const : index === 59 ? 'degraded' as const : 'operational' as const,
+    item.timeline = Array.from({ length: 80 }, (_, index) => ({
+      status: index === 0 ? 'failed' as const : index === 71 ? 'degraded' as const : 'operational' as const,
       latency_ms: 100 + index,
       ping_latency_ms: 20,
-      checked_at: new Date(Date.UTC(2026, 7, 10, 1, 0, 64 - index)).toISOString()
+      checked_at: new Date(Date.UTC(2026, 7, 10, 1, 0, 79 - index)).toISOString()
     }))
     getPublicMonitors.mockResolvedValue({ items: [item] })
 
@@ -117,11 +117,11 @@ describe('PortalStatusView', () => {
     await flushPromises()
 
     const points = wrapper.findAll('.lc-timeline i')
-    expect(points).toHaveLength(60)
+    expect(points).toHaveLength(72)
     expect(points[0].classes()).toContain('degraded')
-    expect(points[59].classes()).toContain('bad')
+    expect(points[71].classes()).toContain('bad')
     expect(points[0].attributes('title')).toContain('降级')
-    expect(points[59].attributes('title')).toContain('异常')
+    expect(points[71].attributes('title')).toContain('异常')
 
     wrapper.unmount()
   })

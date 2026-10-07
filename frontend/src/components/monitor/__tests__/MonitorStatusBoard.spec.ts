@@ -69,7 +69,7 @@ describe('MonitorStatusBoard', () => {
     expect(wrapper.get('.st-summary').text()).toContain('monitorBoard.total:{"n":3}')
   })
 
-  it('renders 60 timeline cells with the oldest point on the left', () => {
+  it('renders 72 timeline cells with the oldest point on the left', () => {
     const wrapper = mountBoard([makeItem({
       primary_model: 'gpt-5',
       timeline: [
@@ -79,9 +79,9 @@ describe('MonitorStatusBoard', () => {
     })])
 
     const cells = wrapper.findAll('.st-bar i')
-    expect(cells).toHaveLength(60)
-    expect(cells[58].classes()).toContain('degraded')
-    expect(cells[59].classes()).toContain('bad')
+    expect(cells).toHaveLength(72)
+    expect(cells[70].classes()).toContain('degraded')
+    expect(cells[71].classes()).toContain('bad')
   })
 
   it('emits detail with the clicked monitor', async () => {
