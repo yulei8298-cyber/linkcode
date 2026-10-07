@@ -206,33 +206,35 @@ function timelineLabel(item: UserMonitorView) {
 .st-dot.warn { background: var(--st-warn); }
 .st-dot.bad { background: var(--st-bad); }
 
-.st-group { margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--lc-line); }
+/* 紧凑排布：分组之间细分隔线，组内两列，每个号池只占一条矮状态条 + 一行指标，大屏上也不会被拉高 */
+.st-group { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--lc-line); }
 .st-group:first-of-type { border-top: 0; padding-top: 0; }
-.st-group h2 { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 17px; font-weight: 600; }
-.st-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 48px; }
-.st-item { display: grid; gap: 10px; min-width: 0; min-height: 0; padding: 0; text-align: left; }
-.st-item-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.st-icon { display: grid; place-items: center; flex: none; width: 22px; height: 22px; color: var(--lc-ink); }
-.st-name { display: flex; align-items: baseline; gap: 10px; flex: 1; min-width: 0; }
-.st-name b { overflow: hidden; font-size: 15.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.st-name span { overflow: hidden; color: var(--lc-ink-3); font: 12.5px var(--lc-font-mono); text-overflow: ellipsis; white-space: nowrap; }
-/* 每格宽高比固定 5:14：列宽变化时格子等比缩放，始终是「矮一点、粗一点」的方块条 */
-.st-bar { margin-top: 4px; gap: 2px; }
-.st-bar i { height: auto; aspect-ratio: 5 / 14; border-radius: 2px; opacity: 1; background: var(--st-ok); }
+.st-group h2 { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 14px; font-weight: 600; }
+.st-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 40px; }
+.st-item { display: grid; gap: 7px; min-width: 0; min-height: 0; padding: 0; text-align: left; }
+.st-item-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.st-icon { display: grid; place-items: center; flex: none; width: 18px; height: 18px; color: var(--lc-ink); }
+.st-name { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; }
+.st-name b { overflow: hidden; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.st-name span { overflow: hidden; color: var(--lc-ink-3); font: 12px var(--lc-font-mono); text-overflow: ellipsis; white-space: nowrap; }
+/* 固定高度的细格：列宽变化只改变格宽，不再按比例把条拉高 */
+.st-bar { margin-top: 2px; gap: 2px; }
+.st-bar i { height: 16px; border-radius: 2px; opacity: 1; background: var(--st-ok); }
 .st-bar i.degraded { background: var(--st-warn); }
 .st-bar i.bad { background: var(--st-bad); }
 .st-bar i.unknown { background: var(--lc-line-2); }
-.st-axis { display: flex; justify-content: space-between; margin-top: -4px; color: var(--lc-ink-3); font-size: 12px; }
-.st-metrics { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; font-size: 13.5px; }
-.st-metrics div { display: flex; align-items: baseline; gap: 8px; }
+.st-axis { display: flex; justify-content: space-between; margin-top: -3px; color: var(--lc-ink-3); font-size: 11px; }
+.st-metrics { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 22px; font-size: 12.5px; }
+.st-metrics div { display: flex; align-items: baseline; gap: 6px; }
+.st-metrics dt { font-size: 12px; }
 .st-metrics dt { color: var(--lc-ink-3); }
 .st-metrics dd { color: var(--lc-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-.st-detail { margin-left: auto; color: var(--lc-accent); font-size: 13px; font-weight: 500; }
+.st-detail { margin-left: auto; color: var(--lc-accent); font-size: 12.5px; font-weight: 500; }
 .st-detail:hover { text-decoration: underline; }
 .st-extra { display: flex; flex-wrap: wrap; gap: 6px; }
 .st-extra li { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border: 1px solid var(--lc-line); border-radius: 999px; color: var(--lc-ink-2); font: 12px var(--lc-font-mono); }
 .st-extra .st-dot { width: 6px; height: 6px; }
-.st-skeleton { height: 150px; border-radius: 12px; background: var(--lc-surface-2); }
+.st-skeleton { height: 96px; border-radius: 12px; background: var(--lc-surface-2); }
 .st-empty { padding: 48px; border: 1px dashed var(--lc-line-2); border-radius: 12px; text-align: center; color: var(--lc-ink-2); }
 .st-empty h3 { color: var(--lc-ink); font-size: 16px; font-weight: 600; }
 .st-empty p { margin-top: 6px; font-size: 14px; }
@@ -243,6 +245,7 @@ function timelineLabel(item: UserMonitorView) {
 
 @media (max-width: 640px) {
   .st-bar { gap: 1px; }
+  .st-bar i { height: 14px; }
   .st-summary-note { margin-left: 0; flex-basis: 100%; }
 }
 </style>
