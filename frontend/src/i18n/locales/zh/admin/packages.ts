@@ -1,6 +1,8 @@
 export default {
   packages: {
     billingTypePackage: '套餐计费',
+    packageBadge: '套餐',
+    packageBadgeHint: '按套餐计费：先扣套餐额度，套餐不够的部分转扣余额',
     title: '套餐设置',
     description: '周卡 / 月卡套餐的配置、购买须知、冻结规则与用户套餐',
     tabs: { plans: '套餐配置', notice: '购买须知', freeze: '冻结设置', userPackages: '用户套餐', enterprise: '企业尊享' },

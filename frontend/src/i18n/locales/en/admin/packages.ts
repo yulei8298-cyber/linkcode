@@ -1,6 +1,8 @@
 export default {
   packages: {
     billingTypePackage: 'Package',
+    packageBadge: 'Package',
+    packageBadgeHint: 'Package billing: charged to package quota first, any remainder to balance',
     title: 'Package Settings',
     description: 'Weekly / monthly packages: plans, purchase notice, freeze rules and user packages',
     tabs: { plans: 'Plans', notice: 'Purchase notice', freeze: 'Freezing', userPackages: 'User packages', enterprise: 'Enterprise' },

@@ -214,6 +214,13 @@
                 data-testid="long-context-billing-marker"
                 class="inline-flex items-center rounded px-1 py-px text-[10px] font-semibold leading-tight bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:ring-amber-500/30"
               >x2</span>
+              <!-- 二开：按套餐计费的请求（billing_type=2），费用先从套餐额度扣，不够的部分转余额 -->
+              <span
+                v-if="row.billing_type === 2"
+                data-testid="package-billing-marker"
+                :title="t('admin.packages.packageBadgeHint')"
+                class="inline-flex items-center rounded px-1 py-px text-[10px] font-semibold leading-tight bg-violet-100 text-violet-700 ring-1 ring-inset ring-violet-200 dark:bg-violet-500/20 dark:text-violet-300 dark:ring-violet-500/30"
+              >{{ t('admin.packages.packageBadge') }}</span>
               <!-- Cost Detail Tooltip -->
               <div
                 class="group relative"

@@ -20,6 +20,7 @@ import UsageTable from '../UsageTable.vue'
 
 const messages: Record<string, string> = {
   'admin.usage.userDeletedBadge': 'Deleted',
+  'admin.packages.packageBadge': '套餐',
   'usage.costDetails': 'Cost Breakdown',
   'admin.usage.inputCost': 'Input Cost',
   'admin.usage.outputCost': 'Output Cost',
@@ -173,6 +174,25 @@ describe('admin UsageTable tooltip', () => {
 
     expect(wrapper.findAll('[data-testid="long-context-billing-marker"]')).toHaveLength(1)
     expect(wrapper.get('[data-testid="long-context-billing-marker"]').text()).toBe('x2')
+  })
+
+  it('marks package-billed rows next to the cost', () => {
+    const wrapper = mount(UsageTable, {
+      props: {
+        data: [
+          { ...baseImageRow, request_id: 'req-package', billing_type: 2 },
+          { ...baseImageRow, request_id: 'req-balance', billing_type: 0 },
+          { ...baseImageRow, request_id: 'req-subscription', billing_type: 1 },
+        ],
+        loading: false,
+        columns: [],
+      },
+      global: { stubs: { DataTable: DataTableStub, EmptyState: true, Icon: true, Teleport: true } },
+    })
+
+    const markers = wrapper.findAll('[data-testid="package-billing-marker"]')
+    expect(markers).toHaveLength(1)
+    expect(markers[0].text()).toBe('套餐')
   })
 
   it('keeps the request type badge and adds a separate badge only for native compaction rows', () => {
