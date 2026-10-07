@@ -62,7 +62,6 @@ var (
 	ErrPackageNotFound        = infraerrors.NotFound("PACKAGE_NOT_FOUND", "套餐不存在")
 	ErrPackageInvalidPlan     = infraerrors.BadRequest("PACKAGE_INVALID_PLAN", "套餐配置不合法")
 	ErrPackageGroupInvalid    = infraerrors.BadRequest("PACKAGE_GROUP_INVALID", "套餐只能绑定可用的普通（余额）分组")
-	ErrPackageBaseTierMissing = infraerrors.BadRequest("PACKAGE_BASE_TIER_MISSING", "请先配置同周期的 1x 套餐，2x 额度按 1x 的两倍计算")
 	ErrPackageFreezeDisabled  = infraerrors.Forbidden("PACKAGE_FREEZE_DISABLED", "冻结功能暂未开放")
 	ErrPackageFreezeNotToday  = infraerrors.BadRequest("PACKAGE_FREEZE_NOT_ALLOWED_TODAY", "只有周末和节假日可以冻结")
 	ErrPackageFreezeCapUsed   = infraerrors.BadRequest("PACKAGE_FREEZE_CAP_REACHED", "这张套餐的冻结额度已用完")
@@ -177,7 +176,6 @@ type PackageRepository interface {
 	GetPlan(ctx context.Context, id int64) (*PackagePlan, error)
 	GetPlanByCombo(ctx context.Context, groupID int64, cycle string, tier int) (*PackagePlan, error)
 	SavePlan(ctx context.Context, plan *PackagePlan) error
-	SetPlanQuota(ctx context.Context, id int64, quotaUSD float64) error
 	DeletePlan(ctx context.Context, id int64) error
 
 	// 用户套餐

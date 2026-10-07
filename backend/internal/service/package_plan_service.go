@@ -11,7 +11,7 @@ import (
 const packagePlanNameMaxRunes = 50
 
 // PackagePlanInput 管理端保存套餐的参数。group / cycle / tier 决定唯一组合；
-// tier=2 时 QuotaUSD 被忽略，固定为同组同周期 1x 的两倍。
+// 各档额度独立填写，便于高档位给出更优的折算倍率。
 type PackagePlanInput struct {
 	ID       int64   `json:"id"`
 	GroupID  int64   `json:"group_id"`
@@ -48,7 +48,8 @@ func (s *PackageService) SavePlan(ctx context.Context, in PackagePlanInput) (*Pa
 		in.GroupID, in.Cycle, in.Tier = existing.GroupID, existing.Cycle, existing.Tier
 	}
 	if !IsValidPackageCycle(in.Cycle) || !IsValidPackageTier(in.Tier) || in.Name == "" ||
-		utf8.RuneCountInString(in.Name) > packagePlanNameMaxRunes || !isPositiveAmount(in.Price) {
+		utf8.RuneCountInString(in.Name) > packagePlanNameMaxRunes || !isPositiveAmount(in.Price) ||
+		!isPositiveAmount(in.QuotaUSD) {
 		return nil, ErrPackageInvalidPlan
 	}
 	if err := s.ensurePackageGroup(ctx, in.GroupID); err != nil {
@@ -64,10 +65,6 @@ func (s *PackageService) SavePlan(ctx context.Context, in PackagePlanInput) (*Pa
 		}
 	}
 
-	quota, err := s.resolvePlanQuota(ctx, in)
-	if err != nil {
-		return nil, err
-	}
 	plan := &PackagePlan{
 		ID:           in.ID,
 		GroupID:      in.GroupID,
@@ -75,17 +72,12 @@ func (s *PackageService) SavePlan(ctx context.Context, in PackagePlanInput) (*Pa
 		Cycle:        in.Cycle,
 		Tier:         in.Tier,
 		Price:        roundCents(in.Price),
-		QuotaUSD:     quota,
+		QuotaUSD:     QuantizeUsageBillingAmount(in.QuotaUSD),
 		ValidityDays: PackageValidityDays(in.Cycle),
 		ForSale:      in.ForSale,
 	}
 	if err := s.repo.SavePlan(ctx, plan); err != nil {
 		return nil, err
-	}
-	if in.Tier == 1 {
-		if err := s.syncDoubleTierQuota(ctx, plan); err != nil {
-			return nil, err
-		}
 	}
 	return plan, nil
 }
@@ -138,36 +130,6 @@ func (s *PackageService) GetPlanForPurchase(ctx context.Context, planID int64) (
 		return nil, err
 	}
 	return plan, nil
-}
-
-func (s *PackageService) resolvePlanQuota(ctx context.Context, in PackagePlanInput) (float64, error) {
-	if in.Tier == 1 {
-		if !isPositiveAmount(in.QuotaUSD) {
-			return 0, ErrPackageInvalidPlan
-		}
-		return QuantizeUsageBillingAmount(in.QuotaUSD), nil
-	}
-	base, err := s.repo.GetPlanByCombo(ctx, in.GroupID, in.Cycle, 1)
-	if err != nil {
-		return 0, err
-	}
-	if base == nil {
-		return 0, ErrPackageBaseTierMissing
-	}
-	return QuantizeUsageBillingAmount(base.QuotaUSD * 2), nil
-}
-
-// syncDoubleTierQuota 1x 额度变化后，把同组同周期 2x 的额度同步为两倍。
-func (s *PackageService) syncDoubleTierQuota(ctx context.Context, base *PackagePlan) error {
-	twin, err := s.repo.GetPlanByCombo(ctx, base.GroupID, base.Cycle, 2)
-	if err != nil || twin == nil {
-		return err
-	}
-	want := QuantizeUsageBillingAmount(base.QuotaUSD * 2)
-	if twin.QuotaUSD == want {
-		return nil
-	}
-	return s.repo.SetPlanQuota(ctx, twin.ID, want)
 }
 
 func (s *PackageService) ensurePackageGroup(ctx context.Context, groupID int64) error {

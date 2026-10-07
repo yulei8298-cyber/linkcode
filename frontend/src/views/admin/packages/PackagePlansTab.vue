@@ -82,12 +82,11 @@
         </label>
         <label class="block">
           <span class="input-label">{{ t('admin.packages.plans.quota') }}</span>
-          <input v-model.number="form.quota" class="input" type="number" min="0" step="1" :readonly="form.tier === 2" />
+          <input v-model.number="form.quota" class="input" type="number" min="0" step="1" />
         </label>
       </div>
       <p class="text-xs text-gray-500 dark:text-gray-400">
         {{ existing ? t('admin.packages.plans.overwriteHint', { name: existing.name }) : t('admin.packages.plans.newHint') }}
-        {{ form.tier === 2 ? (basePlan ? t('admin.packages.plans.quotaLocked') : t('admin.packages.plans.needBase')) : t('admin.packages.plans.quotaSync') }}
       </p>
       <button type="button" class="btn btn-primary" :disabled="!canSave || busy" @click="save">{{ t('admin.packages.common.save') }}</button>
     </section>
@@ -137,16 +136,13 @@ const form = reactive({ cycle: 'week' as PackageCycle, tier: 1 as PackageTier, n
 
 const formStyle = computed(() => packagePlanStyle(form.cycle, form.tier))
 const existing = computed(() => plans.value.find((p) => p.cycle === form.cycle && p.tier === form.tier) ?? null)
-const basePlan = computed(() => plans.value.find((p) => p.cycle === form.cycle && p.tier === 1) ?? null)
-const canSave = computed(
-  () => !!groupId.value && !!form.name && form.price > 0 && (form.tier === 2 ? !!basePlan.value : form.quota > 0),
-)
+const canSave = computed(() => !!groupId.value && !!form.name && form.price > 0 && form.quota > 0)
 
-/** 切换周期 / 档位时：已有套餐则带出其内容，2x 额度始终按 1x 两倍展示。 */
+/** 切换周期 / 档位时：已有套餐则带出其内容。 */
 function fillForm() {
   form.name = existing.value?.name ?? ''
   form.price = existing.value?.price ?? 0
-  form.quota = form.tier === 2 ? (basePlan.value?.quota_usd ?? 0) * 2 : (existing.value?.quota_usd ?? 0)
+  form.quota = existing.value?.quota_usd ?? 0
 }
 
 function editPlan(plan: PackagePlan) {
@@ -189,10 +185,9 @@ const save = () =>
 const toggleSale = (plan: PackagePlan) =>
   run(() => packagesAdminAPI.savePlan(planInput(plan, { for_sale: !plan.for_sale })), t('admin.packages.plans.toggled'))
 
-/** 1x 先保存，2x 的额度依赖它。 */
 const applyPreset = (pair: [string, string]) =>
   run(async () => {
-    for (const plan of [...plans.value].sort((a, b) => a.tier - b.tier)) {
+    for (const plan of plans.value) {
       await packagesAdminAPI.savePlan(planInput(plan, { name: `${pair[plan.tier - 1]}${PRESET_SUFFIX[plan.cycle]}` }))
     }
   }, t('admin.packages.plans.presetApplied', { pair: pair.join(' / ') }))

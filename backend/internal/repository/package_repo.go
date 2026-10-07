@@ -104,11 +104,6 @@ func (r *packageRepository) SavePlan(ctx context.Context, plan *service.PackageP
 	return nil
 }
 
-func (r *packageRepository) SetPlanQuota(ctx context.Context, id int64, quotaUSD float64) error {
-	_, err := clientFromContext(ctx, r.client).PackagePlan.UpdateOneID(id).SetQuotaUsd(quotaUSD).Save(ctx)
-	return translatePersistenceError(err, service.ErrPackagePlanNotFound, nil)
-}
-
 func (r *packageRepository) DeletePlan(ctx context.Context, id int64) error {
 	err := clientFromContext(ctx, r.client).PackagePlan.DeleteOneID(id).Exec(ctx)
 	return translatePersistenceError(err, service.ErrPackagePlanNotFound, nil)

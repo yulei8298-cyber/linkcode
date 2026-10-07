@@ -74,11 +74,6 @@ func (f *packageRepoFake) SavePlan(_ context.Context, plan *PackagePlan) error {
 	return nil
 }
 
-func (f *packageRepoFake) SetPlanQuota(_ context.Context, id int64, quota float64) error {
-	f.plans[id].QuotaUSD = quota
-	return nil
-}
-
 func (f *packageRepoFake) ListFreezeDays(_ context.Context, _, _ time.Time) ([]PackageFreezeDay, error) {
 	return f.days, nil
 }
@@ -154,26 +149,27 @@ func packageDate(t *testing.T, s string) time.Time {
 
 // ---------- 套餐配置 ----------
 
-func TestPackageSavePlan_DoubleTierFollowsBaseQuota(t *testing.T) {
+func TestPackageSavePlan_TierQuotasAreIndependent(t *testing.T) {
 	repo := newPackageRepoFake()
 	svc := newPackageServiceForTest(repo, time.Now())
 	ctx := context.Background()
 
-	_, err := svc.SavePlan(ctx, PackagePlanInput{GroupID: 7, Cycle: PackageCycleWeek, Tier: 2, Name: "爆肝周卡", Price: 190, ForSale: true})
-	require.ErrorIs(t, err, ErrPackageBaseTierMissing, "没有 1x 时不能建 2x")
+	_, err := svc.SavePlan(ctx, PackagePlanInput{GroupID: 7, Cycle: PackageCycleWeek, Tier: 2, Name: "爆肝周卡", Price: 176, ForSale: true})
+	require.ErrorIs(t, err, ErrPackageInvalidPlan, "2x 也必须填写额度")
 
-	base, err := svc.SavePlan(ctx, PackagePlanInput{GroupID: 7, Cycle: PackageCycleWeek, Tier: 1, Name: "摸鱼周卡", Price: 95, QuotaUSD: 120, ForSale: true})
-	require.NoError(t, err)
-	require.Equal(t, 7, base.ValidityDays)
+	double, err := svc.SavePlan(ctx, PackagePlanInput{GroupID: 7, Cycle: PackageCycleWeek, Tier: 2, Name: "爆肝周卡", Price: 176, QuotaUSD: 195, ForSale: true})
+	require.NoError(t, err, "2x 不依赖先建 1x")
+	require.Equal(t, 195.0, double.QuotaUSD)
+	require.Equal(t, 7, double.ValidityDays)
 
-	double, err := svc.SavePlan(ctx, PackagePlanInput{GroupID: 7, Cycle: PackageCycleWeek, Tier: 2, Name: "爆肝周卡", Price: 190, QuotaUSD: 999, ForSale: true})
+	base, err := svc.SavePlan(ctx, PackagePlanInput{GroupID: 7, Cycle: PackageCycleWeek, Tier: 1, Name: "摸鱼周卡", Price: 88, QuotaUSD: 96, ForSale: true})
 	require.NoError(t, err)
-	require.Equal(t, 240.0, double.QuotaUSD, "2x 额度忽略传入值，固定为 1x 的两倍")
+	require.Equal(t, 96.0, base.QuotaUSD)
 
-	// 修改 1x 额度后，2x 自动同步。
-	_, err = svc.SavePlan(ctx, PackagePlanInput{ID: base.ID, Name: "摸鱼周卡", Price: 95, QuotaUSD: 150, ForSale: true})
+	// 修改 1x 额度不会改动 2x。
+	_, err = svc.SavePlan(ctx, PackagePlanInput{ID: base.ID, Name: "摸鱼周卡", Price: 88, QuotaUSD: 100, ForSale: true})
 	require.NoError(t, err)
-	require.Equal(t, 300.0, repo.plans[double.ID].QuotaUSD)
+	require.Equal(t, 195.0, repo.plans[double.ID].QuotaUSD)
 }
 
 func TestPackageSavePlan_SameComboOverwrites(t *testing.T) {
