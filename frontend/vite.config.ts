@@ -77,6 +77,46 @@ function injectPublicSettings(backendUrl: string): Plugin {
   }
 }
 
+/**
+ * 首屏语言包预加载。语言包由 src/i18n 动态 import，默认要等主脚本执行完才开始下载，
+ * 首屏多出一轮往返（海外服务器上约 0.25s 以上）。构建时找出中英文语言包分包，在 HTML 里
+ * 按与 getDefaultLocale 相同的规则（先看 sub2api_locale，再看浏览器语言是否 zh 开头）
+ * 只预加载要用的那一个，和主脚本并行下载。
+ * 内联脚本带后端的 CSP nonce 占位符（internal/web 在响应时替换）；被拦截时只是不预加载，页面照常。
+ */
+const CSP_NONCE_PLACEHOLDER = '__CSP_NONCE_VALUE__'
+const LOCALE_ENTRY = /\/src\/i18n\/locales\/(en|zh)\/index\.ts$/
+
+function preloadLocaleChunk(): Plugin {
+  let base = '/'
+  return {
+    name: 'preload-locale-chunk',
+    apply: 'build',
+    configResolved(config) {
+      base = config.base
+    },
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        const files: Record<string, string> = {}
+        for (const chunk of Object.values(ctx.bundle ?? {})) {
+          const match = chunk.type === 'chunk' && chunk.facadeModuleId ? LOCALE_ENTRY.exec(chunk.facadeModuleId) : null
+          if (match) files[match[1]] = base + chunk.fileName
+        }
+        if (!files.en || !files.zh) return html
+        const script =
+          `<script nonce="${CSP_NONCE_PLACEHOLDER}">(function(){try{` +
+          `var s=localStorage.getItem('sub2api_locale');` +
+          `var zh=s==='zh'||s==='en'?s==='zh':(navigator.language||'').toLowerCase().indexOf('zh')===0;` +
+          `var l=document.createElement('link');l.rel='modulepreload';` +
+          `l.href=zh?${JSON.stringify(files.zh)}:${JSON.stringify(files.en)};` +
+          `document.head.appendChild(l)}catch(e){}})()</script>`
+        return html.replace('</head>', `${script}\n</head>`)
+      }
+    }
+  }
+}
+
 export default defineConfig(({ mode }) => {
   // 加载环境变量
   const env = loadEnv(mode, process.cwd(), '')
@@ -89,7 +129,8 @@ export default defineConfig(({ mode }) => {
       checker({
         vueTsc: true
       }),
-      injectPublicSettings(backendUrl)
+      injectPublicSettings(backendUrl),
+      preloadLocaleChunk()
     ],
   resolve: {
     alias: {
@@ -142,6 +183,12 @@ export default defineConfig(({ mode }) => {
             // Stripe 仅在支付流程中按需加载，避免进入首页公共依赖。
             if (id.includes('/@stripe/stripe-js/')) {
               return 'vendor-stripe'
+            }
+
+            // Airwallex 同理：它在模块加载时就会向 airwallex.com 拉取两个脚本，
+            // 落进 vendor-misc 会让每个页面都发起这两个海外请求。
+            if (id.includes('/@airwallex/')) {
+              return 'vendor-airwallex'
             }
 
             // 其他小型第三方库合并
