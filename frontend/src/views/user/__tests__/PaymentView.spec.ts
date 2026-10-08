@@ -5,6 +5,7 @@ import { PAYMENT_RECOVERY_STORAGE_KEY } from '@/components/payment/paymentFlow'
 import { formatPaymentAmount } from '@/components/payment/currency'
 import AmountInput from '@/components/payment/AmountInput.vue'
 import SubscriptionPlanCard from '@/components/payment/SubscriptionPlanCard.vue'
+import { resetFeatureFlagMemory } from '@/utils/featureFlags'
 import en from '@/i18n/locales/en'
 import zh from '@/i18n/locales/zh'
 import type { CheckoutInfoResponse, MethodLimit, SubscriptionPlan } from '@/types/payment'
@@ -821,6 +822,11 @@ describe('PaymentView WeChat JSAPI flow', () => {
 })
 
 describe('PaymentView subscription feature flag', () => {
+  beforeEach(() => {
+    // 开关记忆是模块级状态：上一个用例写入的 subscription_enabled 会成为下一个用例未加载设置时的兜底。
+    resetFeatureFlagMemory()
+  })
+
   afterEach(() => {
     appStoreState.setPublicSettings(undefined)
   })

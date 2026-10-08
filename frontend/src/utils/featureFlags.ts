@@ -208,6 +208,20 @@ function rememberFlag(key: string, value: boolean): void {
 }
 
 /**
+ * 清空开关记忆（模块内缓存 + localStorage）。
+ * 记忆是模块级状态，测试用例之间会互相泄漏（上一个用例解析过的值会成为下一个用例
+ * "设置未加载"时的兜底），因此需要隔离的测试应在每个用例前调用。
+ */
+export function resetFeatureFlagMemory(): void {
+  flagMemoryCache = null
+  try {
+    globalThis.localStorage?.removeItem(FEATURE_FLAG_MEMORY_KEY)
+  } catch {
+    // 存储不可用时没有可清的内容。
+  }
+}
+
+/**
  * Read the current value of a flag, honoring the mode's fallback.
  * `true`  → the feature is enabled (menu/route should render).
  * `false` → the feature is disabled (menu/route should hide).
