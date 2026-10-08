@@ -95,7 +95,7 @@ const formatCost = (c: number) => c.toFixed(4)
 
 .recent .mono {
   font-family: var(--lc-font-mono);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .recent .model,

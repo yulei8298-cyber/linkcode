@@ -13,6 +13,22 @@
     background: var(--lc-bg);
   }
 
+  /* 控制台（AppLayout 挂载期间）的观感调整，门户页保持原样，所以不直接改 html：
+     1. 改回系统默认字体平滑：antialiased 在 macOS 下会关掉笔画加粗，常规字重的正文显得发灰发虚；
+     2. 浅色模式页面底改用纯白，门户的暖米色底在数据密集的控制台里显得灰蒙蒙。 */
+  html.lc-console {
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+  }
+
+  html.lc-console:not(.dark) {
+    --lc-bg: var(--lc-console-bg);
+  }
+
+  html.lc-console:not(.dark) body {
+    background: var(--lc-bg);
+  }
+
   .dark {
     color-scheme: dark;
   }
@@ -564,7 +580,7 @@
   .sidebar-link {
     @apply flex items-center gap-3 rounded-lg py-2;
     @apply overflow-hidden;
-    @apply text-[13.5px] font-medium;
+    @apply text-[14px] font-medium;
     @apply text-gray-600 dark:text-dark-300;
     @apply transition-colors duration-150;
     @apply hover:bg-gray-100 dark:hover:bg-dark-800;
@@ -604,7 +620,7 @@
   }
 
   .dash-link {
-    @apply text-[12.5px] font-medium text-primary-600 hover:underline dark:text-primary-400;
+    @apply text-[13px] font-medium text-primary-600 hover:underline dark:text-primary-400;
   }
 
   .dash-chart-controls {

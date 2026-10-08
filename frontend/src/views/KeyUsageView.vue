@@ -456,9 +456,9 @@ const CIRCUMFERENCE = 2 * Math.PI * 68
 // 环形进度配色取自设计稿 A：品牌橙、灰蓝、苔绿、赭黄
 const RING_GRADIENTS = [
   { from: '#d4561b', to: '#ff8a4c' },
-  { from: '#48667c', to: '#86a7bf' },
-  { from: '#2f7a50', to: '#6fb88a' },
-  { from: '#a37422', to: '#e0a85a' },
+  { from: '#2563eb', to: '#6aa8e8' },
+  { from: '#15803d', to: '#4cc77f' },
+  { from: '#b45309', to: '#f2b13c' },
 ]
 
 const ringAnimated = ref(false)

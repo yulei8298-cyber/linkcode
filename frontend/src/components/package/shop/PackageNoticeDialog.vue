@@ -137,12 +137,12 @@ watch(
   border-radius: 12px;
   border: 1px solid var(--pkg-h-line);
   background: var(--pkg-h-soft);
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--lc-ink-2);
 }
 .notice-order b { color: var(--pkg-h-text); font-weight: 800; }
 .notice-price { margin-left: auto; font-size: 18px; font-weight: 800; color: var(--pkg-h-text); }
-.notice-agree { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--lc-ink); }
+.notice-agree { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--lc-ink); }
 .notice-agree input { width: 18px; height: 18px; accent-color: #ff6a3d; }
 .notice-agree.locked { font-weight: 500; color: var(--lc-ink-3); }
 .notice-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }

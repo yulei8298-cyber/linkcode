@@ -22,7 +22,7 @@ const isDarkMode = computed(() => document.documentElement.classList.contains('d
 const colors = computed(() => ({
   blue: '#4f6fd0',
   grid: isDarkMode.value ? '#26262a' : '#e3e3de',
-  text: isDarkMode.value ? '#a6a6a1' : '#57574f'
+  text: isDarkMode.value ? '#b4b4ae' : '#4a4a45'
 }))
 
 const hasData = computed(() => (props.latencyData?.total_requests ?? 0) > 0)

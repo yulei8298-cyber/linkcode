@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-950">
+  <div class="min-h-screen bg-[var(--lc-bg)] dark:bg-dark-950">
     <!-- Sidebar -->
     <AppSidebar />
 
@@ -19,9 +19,16 @@
   </div>
 </template>
 
+<script lang="ts">
+// 控制台观感开关（字体平滑、页面底色）挂在 <html> 上（弹窗会 teleport 到 body，挂在布局根节点上管不到）。
+// 切换页面时新旧布局的挂载与卸载可能交错，用计数保证仍有布局在时不被提前移除。
+const CONSOLE_CLASS = 'lc-console'
+let mountedConsoleLayouts = 0
+</script>
+
 <script setup lang="ts">
 import '@/styles/onboarding.css'
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useAppStore } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
 import { useOnboardingTour } from '@/composables/useOnboardingTour'
@@ -43,6 +50,13 @@ const onboardingStore = useOnboardingStore()
 
 onMounted(() => {
   onboardingStore.setReplayCallback(replayTour)
+  mountedConsoleLayouts++
+  document.documentElement.classList.add(CONSOLE_CLASS)
+})
+
+onBeforeUnmount(() => {
+  mountedConsoleLayouts = Math.max(0, mountedConsoleLayouts - 1)
+  if (mountedConsoleLayouts === 0) document.documentElement.classList.remove(CONSOLE_CLASS)
 })
 
 defineExpose({ replayTour })

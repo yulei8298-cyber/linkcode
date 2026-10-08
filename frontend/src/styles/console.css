@@ -47,7 +47,7 @@
 }
 
 .dash-kpi-meta {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--lc-ink-3);
 }
 
@@ -73,7 +73,7 @@
 }
 
 .dash-strip dt {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--lc-ink-3);
 }
 
@@ -196,7 +196,7 @@
 
 .dash-toolbar-end .dash-shortcuts button {
   padding: 5px 10px;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 /* 分段切换：替代各处自写的蓝色高亮按钮组 */
@@ -211,7 +211,7 @@
 .dash-seg button {
   padding: 4px 10px;
   border-radius: 6px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--lc-ink-2);
 }
 

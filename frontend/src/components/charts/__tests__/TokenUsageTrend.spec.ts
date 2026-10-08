@@ -56,15 +56,15 @@ describe('TokenUsageTrend', () => {
     })
 
     expect(JSON.parse(wrapper.find('.chart-options').text()).plugins.legend.labels.color).toBe(
-      '#a6a6a1'
+      '#b4b4ae'
     )
 
     document.documentElement.classList.remove('dark')
     await flushPromises()
 
     const lightOptions = JSON.parse(wrapper.find('.chart-options').text())
-    expect(lightOptions.plugins.legend.labels.color).toBe('#57574f')
-    expect(lightOptions.scales.x.ticks.color).toBe('#57574f')
+    expect(lightOptions.plugins.legend.labels.color).toBe('#4a4a45')
+    expect(lightOptions.scales.x.ticks.color).toBe('#4a4a45')
 
     wrapper.unmount()
   })

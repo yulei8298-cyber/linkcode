@@ -128,7 +128,7 @@
   border: 1px solid rgba(217, 119, 6, 0.4);
   background: rgba(245, 158, 11, 0.12);
   color: #b26a00;
-  font-size: 13.5px;
+  font-size: 14px;
 }
 .dark .pkg-amber-banner { border-color: rgba(245, 158, 11, 0.45); background: rgba(245, 158, 11, 0.1); color: #f5b94a; }
 

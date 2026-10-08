@@ -11,16 +11,16 @@ export interface ChartPalette {
 }
 
 const LIGHT: ChartPalette = {
-  text: '#57574f',
+  text: '#4a4a45',
   grid: '#e3e3de',
-  series: ['#d4561b', '#57574f', '#4f6fd0', '#2f7a50', '#a8781f', '#8a5cb8', '#2b8a9e', '#b5475a', '#5e8f2f', '#c08a62', '#6b5fa8', '#8c8c84'],
+  series: ['#d4561b', '#4a4a45', '#4f6fd0', '#15803d', '#a8781f', '#8a5cb8', '#2b8a9e', '#b5475a', '#5e8f2f', '#c08a62', '#6b5fa8', '#8c8c84'],
   other: '#cfcfc8',
 }
 
 const DARK: ChartPalette = {
-  text: '#a6a6a1',
+  text: '#b4b4ae',
   grid: '#26262a',
-  series: ['#ff8a4c', '#cfcfca', '#7d97e8', '#6fc08f', '#e0a85a', '#b08ad8', '#5fb8c9', '#e07a8c', '#9cc46a', '#d9a882', '#968be0', '#85857f'],
+  series: ['#ff8a4c', '#d9d9d5', '#7d97e8', '#4cc77f', '#f2b13c', '#b08ad8', '#5fb8c9', '#e07a8c', '#9cc46a', '#d9a882', '#968be0', '#96968f'],
   other: '#38383b',
 }
 

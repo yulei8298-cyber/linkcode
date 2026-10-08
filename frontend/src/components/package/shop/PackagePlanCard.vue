@@ -121,7 +121,7 @@ const style = computed(() => packagePlanStyle(props.plan.cycle, props.plan.tier)
   font-weight: 700;
   color: var(--lc-ink);
 }
-.plan-perk-head span { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--pkg-h-text); }
+.plan-perk-head span { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--pkg-h-text); }
 .plan-perk-row {
   display: flex;
   align-items: center;
@@ -140,7 +140,7 @@ const style = computed(() => packagePlanStyle(props.plan.cycle, props.plan.tier)
   gap: 6px;
   padding: 9px 16px;
   border-top: 1px solid var(--lc-line);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--lc-ink-3);
 }
 .plan-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding-top: 16px; border-top: 1px solid var(--lc-line); }

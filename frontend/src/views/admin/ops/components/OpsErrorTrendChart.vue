@@ -36,13 +36,13 @@ const { t } = useI18n()
 
 const isDarkMode = computed(() => document.documentElement.classList.contains('dark'))
 const colors = computed(() => ({
-  red: '#b0453a',
-  redAlpha: '#b0453a20',
+  red: '#c62828',
+  redAlpha: '#c6282820',
   purple: '#8a5cb8',
   purpleAlpha: '#8a5cb820',
   gray: '#9ca3af',
   grid: isDarkMode.value ? '#26262a' : '#e3e3de',
-  text: isDarkMode.value ? '#a6a6a1' : '#57574f'
+  text: isDarkMode.value ? '#b4b4ae' : '#4a4a45'
 }))
 
 const totalRequestErrors = computed(() => sumNumbers(props.points.map((p) => p.error_count_sla ?? 0)))
@@ -121,7 +121,7 @@ const options = computed(() => {
       tooltip: {
         backgroundColor: isDarkMode.value ? '#141415' : '#ffffff',
         titleColor: isDarkMode.value ? '#f2f2ef' : '#141413',
-        bodyColor: isDarkMode.value ? '#cfcfca' : '#57574f',
+        bodyColor: isDarkMode.value ? '#d9d9d5' : '#4a4a45',
         borderColor: c.grid,
         borderWidth: 1,
         padding: 10,

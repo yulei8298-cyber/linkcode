@@ -165,9 +165,9 @@ onMounted(async () => {
   background: linear-gradient(160deg, var(--pkg-h-soft), transparent 70%), var(--lc-surface);
 }
 .shop-tile h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 700; color: var(--lc-ink); }
-.shop-tile p { margin: 0; font-size: 13.5px; color: var(--lc-ink-2); }
+.shop-tile p { margin: 0; font-size: 14px; color: var(--lc-ink-2); }
 .shop-tile-icon { width: 32px; height: 32px; border-radius: 10px; }
-.shop-flow { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--lc-ink); }
+.shop-flow { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; font-weight: 600; color: var(--lc-ink); }
 .shop-flow i { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-style: normal; border: 1px solid var(--lc-line); background: var(--lc-surface-2); }
 .shop-flow em { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-style: normal; color: #fff; background: var(--pkg-h-btn); }
 @media (min-width: 1560px) { .shop-plans { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

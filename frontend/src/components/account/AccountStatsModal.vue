@@ -538,7 +538,7 @@ const isDarkMode = computed(() => {
 
 // Chart colors
 const chartColors = computed(() => ({
-  text: isDarkMode.value ? '#cfcfca' : '#3f3f39',
+  text: isDarkMode.value ? '#d9d9d5' : '#2e2e2a',
   grid: isDarkMode.value ? '#26262a' : '#e3e3de'
 }))
 
@@ -561,7 +561,7 @@ const trendChartData = computed(() => {
       {
         label: t('usage.userBilled') + ' (USD)',
         data: stats.value.history.map((h) => h.user_cost),
-        borderColor: '#2f7a50',
+        borderColor: '#15803d',
         backgroundColor: 'rgba(16, 185, 129, 0.08)',
         fill: false,
         tension: 0.3,

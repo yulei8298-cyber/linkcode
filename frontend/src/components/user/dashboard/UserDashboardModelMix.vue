@@ -70,7 +70,7 @@ const rows = computed(() => {
   min-width: 0;
   overflow: hidden;
   font-family: var(--lc-font-mono);
-  font-size: 12.5px;
+  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--lc-ink);

@@ -36,7 +36,7 @@ const colors = computed(() => ({
   teal: '#2b8a9e',
   tealAlpha: '#2b8a9e20',
   grid: isDarkMode.value ? '#26262a' : '#e3e3de',
-  text: isDarkMode.value ? '#a6a6a1' : '#57574f'
+  text: isDarkMode.value ? '#b4b4ae' : '#4a4a45'
 }))
 
 const totalRequests = computed(() => sumNumbers(props.points.map((p) => p.request_count)))
@@ -86,7 +86,7 @@ const options = computed(() => {
       tooltip: {
         backgroundColor: isDarkMode.value ? '#141415' : '#ffffff',
         titleColor: isDarkMode.value ? '#f2f2ef' : '#141413',
-        bodyColor: isDarkMode.value ? '#cfcfca' : '#57574f',
+        bodyColor: isDarkMode.value ? '#d9d9d5' : '#4a4a45',
         borderColor: c.grid,
         borderWidth: 1,
         padding: 10,

@@ -123,7 +123,7 @@ onMounted(() => {
   gap: 8px;
   padding: 8px 12px;
   border-top: 1px solid var(--lc-line);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .qa-eps div:first-child {
@@ -170,7 +170,7 @@ onMounted(() => {
 }
 
 .qa-action b {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--lc-ink);
 }

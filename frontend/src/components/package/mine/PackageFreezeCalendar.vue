@@ -132,7 +132,7 @@ watch(
   border: 1px solid var(--lc-line);
   background: var(--lc-surface-2);
   color: var(--lc-ink-3);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .cal-day.empty { visibility: hidden; }
 .cal-day b { font-size: 15px; font-weight: 700; color: var(--lc-ink-2); }
@@ -153,7 +153,7 @@ watch(
 .cal-day.off:not(.k-none) { opacity: 0.55; }
 .cal-day.today { outline: 2px solid var(--lc-ink); outline-offset: 1px; }
 .cal-error { margin: 0; font-size: 13px; color: #e11d48; }
-.cal-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--lc-ink-3); }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--lc-ink-3); }
 .cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .cal-legend span:not(.cal-note)::before { content: ''; width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
 @media (max-width: 640px) {

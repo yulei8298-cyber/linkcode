@@ -98,7 +98,7 @@ onUnmounted(() => {
 }
 
 .table-scroll-container :deep(th) {
-  @apply px-4 py-3 text-left text-[12.5px] font-medium normal-case tracking-normal text-gray-500 dark:text-dark-400 border-b border-gray-200 dark:border-dark-700;
+  @apply px-4 py-3 text-left text-[13px] font-medium normal-case tracking-normal text-gray-500 dark:text-dark-400 border-b border-gray-200 dark:border-dark-700;
 }
 
 .table-scroll-container :deep(td) {

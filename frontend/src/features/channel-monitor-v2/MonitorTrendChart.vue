@@ -131,7 +131,7 @@ const chartData = computed(() => {
       {
         label: t('channelMonitorV2.chart.errorDataset'),
         data: errorRates,
-        borderColor: '#b0453a',
+        borderColor: '#c62828',
         backgroundColor: 'rgba(239, 67, 67, 0.10)',
         yAxisID: 'yPct',
         tension: 0.4,
@@ -145,7 +145,7 @@ const chartData = computed(() => {
       {
         label: t('channelMonitorV2.chart.cacheDataset'),
         data: cacheRates,
-        borderColor: '#2f7a50',
+        borderColor: '#15803d',
         backgroundColor: 'rgba(16, 185, 129, 0.08)',
         yAxisID: 'yPct',
         tension: 0.4,
@@ -205,11 +205,11 @@ function smoothTrend(values: Array<number | null>): Array<number | null> {
 }
 
 const chartOptions = computed(() => {
-  const text = isDark.value ? '#a6a6a1' : '#57574f'
+  const text = isDark.value ? '#b4b4ae' : '#4a4a45'
   const grid = isDark.value ? '#26262a' : '#e3e3de'
   const tooltipBg = isDark.value ? '#141415' : '#ffffff'
   const tooltipTitle = isDark.value ? '#f2f2ef' : '#141413'
-  const tooltipBody = isDark.value ? '#cfcfca' : '#57574f'
+  const tooltipBody = isDark.value ? '#d9d9d5' : '#4a4a45'
   return {
     responsive: true,
     maintainAspectRatio: false,

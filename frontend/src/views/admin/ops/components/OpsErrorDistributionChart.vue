@@ -24,10 +24,10 @@ const { t } = useI18n()
 const isDarkMode = computed(() => document.documentElement.classList.contains('dark'))
 const colors = computed(() => ({
   blue: '#4f6fd0',
-  red: '#b0453a',
+  red: '#c62828',
   orange: '#a8781f',
   gray: '#9ca3af',
-  text: isDarkMode.value ? '#a6a6a1' : '#57574f'
+  text: isDarkMode.value ? '#b4b4ae' : '#4a4a45'
 }))
 
 const totalSlaErrors = computed(() =>
@@ -102,7 +102,7 @@ const options = computed(() => ({
     tooltip: {
       backgroundColor: isDarkMode.value ? '#141415' : '#ffffff',
       titleColor: isDarkMode.value ? '#f2f2ef' : '#141413',
-      bodyColor: isDarkMode.value ? '#cfcfca' : '#57574f'
+      bodyColor: isDarkMode.value ? '#d9d9d5' : '#4a4a45'
     }
   }
 }))

@@ -56,7 +56,7 @@ const leftLabel = computed(() => {
 </script>
 
 <style scoped>
-.fd { display: grid; gap: 14px; font-size: 13.5px; color: var(--lc-ink-2); }
+.fd { display: grid; gap: 14px; font-size: 14px; color: var(--lc-ink-2); }
 .fd p { margin: 0; }
 .fd dl {
   display: grid;

@@ -173,9 +173,9 @@ onMounted(load)
 .mine-sec { display: grid; gap: 12px; }
 .mine-sec-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; }
 .mine-sec-head h2 { margin: 0; font-size: 17px; font-weight: 700; color: var(--lc-ink); }
-.mine-sec-head p { margin: 0; font-size: 12.5px; color: var(--lc-ink-3); }
-.mine-table { width: 100%; border-collapse: collapse; font-size: 13.5px; color: var(--lc-ink); }
-.mine-table th { padding: 11px 16px; text-align: left; font-size: 12.5px; font-weight: 500; white-space: nowrap; color: var(--lc-ink-3); background: var(--lc-surface-2); border-bottom: 1px solid var(--lc-line); }
+.mine-sec-head p { margin: 0; font-size: 13px; color: var(--lc-ink-3); }
+.mine-table { width: 100%; border-collapse: collapse; font-size: 14px; color: var(--lc-ink); }
+.mine-table th { padding: 11px 16px; text-align: left; font-size: 13px; font-weight: 500; white-space: nowrap; color: var(--lc-ink-3); background: var(--lc-surface-2); border-bottom: 1px solid var(--lc-line); }
 .mine-table td { padding: 12px 16px; white-space: nowrap; border-bottom: 1px solid var(--lc-line); }
 .mine-table tr:last-child td { border-bottom: 0; }
 .mine-dot { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }

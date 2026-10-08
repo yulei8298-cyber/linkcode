@@ -104,11 +104,11 @@ const segments = computed(() =>
 .hero-lab { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; opacity: 0.92; }
 .hero-lab b { padding: 1px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); font-weight: 600; }
 .hero-amt { margin: 10px 0 2px; font-size: 46px; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; }
-.hero-sub { font-size: 13.5px; opacity: 0.92; }
+.hero-sub { font-size: 14px; opacity: 0.92; }
 .hero-stack { display: flex; gap: 2px; height: 12px; margin-top: 18px; border-radius: 6px; overflow: hidden; background: rgba(255, 255, 255, 0.2); }
 .hero-stack i { display: block; height: 100%; }
 .hero-stack i.fz { background: repeating-linear-gradient(135deg, rgba(186, 230, 253, 0.95) 0 4px, rgba(125, 211, 252, 0.7) 4px 8px) !important; }
-.hero-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; font-size: 12.5px; }
+.hero-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; font-size: 13px; }
 .hero-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .hero-legend span::before { content: ''; width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
 .hero-side { display: grid; gap: 12px; margin: 0; }
@@ -121,9 +121,9 @@ const segments = computed(() =>
   border: 1px solid var(--pkg-h-line);
   background: linear-gradient(120deg, var(--pkg-h-soft), transparent 75%), var(--lc-surface);
 }
-.hero-stat dt { font-size: 12.5px; color: var(--lc-ink-3); }
+.hero-stat dt { font-size: 13px; color: var(--lc-ink-3); }
 .hero-stat dd { margin: 0; font-size: 18px; font-weight: 800; color: var(--lc-ink); }
-.hero-stat dd small { margin-left: 6px; font-size: 12.5px; font-weight: 500; color: var(--lc-ink-3); }
+.hero-stat dd small { margin-left: 6px; font-size: 13px; font-weight: 500; color: var(--lc-ink-3); }
 @media (max-width: 1100px) {
   .hero { grid-template-columns: minmax(0, 1fr); }
   .hero-side { grid-template-columns: repeat(3, minmax(0, 1fr)); }

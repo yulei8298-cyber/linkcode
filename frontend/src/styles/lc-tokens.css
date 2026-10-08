@@ -9,6 +9,8 @@
   --lc-portal-width: min(calc(100% - 48px), max(1200px, 86vw));
 
   --lc-bg: #f6f6f3;
+  /* 控制台浅色页面底：纯白，文字与彩色标签最清晰；卡片靠描边区分（见 style.css 的 html.lc-console） */
+  --lc-console-bg: #ffffff;
   --lc-bg-2: #efefeb;
   --lc-surface: #ffffff;
   --lc-surface-2: #f4f4f1;
@@ -17,8 +19,8 @@
   --lc-line-2: rgba(24, 24, 18, 0.16);
 
   --lc-ink: #141413;
-  --lc-ink-2: #57574f;
-  --lc-ink-3: #6c6c64;
+  --lc-ink-2: #4a4a45;
+  --lc-ink-3: #63635d;
 
   /* 浅色底上的强调色兼作小字链接，按 WCAG AA 正文 4.5:1 取值（#d4561b 仅 3.77:1） */
   --lc-accent: #bd4d18;
@@ -40,14 +42,14 @@
   --lc-code-str: #b9d3a8;
   --lc-code-key: #ffb48a;
 
-  --lc-ok: #2f7a50;
-  --lc-ok-soft: rgba(47, 122, 80, 0.09);
-  --lc-warn: #8f6416;
-  --lc-warn-soft: rgba(143, 100, 22, 0.1);
-  --lc-bad: #b0453a;
-  --lc-bad-soft: rgba(176, 69, 58, 0.08);
-  --lc-info: #48667c;
-  --lc-info-soft: rgba(72, 102, 124, 0.08);
+  --lc-ok: #15803d;
+  --lc-ok-soft: rgba(21, 128, 61, 0.09);
+  --lc-warn: #b45309;
+  --lc-warn-soft: rgba(180, 83, 9, 0.1);
+  --lc-bad: #c62828;
+  --lc-bad-soft: rgba(198, 40, 40, 0.08);
+  --lc-info: #2563eb;
+  --lc-info-soft: rgba(37, 99, 235, 0.08);
 
   --lc-glow: rgba(212, 86, 27, 0.07);
   --lc-hi: rgba(255, 255, 255, 1);
@@ -70,8 +72,8 @@
   --lc-line-2: rgba(255, 255, 255, 0.14);
 
   --lc-ink: #f2f2ef;
-  --lc-ink-2: #a6a6a1;
-  --lc-ink-3: #85857f;
+  --lc-ink-2: #b4b4ae;
+  --lc-ink-3: #96968f;
 
   --lc-accent: #ff8a4c;
   --lc-accent-soft: rgba(255, 138, 76, 0.12);
@@ -87,14 +89,14 @@
 
   --lc-code-bg: #09090a;
 
-  --lc-ok: #6fc08f;
-  --lc-ok-soft: rgba(111, 192, 143, 0.12);
-  --lc-warn: #e0a85a;
-  --lc-warn-soft: rgba(224, 168, 90, 0.12);
-  --lc-bad: #ec8579;
-  --lc-bad-soft: rgba(236, 133, 121, 0.12);
-  --lc-info: #8fb0c8;
-  --lc-info-soft: rgba(143, 176, 200, 0.1);
+  --lc-ok: #4cc77f;
+  --lc-ok-soft: rgba(76, 199, 127, 0.12);
+  --lc-warn: #f2b13c;
+  --lc-warn-soft: rgba(242, 177, 60, 0.12);
+  --lc-bad: #f07468;
+  --lc-bad-soft: rgba(240, 116, 104, 0.12);
+  --lc-info: #6aa8e8;
+  --lc-info-soft: rgba(106, 168, 232, 0.1);
 
   --lc-glow: rgba(255, 255, 255, 0.075);
   --lc-hi: rgba(255, 255, 255, 0.05);
