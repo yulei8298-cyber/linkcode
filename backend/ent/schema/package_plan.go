@@ -40,7 +40,7 @@ func (PackagePlan) Fields() []ent.Field {
 		// cycle: week | month，决定有效期与前端样式。
 		field.String("cycle").
 			MaxLen(10),
-		// tier: 1 | 2，2 档额度固定为同分组同周期 1 档的两倍。
+		// tier: 1 | 2，各档额度独立配置。
 		field.Int8("tier"),
 		field.Float("price").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,2)"}),
