@@ -83,6 +83,7 @@ function injectPublicSettings(backendUrl: string): Plugin {
  * 按与 getDefaultLocale 相同的规则（先看 sub2api_locale，再看浏览器语言是否 zh 开头）
  * 只预加载要用的那一个，和主脚本并行下载。
  * 内联脚本带后端的 CSP nonce 占位符（internal/web 在响应时替换）；被拦截时只是不预加载，页面照常。
+ * 脚本插在 <head> 开头（<meta charset> 之后），原因见下方 transformIndexHtml。
  */
 const CSP_NONCE_PLACEHOLDER = '__CSP_NONCE_VALUE__'
 const LOCALE_ENTRY = /\/src\/i18n\/locales\/(en|zh)\/index\.ts$/
@@ -111,7 +112,12 @@ function preloadLocaleChunk(): Plugin {
           `var l=document.createElement('link');l.rel='modulepreload';` +
           `l.href=zh?${JSON.stringify(files.zh)}:${JSON.stringify(files.en)};` +
           `document.head.appendChild(l)}catch(e){}})()</script>`
-        return html.replace('</head>', `${script}\n</head>`)
+        // 必须放在样式表之前：浏览器规定普通脚本要等它前面的样式表加载完才执行，
+        // 放在 </head> 前会被 CSS 挡住，预加载就和主脚本自己发起请求同时甚至更晚，等于没做。
+        const charset = /<meta\s+charset=[^>]*>/i
+        return charset.test(html)
+          ? html.replace(charset, (tag) => `${tag}\n    ${script}`)
+          : html.replace(/<head[^>]*>/i, (tag) => `${tag}\n    ${script}`)
       }
     }
   }
