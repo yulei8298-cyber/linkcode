@@ -174,27 +174,11 @@ func mergeEnterpriseRates(userRates map[int64]float64, enterpriseRates map[int64
 	if len(enterpriseRates) == 0 {
 		return userRates, nil
 	}
-	merged := make(map[int64]float64, len(userRates)+len(enterpriseRates))
-	for id, rate := range userRates {
-		merged[id] = rate
-	}
-	marked := make(map[int64]bool, len(enterpriseRates))
+	groupRates := make(map[int64]float64, len(groups))
 	for i := range groups {
-		g := &groups[i]
-		enterprise, ok := enterpriseRates[g.ID]
-		if !ok {
-			continue
-		}
-		current, hasPersonal := merged[g.ID]
-		if !hasPersonal {
-			current = g.RateMultiplier
-		}
-		if enterprise < current {
-			merged[g.ID] = enterprise
-			marked[g.ID] = true
-		}
+		groupRates[groups[i].ID] = groups[i].RateMultiplier
 	}
-	return merged, marked
+	return service.MergeEnterpriseGroupRates(userRates, enterpriseRates, groupRates)
 }
 
 // filterPlazaVisibleGroups 按登录态裁剪分组可见性。

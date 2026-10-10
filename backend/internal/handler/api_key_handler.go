@@ -4,6 +4,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"math"
 	"strconv"
 	"strings"
@@ -354,5 +355,26 @@ func (h *APIKeyHandler) GetUserGroupRates(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, rates)
+	response.Success(c, h.withEnterpriseRates(c.Request.Context(), subject.UserID, rates))
+}
+
+// withEnterpriseRates 把企业尊享用户的企业倍率并入专属倍率：密钥页的分组选择、可用渠道、
+// 监控弹窗都读这个接口，需要和模型广场、实际按量计费看到同一个倍率。
+// 企业倍率只是展示增强，取不到可见分组时降级为原有专属倍率。
+func (h *APIKeyHandler) withEnterpriseRates(ctx context.Context, userID int64, personal map[int64]float64) map[int64]float64 {
+	enterprise := h.apiKeyService.EnterpriseGroupRates(ctx, userID)
+	if len(enterprise) == 0 {
+		return personal
+	}
+	groups, err := h.apiKeyService.GetAvailableGroups(ctx, userID)
+	if err != nil {
+		slog.Warn("group_rates_enterprise_merge_failed", "error", err, "user_id", userID)
+		return personal
+	}
+	groupRates := make(map[int64]float64, len(groups))
+	for i := range groups {
+		groupRates[groups[i].ID] = groups[i].RateMultiplier
+	}
+	merged, _ := service.MergeEnterpriseGroupRates(personal, enterprise, groupRates)
+	return merged
 }

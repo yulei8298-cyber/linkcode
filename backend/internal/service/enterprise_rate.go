@@ -154,3 +154,35 @@ func (s *PackageService) ResolveEnterpriseRate(ctx context.Context, userID, grou
 	}
 	return &EnterpriseRate{GroupID: groupID, Multiplier: rate}
 }
+
+// MergeEnterpriseGroupRates 把企业倍率并入用户专属倍率，供前端展示「我的倍率」：
+// 某分组的企业倍率低于该用户在此分组的现行倍率（个人专属倍率，没有则分组默认倍率）时，
+// 用企业倍率，并记下这些分组。与按量计费的取值口径一致；套餐请求仍按原倍率，不在展示范围内。
+//
+// groupRates 是用户可见分组的默认倍率；企业倍率里不在其中的分组没有对照基准，不处理。
+// 不修改传入的 map，没有企业倍率时原样返回 userRates。
+func MergeEnterpriseGroupRates(userRates, enterpriseRates, groupRates map[int64]float64) (map[int64]float64, map[int64]bool) {
+	if len(enterpriseRates) == 0 {
+		return userRates, nil
+	}
+	merged := make(map[int64]float64, len(userRates)+len(enterpriseRates))
+	for id, rate := range userRates {
+		merged[id] = rate
+	}
+	marked := make(map[int64]bool, len(enterpriseRates))
+	for groupID, enterprise := range enterpriseRates {
+		current, hasPersonal := merged[groupID]
+		if !hasPersonal {
+			base, known := groupRates[groupID]
+			if !known {
+				continue
+			}
+			current = base
+		}
+		if enterprise < current {
+			merged[groupID] = enterprise
+			marked[groupID] = true
+		}
+	}
+	return merged, marked
+}
