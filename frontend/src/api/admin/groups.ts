@@ -473,6 +473,59 @@ export async function getCapacitySummary(): Promise<
   return data
 }
 
+export interface GroupRealtimeRPM {
+  group_id: number
+  rpm: number
+}
+
+export interface GroupRealtimeRPMSummary {
+  /** 统计窗口（秒）：最近这么久完成并记账的请求数，即每分钟请求数 */
+  window_seconds: number
+  total: number
+  /** 没有请求的分组不会出现，按 0 处理 */
+  items: GroupRealtimeRPM[]
+}
+
+export interface GroupUserConcurrencyKey {
+  api_key_id: number
+  api_key_name: string
+  concurrency: number
+}
+
+export interface GroupUserConcurrency {
+  user_id: number
+  email: string
+  username: string
+  concurrency: number
+  api_keys: GroupUserConcurrencyKey[]
+}
+
+export interface GroupUserConcurrencySummary {
+  group_id: number
+  /** 该分组当前所有进行中的请求数 */
+  total: number
+  /** 分组里绑定的 API Key 总数 */
+  api_key_count: number
+  /** 当前有请求在处理的用户，按并发从高到低 */
+  users: GroupUserConcurrency[]
+}
+
+/**
+ * Get realtime RPM (requests in the last 60 seconds) for every group
+ */
+export async function getRealtimeRPM(): Promise<GroupRealtimeRPMSummary> {
+  const { data } = await apiClient.get<GroupRealtimeRPMSummary>('/admin/groups/realtime-rpm')
+  return data
+}
+
+/**
+ * Get the current concurrency of every user in a group
+ */
+export async function getUserConcurrency(id: number): Promise<GroupUserConcurrencySummary> {
+  const { data } = await apiClient.get<GroupUserConcurrencySummary>(`/admin/groups/${id}/user-concurrency`)
+  return data
+}
+
 export const groupsAPI = {
   list,
   getAll,
@@ -502,7 +555,9 @@ export const groupsAPI = {
   batchSetGroupRPMOverrides,
   updateSortOrder,
   getUsageSummary,
-  getCapacitySummary
+  getCapacitySummary,
+  getRealtimeRPM,
+  getUserConcurrency
 }
 
 export default groupsAPI

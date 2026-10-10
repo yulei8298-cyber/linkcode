@@ -350,6 +350,26 @@
             <span v-else class="text-xs text-gray-400">—</span>
           </template>
 
+          <template #cell-rpm="{ row }">
+            <span
+              v-if="rpmLoaded"
+              class="inline-flex items-baseline gap-1 font-mono tabular-nums"
+              data-testid="group-realtime-rpm"
+              :title="t('admin.groups.rpmRealtimeHint')"
+            >
+              <span
+                :class="
+                  rpmOf(row.id) > 0
+                    ? 'text-sm font-semibold text-emerald-600 dark:text-emerald-400'
+                    : 'text-sm text-gray-400 dark:text-gray-500'
+                "
+                >{{ rpmOf(row.id) }}</span
+              >
+              <span class="text-[10px] text-gray-400 dark:text-gray-500">/min</span>
+            </span>
+            <span v-else class="text-xs text-gray-400">—</span>
+          </template>
+
           <template #cell-usage="{ row }">
             <div v-if="usageLoading" class="text-xs text-gray-400">—</div>
             <div v-else class="space-y-0.5 text-xs">
@@ -458,6 +478,17 @@
                 <Icon name="bolt" size="sm" />
                 <span class="text-xs">{{
                   t("admin.groups.rpmOverrides")
+                }}</span>
+              </button>
+              <button
+                v-if="!authStore.isSimpleMode"
+                data-testid="group-user-concurrency"
+                @click="handleUserConcurrency(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-emerald-600 dark:hover:bg-dark-700 dark:hover:text-emerald-400"
+              >
+                <Icon name="users" size="sm" />
+                <span class="text-xs">{{
+                  t("admin.groups.userConcurrency")
                 }}</span>
               </button>
               <button
@@ -4623,6 +4654,13 @@
       @close="showRPMOverridesModal = false"
       @success="loadGroups"
     />
+
+    <!-- Group User Concurrency Modal -->
+    <GroupUserConcurrencyModal
+      :show="showUserConcurrencyModal"
+      :group="userConcurrencyGroup"
+      @close="showUserConcurrencyModal = false"
+    />
   </AppLayout>
 </template>
 
@@ -4661,6 +4699,8 @@ import PlatformIcon from "@/components/common/PlatformIcon.vue";
 import Icon from "@/components/icons/Icon.vue";
 import GroupRateMultipliersModal from "@/components/admin/group/GroupRateMultipliersModal.vue";
 import GroupRPMOverridesModal from "@/components/admin/group/GroupRPMOverridesModal.vue";
+import GroupUserConcurrencyModal from "@/components/admin/group/GroupUserConcurrencyModal.vue";
+import { useGroupRealtimeRPM } from "@/composables/useGroupRealtimeRPM";
 import GroupCapacityBadge from "@/components/common/GroupCapacityBadge.vue";
 import ReasoningEffortPolicyFields from "@/components/admin/group/ReasoningEffortPolicyFields.vue";
 import CodexManifestAccountsField from "@/components/admin/group/CodexManifestAccountsField.vue";
@@ -4857,6 +4897,7 @@ const allColumns = computed<Column[]>(() => [
     label: t("admin.groups.columns.capacity"),
     sortable: false,
   },
+  { key: "rpm", label: t("admin.groups.columns.rpmRealtime"), sortable: false },
   { key: "usage", label: t("admin.groups.columns.usage"), sortable: false },
   { key: "status", label: t("admin.groups.columns.status"), sortable: true },
   { key: "actions", label: t("admin.groups.columns.actions"), sortable: false },
@@ -4944,6 +4985,15 @@ const hasVisibleUsageSummaryConsumer = computed(
 );
 const hasVisibleCapacityColumn = computed(() => isColumnVisible("capacity"));
 
+// 实时 RPM：5 秒轮询，列被隐藏或简易模式下不请求。
+const {
+  loaded: rpmLoaded,
+  rpmOf,
+  refresh: refreshRealtimeRPM,
+} = useGroupRealtimeRPM({
+  enabled: () => !authStore.isSimpleMode && isColumnVisible("rpm"),
+});
+
 const toggleColumn = (key: string) => {
   const validKeys = getValidHiddenColumnKeys();
   if (!validKeys.has(key)) return;
@@ -4958,6 +5008,9 @@ const toggleColumn = (key: string) => {
 
   if (wasHidden && (key === "usage" || key === "billing_type")) {
     loadUsageSummary();
+  }
+  if (wasHidden && key === "rpm") {
+    void refreshRealtimeRPM();
   }
   if (wasHidden && key === "capacity") {
     loadCapacitySummary();
@@ -5214,6 +5267,8 @@ const showRateMultipliersModal = ref(false);
 const rateMultipliersGroup = ref<AdminGroup | null>(null);
 const showRPMOverridesModal = ref(false);
 const rpmOverridesGroup = ref<AdminGroup | null>(null);
+const showUserConcurrencyModal = ref(false);
+const userConcurrencyGroup = ref<AdminGroup | null>(null);
 const sortableGroups = ref<AdminGroup[]>([]);
 type ConcreteGroupPlatform = Exclude<GroupPlatform, "composite">;
 type CompositeRouteFormState = {
@@ -6823,6 +6878,11 @@ const handleRateMultipliers = (group: AdminGroup) => {
 const handleRPMOverrides = (group: AdminGroup) => {
   rpmOverridesGroup.value = group;
   showRPMOverridesModal.value = true;
+};
+
+const handleUserConcurrency = (group: AdminGroup) => {
+  userConcurrencyGroup.value = group;
+  showUserConcurrencyModal.value = true;
 };
 
 const handleDuplicate = async (group: AdminGroup) => {

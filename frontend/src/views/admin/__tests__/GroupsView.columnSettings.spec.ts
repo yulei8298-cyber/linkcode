@@ -10,6 +10,7 @@ const {
   getModelAllowlistCandidates,
   getUsageSummary,
   getCapacitySummary,
+  getRealtimeRPM,
   getLiveCapability,
   listAccounts,
   showError,
@@ -23,6 +24,7 @@ const {
   getModelAllowlistCandidates: vi.fn(),
   getUsageSummary: vi.fn(),
   getCapacitySummary: vi.fn(),
+  getRealtimeRPM: vi.fn(),
   getLiveCapability: vi.fn(),
   listAccounts: vi.fn(),
   showError: vi.fn(),
@@ -42,6 +44,7 @@ const messages: Record<string, string> = {
   'admin.groups.columns.type': 'Type',
   'admin.groups.columns.accounts': 'Accounts',
   'admin.groups.columns.capacity': 'Capacity',
+  'admin.groups.columns.rpmRealtime': 'Live RPM',
   'admin.groups.columns.usage': 'Usage',
   'admin.groups.columns.status': 'Status',
   'admin.groups.columns.actions': 'Actions',
@@ -58,6 +61,7 @@ vi.mock('@/api/admin', () => ({
       getModelAllowlistCandidates,
       getUsageSummary,
       getCapacitySummary,
+      getRealtimeRPM,
       getLiveCapability,
       create: vi.fn(),
       update: vi.fn(),
@@ -163,6 +167,9 @@ const DataTableStub = {
       <div v-if="data.length" data-test="usage-cell">
         <slot name="cell-usage" :row="data[0]" />
       </div>
+      <div v-if="data.length" data-test="rpm-cell">
+        <slot name="cell-rpm" :row="data[0]" />
+      </div>
     </div>
   `,
 }
@@ -242,6 +249,7 @@ describe('admin GroupsView column settings', () => {
     getModelAllowlistCandidates.mockReset()
     getUsageSummary.mockReset()
     getCapacitySummary.mockReset()
+    getRealtimeRPM.mockReset()
     getLiveCapability.mockReset()
     listAccounts.mockReset()
     showError.mockReset()
@@ -261,6 +269,7 @@ describe('admin GroupsView column settings', () => {
     getModelAllowlistCandidates.mockResolvedValue([])
     getUsageSummary.mockResolvedValue([])
     getCapacitySummary.mockResolvedValue([])
+    getRealtimeRPM.mockResolvedValue({ window_seconds: 60, total: 0, items: [] })
     getLiveCapability.mockResolvedValue({ supported: false })
     listAccounts.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, pages: 0 })
     isCurrentStep.mockReturnValue(false)
@@ -274,6 +283,7 @@ describe('admin GroupsView column settings', () => {
     expect(getModelAllowlistCandidates).not.toHaveBeenCalled()
     expect(getUsageSummary).not.toHaveBeenCalled()
     expect(getCapacitySummary).not.toHaveBeenCalled()
+    expect(getRealtimeRPM).not.toHaveBeenCalled()
     expect(listGroups).toHaveBeenCalledWith(
       expect.any(Number),
       expect.any(Number),
@@ -298,6 +308,7 @@ describe('admin GroupsView column settings', () => {
       'is_exclusive',
       'account_count',
       'capacity',
+      'rpm',
       'usage',
       'status',
       'actions',
@@ -323,6 +334,7 @@ describe('admin GroupsView column settings', () => {
       'rate_multiplier',
       'is_exclusive',
       'account_count',
+      'rpm',
       'status',
       'actions',
     ])
@@ -342,6 +354,7 @@ describe('admin GroupsView column settings', () => {
       'is_exclusive',
       'account_count',
       'capacity',
+      'rpm',
       'status',
       'actions',
     ])
@@ -365,6 +378,7 @@ describe('admin GroupsView column settings', () => {
       'is_exclusive',
       'account_count',
       'capacity',
+      'rpm',
       'status',
       'actions',
     ])
@@ -388,6 +402,7 @@ describe('admin GroupsView column settings', () => {
       'is_exclusive',
       'account_count',
       'capacity',
+      'rpm',
       'usage',
       'status',
       'actions',
@@ -415,6 +430,36 @@ describe('admin GroupsView column settings', () => {
     await clickColumnToggle(wrapper, 'Capacity')
     expect(getUsageSummary).toHaveBeenCalledTimes(1)
     expect(getCapacitySummary).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows each group\'s realtime RPM and treats missing groups as zero', async () => {
+    getRealtimeRPM.mockResolvedValue({ window_seconds: 60, total: 42, items: [{ group_id: 1, rpm: 42 }] })
+    const wrapper = await mountView()
+
+    expect(wrapper.get('[data-test="rpm-cell"]').text()).toContain('42')
+
+    getRealtimeRPM.mockResolvedValue({ window_seconds: 60, total: 0, items: [] })
+    const idle = await mountView()
+    expect(idle.get('[data-test="rpm-cell"]').text()).toContain('0')
+  })
+
+  it('shows a dash instead of 0 until the first RPM response arrives', async () => {
+    getRealtimeRPM.mockRejectedValue(new Error('boom'))
+    const wrapper = await mountView()
+
+    expect(wrapper.get('[data-test="rpm-cell"]').text()).toBe('—')
+  })
+
+  it('polls RPM only while the RPM column is visible and fetches right away when it is re-shown', async () => {
+    localStorage.setItem('group-hidden-columns', JSON.stringify(['id', 'rpm']))
+    localStorage.setItem('group-column-settings-version', '2')
+
+    const wrapper = await mountView()
+    expect(getRealtimeRPM).not.toHaveBeenCalled()
+
+    await openColumnSettings(wrapper)
+    await clickColumnToggle(wrapper, 'Live RPM')
+    expect(getRealtimeRPM).toHaveBeenCalledTimes(1)
   })
 
   it('renders yesterday usage between today and total', async () => {
