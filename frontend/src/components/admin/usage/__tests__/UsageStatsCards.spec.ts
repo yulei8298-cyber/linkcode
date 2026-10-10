@@ -13,6 +13,8 @@ const messages: Record<string, string> = {
   'usage.cacheBreakdown': 'Cache Token Breakdown',
   'usage.cacheCreationTokensLabel': 'Cache Creation',
   'usage.cacheReadTokensLabel': 'Cache Read',
+  'usage.cacheRate': 'Cache hit rate',
+  'usage.cacheRateHint': 'cache read / total tokens',
   'usage.totalCost': 'Total Cost',
   'usage.accountCost': 'Cost',
   'usage.standardCost': 'Standard',
@@ -63,6 +65,25 @@ describe('UsageStatsCards', () => {
     expect(text).toContain('12')
     expect(text).toContain('Cache Read')
     expect(text).toContain('22')
+  })
+
+  it('shows the cache hit rate (cache read / total tokens) in the total tokens card', () => {
+    const wrapper = mount(UsageStatsCards, {
+      props: { stats },
+      global: { stubs: { Icon: true } },
+    })
+
+    // 22 / 184 = 11.96%
+    expect(wrapper.text()).toContain('Cache hit rate: 12.0%')
+  })
+
+  it('shows a dash instead of a rate when there are no tokens', () => {
+    const wrapper = mount(UsageStatsCards, {
+      props: { stats: { ...stats, total_tokens: 0, total_cache_read_tokens: 0 } },
+      global: { stubs: { Icon: true } },
+    })
+
+    expect(wrapper.text()).toContain('Cache hit rate: -')
   })
 
   it('keeps the cache tooltip out of the layout while it is hidden', () => {

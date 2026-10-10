@@ -145,6 +145,16 @@
           </span>
         </template>
 
+        <template #cell-cache_rate="{ row }">
+          <span
+            v-if="!isImageUsage(row) && calcRowCacheRate(row) !== null"
+            class="text-sm font-medium tabular-nums"
+            :class="row.cache_read_tokens > 0 ? 'text-sky-600 dark:text-sky-400' : 'text-gray-400 dark:text-gray-500'"
+            :title="t('usage.cacheRateHint')"
+          >{{ formatCacheRate(calcRowCacheRate(row)) }}</span>
+          <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
+        </template>
+
         <template #cell-tokens="{ row }">
           <!-- 图片生成请求（仅按次计费时显示图片格式） -->
           <div v-if="isImageUsage(row)" class="flex items-center gap-1.5">
@@ -543,7 +553,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { formatDateTime, formatReasoningEffort, reasoningEffortValuesEqual } from '@/utils/format'
-import { formatCacheTokens, formatMultiplier } from '@/utils/formatters'
+import { calcRowCacheRate, formatCacheRate, formatCacheTokens, formatMultiplier } from '@/utils/formatters'
 import { formatTokenPricePerMillion } from '@/utils/usagePricing'
 import { getUsageServiceTierLabel } from '@/utils/usageServiceTier'
 import { resolveUsageRequestType } from '@/utils/usageRequestType'

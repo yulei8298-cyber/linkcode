@@ -48,6 +48,8 @@
             </span>
           </span>
         </span>
+        <span>/</span>
+        <span :title="t('usage.cacheRateHint')">{{ t('usage.cacheRate') }}: <b>{{ cacheRateText }}</b></span>
       </p>
     </div>
     <div class="card dash-kpi-card">
@@ -76,6 +78,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { AdminUsageStatsResponse } from '@/api/admin/usage'
 import type { UsageStatsResponse } from '@/types'
+import { calcCacheRate, formatCacheRate } from '@/utils/formatters'
 
 const props = withDefaults(defineProps<{
   stats: (AdminUsageStatsResponse | UsageStatsResponse) | null
@@ -104,6 +107,10 @@ const formatTokens = (value: number) => {
   if (value >= 1e3) return (value / 1e3).toFixed(2) + 'K'
   return value.toLocaleString()
 }
+
+const cacheRateText = computed(() =>
+  formatCacheRate(calcCacheRate(props.stats?.total_cache_read_tokens || 0, props.stats?.total_tokens || 0))
+)
 
 const cacheLabel = () => t('usage.cacheTotal')
 const cacheDetailLabel = () => t('usage.cacheBreakdown')

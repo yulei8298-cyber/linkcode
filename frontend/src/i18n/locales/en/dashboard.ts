@@ -349,6 +349,8 @@ export default {
     totalRequests: 'Total Requests',
     totalTokens: 'Total Tokens',
     cacheTotal: 'Cache',
+    cacheRate: 'Cache hit rate',
+    cacheRateHint: 'Cache hit rate = cache read ÷ total tokens (input + output + cache creation + cache read)',
     cacheBreakdown: 'Cache Token Breakdown',
     cacheCreationTokensLabel: 'Cache Creation',
     cacheReadTokensLabel: 'Cache Read',

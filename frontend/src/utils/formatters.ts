@@ -15,3 +15,31 @@ export function formatMultiplier(val: number): string {
   if (val < 0.0001) return val.toPrecision(2)
   return val.toFixed(4).replace(/(\.\d{2}\d*?)0+$/, '$1')
 }
+
+export interface TokenBreakdown {
+  input_tokens?: number | null
+  output_tokens?: number | null
+  cache_creation_tokens?: number | null
+  cache_read_tokens?: number | null
+}
+
+/**
+ * 缓存率 = 缓存读取 Token ÷ 总 Token（输入 + 输出 + 缓存创建 + 缓存读取，与使用记录里的「总计」同口径）。
+ * 返回 0~1；总数为 0（没有任何 Token）时返回 null，由展示层显示 "-"。
+ */
+export function calcCacheRate(cacheReadTokens: number, totalTokens: number): number | null {
+  if (!(totalTokens > 0)) return null
+  return Math.min(1, Math.max(0, (cacheReadTokens || 0) / totalTokens))
+}
+
+/** 单条使用记录的缓存率。 */
+export function calcRowCacheRate(row: TokenBreakdown): number | null {
+  const cacheRead = row.cache_read_tokens || 0
+  const total = (row.input_tokens || 0) + (row.output_tokens || 0) + (row.cache_creation_tokens || 0) + cacheRead
+  return calcCacheRate(cacheRead, total)
+}
+
+/** 缓存率展示：固定一位小数（37.5%），无数据显示 "-"。 */
+export function formatCacheRate(rate: number | null): string {
+  return rate === null ? '-' : `${(rate * 100).toFixed(1)}%`
+}

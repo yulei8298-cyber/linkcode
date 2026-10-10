@@ -354,6 +354,8 @@ export default {
     totalRequests: '总请求数',
     totalTokens: '总 Token',
     cacheTotal: '缓存',
+    cacheRate: '缓存率',
+    cacheRateHint: '缓存率 = 缓存读取 ÷ 总 Token（输入 + 输出 + 缓存创建 + 缓存读取）',
     cacheBreakdown: '缓存 Token 明细',
     cacheCreationTokensLabel: '缓存创建',
     cacheReadTokensLabel: '缓存读取',

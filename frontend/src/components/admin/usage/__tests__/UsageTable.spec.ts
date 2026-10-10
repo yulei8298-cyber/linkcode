@@ -176,6 +176,34 @@ describe('admin UsageTable tooltip', () => {
     expect(wrapper.get('[data-testid="long-context-billing-marker"]').text()).toBe('x2')
   })
 
+  it('shows the cache hit rate in its own cell, a dash for image or empty rows', () => {
+    const CacheRateStub = {
+      props: ['data'],
+      template: `<div><div v-for="row in data" :key="row.request_id" :data-row="row.request_id"><slot name="cell-cache_rate" :row="row" /></div></div>`,
+    }
+    const tokenRow = { ...baseImageRow, billing_mode: 'token', image_count: 0 }
+    const wrapper = mount(UsageTable, {
+      props: {
+        data: [
+          // 总计 100+50+12+38=200，缓存读取 38 → 19.0%
+          { ...tokenRow, request_id: 'hit', input_tokens: 100, output_tokens: 50, cache_creation_tokens: 12, cache_read_tokens: 38 },
+          { ...tokenRow, request_id: 'miss', input_tokens: 10, output_tokens: 5 },
+          { ...tokenRow, request_id: 'empty' },
+          { ...baseImageRow, request_id: 'image', input_tokens: 10, cache_read_tokens: 5 },
+        ],
+        loading: false,
+        columns: [],
+      },
+      global: { stubs: { DataTable: CacheRateStub, EmptyState: true, Icon: true, Teleport: true } },
+    })
+
+    const cell = (id: string) => wrapper.get(`[data-row="${id}"]`).text()
+    expect(cell('hit')).toBe('19.0%')
+    expect(cell('miss')).toBe('0.0%')
+    expect(cell('empty')).toBe('-')
+    expect(cell('image')).toBe('-')
+  })
+
   it('marks package-billed rows next to the cost', () => {
     const wrapper = mount(UsageTable, {
       props: {
