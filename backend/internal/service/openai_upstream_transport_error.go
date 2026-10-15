@@ -175,7 +175,7 @@ func (s *OpenAIGatewayService) tempUnscheduleOpenAITransportError(ctx context.Co
 	if s == nil || account == nil {
 		return
 	}
-	until := time.Now().Add(openAITransportErrorTempUnschedDuration)
+	until := time.Now().Add(transportErrorTempUnschedDuration(safeErr, openAITransportErrorTempUnschedDuration))
 	reason := "upstream transport error (proxy/network): " + safeErr
 
 	// Immediate in-memory block so this process skips the account until the

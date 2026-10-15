@@ -98,7 +98,7 @@ func tempUnscheduleAccountForTransportError(ctx context.Context, repo AccountRep
 	if account == nil || repo == nil {
 		return
 	}
-	until := time.Now().Add(gatewayTransportErrorTempUnschedDuration)
+	until := time.Now().Add(transportErrorTempUnschedDuration(safeErr, gatewayTransportErrorTempUnschedDuration))
 	reason := "upstream transport error (proxy/network): " + safeErr
 
 	bgCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), openAIAccountStateUpdateTimeout)
