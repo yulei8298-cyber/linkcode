@@ -892,6 +892,26 @@ func (s *BillingService) initFallbackPricing() {
 		SupportsCacheBreakdown: false,
 	}
 
+	// ---- OpenAI Embeddings（官方价，按输入 Token 计费，embedding 无 output）----
+	// text-embedding-3-small $0.02/MTok、text-embedding-3-large $0.13/MTok、text-embedding-ada-002 $0.10/MTok。
+	// 内置与在线价格表都没有这几个型号：缺价时网关会"放行并记 0"，调用方等于免费使用。
+	// 渠道定价/分组定价仍优先于此处。
+	s.fallbackPrices["text-embedding-3-small"] = &ModelPricing{
+		InputPricePerToken:     0.02e-6,
+		OutputPricePerToken:    0,
+		SupportsCacheBreakdown: false,
+	}
+	s.fallbackPrices["text-embedding-3-large"] = &ModelPricing{
+		InputPricePerToken:     0.13e-6,
+		OutputPricePerToken:    0,
+		SupportsCacheBreakdown: false,
+	}
+	s.fallbackPrices["text-embedding-ada-002"] = &ModelPricing{
+		InputPricePerToken:     0.10e-6,
+		OutputPricePerToken:    0,
+		SupportsCacheBreakdown: false,
+	}
+
 	// ---- 火山方舟 豆包 Embedding（多模态向量化）----
 	// doubao-embedding-vision 图文向量化：上游 usage 回传 prompt_tokens_details.{text_tokens,image_tokens}，
 	// 按量付费官方价 文本 ¥0.7/MTok、图片 ¥1.8/MTok；汇率口径 ÷7.14（与本表其他国产模型一致，¥1≈$0.14）。
@@ -1184,6 +1204,16 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	}
 	if strings.Contains(modelLower, "minimax-m2") || strings.Contains(modelLower, "minimax-m-2") {
 		return s.fallbackPrices["minimax-m2"]
+	}
+
+	// OpenAI Embeddings：三个型号互不包含，按型号名匹配（覆盖带 openai/ 前缀等别名）。
+	switch {
+	case strings.Contains(modelLower, "text-embedding-3-small"):
+		return s.fallbackPrices["text-embedding-3-small"]
+	case strings.Contains(modelLower, "text-embedding-3-large"):
+		return s.fallbackPrices["text-embedding-3-large"]
+	case strings.Contains(modelLower, "text-embedding-ada-002"):
+		return s.fallbackPrices["text-embedding-ada-002"]
 	}
 
 	// 火山方舟 豆包 Embedding（多模态向量化）。
