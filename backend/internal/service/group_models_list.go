@@ -42,3 +42,20 @@ func normalizeGroupModelsListConfig(cfg GroupModelsListConfig) GroupModelsListCo
 func (g *Group) CustomModelsListEnabled() bool {
 	return g != nil && g.ModelsListConfig.Enabled && len(g.ModelsListConfig.Models) > 0
 }
+
+// cloneGroupModelsListConfig 深拷贝模型广场展示配置，复制分组后两份配置互不影响。
+func cloneGroupModelsListConfig(cfg GroupModelsListConfig) GroupModelsListConfig {
+	out := GroupModelsListConfig{Enabled: cfg.Enabled}
+	if cfg.Models != nil {
+		out.Models = append([]string(nil), cfg.Models...)
+	}
+	if cfg.PlazaEnabled != nil {
+		enabled := *cfg.PlazaEnabled
+		out.PlazaEnabled = &enabled
+	}
+	if cfg.PlazaModels != nil {
+		models := append([]string(nil), *cfg.PlazaModels...)
+		out.PlazaModels = &models
+	}
+	return out
+}
