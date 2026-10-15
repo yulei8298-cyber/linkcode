@@ -97,6 +97,8 @@ type IntelCheckTimelinePoint struct {
 	Status    string    `json:"status"`
 	LatencyMs *int      `json:"latency_ms"`
 	CheckedAt time.Time `json:"checked_at"`
+	// RoundID 仅供服务端把同一轮的逻辑题与绘图题配对，不对外序列化。
+	RoundID int64 `json:"-"`
 }
 
 // ---------- 公开页视图 ----------

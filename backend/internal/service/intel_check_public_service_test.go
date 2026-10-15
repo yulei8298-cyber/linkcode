@@ -140,7 +140,9 @@ func TestIntelCheckPublicOverview聚合(t *testing.T) {
 
 	require.EqualValues(t, 10, first.LogicStats24h.Pass)
 	require.EqualValues(t, 2, first.LogicStats24h.Error)
-	require.EqualValues(t, 3, first.DrawingStats24h.Unverified)
+	// 绘图行统计与逻辑题一致，绘图自己的 4 通过 / 4 失败 / 3 未验证不参与展示。
+	require.Equal(t, first.LogicStats24h, first.DrawingStats24h)
+	require.Zero(t, first.DrawingStats24h.Unverified)
 	require.InDelta(t, 1.0, first.LogicStats24h.PassRate, 1e-9)
 	require.True(t, first.LogicStats24h.HasData)
 
@@ -156,27 +158,26 @@ func TestIntelCheckPublicOverview汇总口径(t *testing.T) {
 	out, err := svc.PublicOverview(context.Background())
 	require.NoError(t, err)
 
-	// running 不计入任何一项：它只是尚未出结论的占位行（桩数据里给了 1 条）。
-	require.EqualValues(t, 15, out.Summary.Stats24h.Pass)
-	require.EqualValues(t, 15, out.Summary.Stats24h.Fail)
+	// 汇总只看逻辑题：1 组 10 通过 2 请求失败，2 组 1 通过 9 失败；绘图题的计数不进汇总。
+	require.EqualValues(t, 11, out.Summary.Stats24h.Pass)
+	require.EqualValues(t, 9, out.Summary.Stats24h.Fail)
 	require.EqualValues(t, 2, out.Summary.Stats24h.Error, "request_error 单独计，不进通过率分母")
-	require.EqualValues(t, 3, out.Summary.Stats24h.Unverified, "unverified 单独计，不进通过率分母")
+	require.Zero(t, out.Summary.Stats24h.Unverified, "逻辑题没有未验证状态")
 
-	// 先累加分子分母再相除得 0.5；若改成逐组求平均会得 0.4，
-	// 样本只有 2 条的分组会和样本 12 条的分组等权，这正是要避免的口径。
-	require.InDelta(t, 0.5, out.Summary.Stats24h.PassRate, 1e-9)
+	// 先累加分子分母再相除：11/(11+9)。样本少的分组不应与样本多的分组等权。
+	require.InDelta(t, 11.0/20.0, out.Summary.Stats24h.PassRate, 1e-9)
 	require.True(t, out.Summary.Stats24h.HasData)
 }
 
-func TestIntelCheckPublicOverview统计按题型分别查询(t *testing.T) {
-	// CountByStatusSince 的 kind 会直接落到 SQL 的枚举列上，
-	// 传空串不是「不过滤」而是一个非法枚举值，Postgres 会直接报错。
+func TestIntelCheckPublicOverview统计只按逻辑题查询(t *testing.T) {
+	// 统计、汇总、降智状态都以逻辑题为准，不再读取绘图题的计数。
+	// CountByStatusSince 的 kind 会直接落到 SQL 的枚举列上，传空串是非法枚举值。
 	svc, repo := intelCheckPublicFixture(t, true)
 
 	_, err := svc.PublicOverview(context.Background())
 	require.NoError(t, err)
 
-	require.Equal(t, []string{IntelCheckKindLogic, IntelCheckKindDrawing}, repo.countKinds)
+	require.Equal(t, []string{IntelCheckKindLogic}, repo.countKinds)
 	require.WithinDuration(t, time.Now().Add(-24*time.Hour), repo.countSince, time.Minute,
 		"统计窗口固定 24 小时，不随 timeline_points 变化")
 }

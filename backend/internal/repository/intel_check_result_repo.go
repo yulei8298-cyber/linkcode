@@ -210,11 +210,11 @@ func (r *intelCheckRepository) ListResults(
 // timelineQuery 每个 (分组, 题型) 各取最近 limit 条。
 //
 // 走窗口函数而非「循环每组查一次」：分组数 × 题型数 会放大成几十次往返。
-// 只 SELECT 色块需要的 5 列，绝不带 raw_reply / html_output。
+// 只 SELECT 色块需要的 6 列（含用于同轮配对的 round_id），绝不带 raw_reply / html_output。
 const timelineQuery = `
-SELECT id, target_id, kind, status, latency_ms, checked_at
+SELECT id, target_id, kind, status, latency_ms, checked_at, round_id
 FROM (
-    SELECT id, target_id, kind, status, latency_ms, checked_at,
+    SELECT id, target_id, kind, status, latency_ms, checked_at, round_id,
            ROW_NUMBER() OVER (
                PARTITION BY target_id, kind
                ORDER BY checked_at DESC, id DESC
@@ -247,7 +247,7 @@ func (r *intelCheckRepository) ListTimelineForTargets(
 		)
 		if err := rows.Scan(
 			&point.ResultID, &targetID, &kind,
-			&point.Status, &point.LatencyMs, &point.CheckedAt,
+			&point.Status, &point.LatencyMs, &point.CheckedAt, &point.RoundID,
 		); err != nil {
 			return nil, fmt.Errorf("scan intel check timeline: %w", err)
 		}

@@ -69,16 +69,13 @@ func (s *IntelCheckService) PublicOverview(ctx context.Context) (*IntelCheckPubl
 	if err != nil {
 		return nil, fmt.Errorf("list intel check timeline: %w", err)
 	}
-	// 逻辑题与绘图题分两次统计：CountByStatusSince 的 kind 参数直接落到 SQL 的
-	// 枚举列上，传空串不是「不过滤」而是一个非法枚举值。
+	// 统计、汇总与降智状态一律以逻辑题为准：绘图题仍照常打分入库，但不再参与公开统计。
+	// CountByStatusSince 的 kind 参数直接落到 SQL 的枚举列上，
+	// 传空串不是「不过滤」而是一个非法枚举值，所以这里显式只传逻辑题。
 	since := now.Add(-intelCheckStatsWindow)
 	logicCounts, err := s.repo.CountByStatusSince(ctx, targetIDs, IntelCheckKindLogic, since)
 	if err != nil {
 		return nil, fmt.Errorf("count intel check logic results: %w", err)
-	}
-	drawingCounts, err := s.repo.CountByStatusSince(ctx, targetIDs, IntelCheckKindDrawing, since)
-	if err != nil {
-		return nil, fmt.Errorf("count intel check drawing results: %w", err)
 	}
 	artworks, err := s.repo.LatestDrawingResultIDs(ctx, targetIDs)
 	if err != nil {
@@ -91,7 +88,8 @@ func (s *IntelCheckService) PublicOverview(ctx context.Context) (*IntelCheckPubl
 		}
 		group := buildIntelCheckPublicGroup(target, timelines[target.ID], cfg.DegradedRule)
 		group.LogicStats24h = intelCheckStatsFromCounts(logicCounts[target.ID])
-		group.DrawingStats24h = intelCheckStatsFromCounts(drawingCounts[target.ID])
+		// 绘图行的统计与逻辑题一致，与色块颜色跟随逻辑题的口径对齐。
+		group.DrawingStats24h = group.LogicStats24h
 		group.LatestDrawingResultID = artworks[target.ID]
 
 		out.Groups = append(out.Groups, group)
@@ -120,12 +118,53 @@ func buildIntelCheckPublicGroup(
 		ReasoningEffort: target.ReasoningEffort,
 		RateLabel:       target.RateLabel,
 		LogicTimeline:   intelCheckTimelineOrEmpty(kinds[IntelCheckKindLogic]),
-		DrawingTimeline: intelCheckTimelineOrEmpty(kinds[IntelCheckKindDrawing]),
+		DrawingTimeline: intelCheckTimelineOrEmpty(
+			followLogicStatusOnDrawingTimeline(kinds[IntelCheckKindLogic], kinds[IntelCheckKindDrawing])),
 	}
 	// 状态只看逻辑题（设计文档 §4.4）：绘图题的判定含源码评审打分，
 	// 天然比逻辑题波动大，拿它参与降智判定会频繁误报。
 	group.State = ReplayIntelCheckState(intelCheckTimelineStatuses(group.LogicTimeline), rule)
 	return group
+}
+
+// followLogicStatusOnDrawingTimeline 让绘图题色块的颜色跟随同一轮逻辑题的结果。
+//
+// 只改「展示用」的色块状态：绘图题照常打分、入库，24 小时统计、降智判定、
+// 点击色块看到的判定明细都不受影响。配对按 round_id，一轮里逻辑题与绘图题成对出现。
+//
+// 保持原状态的情形：
+//   - 绘图题仍在检测中（running）：没有结论，不应提前染成逻辑题的颜色；
+//   - 找不到同轮逻辑题（窗口外或该轮没有逻辑题）：无从跟随，沿用绘图题自己的结果；
+//   - 同轮逻辑题仍在检测中：同上。
+//
+// 返回新切片与新点，不修改入参（入参指针可能被其他视图共享）。
+func followLogicStatusOnDrawingTimeline(logic, drawing []*IntelCheckTimelinePoint) []*IntelCheckTimelinePoint {
+	if len(drawing) == 0 || len(logic) == 0 {
+		return drawing
+	}
+	logicByRound := make(map[int64]string, len(logic))
+	for _, point := range logic {
+		if point != nil && point.RoundID > 0 {
+			logicByRound[point.RoundID] = point.Status
+		}
+	}
+
+	out := make([]*IntelCheckTimelinePoint, 0, len(drawing))
+	for _, point := range drawing {
+		if point == nil || point.Status == IntelCheckStatusRunning {
+			out = append(out, point)
+			continue
+		}
+		logicStatus, ok := logicByRound[point.RoundID]
+		if !ok || logicStatus == IntelCheckStatusRunning {
+			out = append(out, point)
+			continue
+		}
+		followed := *point
+		followed.Status = logicStatus
+		out = append(out, &followed)
+	}
+	return out
 }
 
 // fillIntelCheckLatestRound 填入最新轮次编号、上次检测时刻与下次预计时刻。
@@ -168,12 +207,12 @@ func accumulateIntelCheckSummary(summary *IntelCheckPublicSummary, group *IntelC
 		summary.UnknownGroups++
 	}
 
-	for _, stats := range []IntelCheckPublicStats{group.LogicStats24h, group.DrawingStats24h} {
-		summary.Stats24h.Pass += stats.Pass
-		summary.Stats24h.Fail += stats.Fail
-		summary.Stats24h.Error += stats.Error
-		summary.Stats24h.Unverified += stats.Unverified
-	}
+	// 汇总只累加逻辑题：绘图行的统计与逻辑题相同，再累加一次会让每个数翻倍。
+	stats := group.LogicStats24h
+	summary.Stats24h.Pass += stats.Pass
+	summary.Stats24h.Fail += stats.Fail
+	summary.Stats24h.Error += stats.Error
+	summary.Stats24h.Unverified += stats.Unverified
 }
 
 // intelCheckStatsFromCounts 把 SQL 聚合出的状态计数换算成对外统计。
