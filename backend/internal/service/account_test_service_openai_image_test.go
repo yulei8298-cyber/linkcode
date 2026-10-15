@@ -91,3 +91,62 @@ func TestAccountTestService_OpenAIImageAPIKeyUsesConfiguredV1BaseURL(t *testing.
 	require.Contains(t, rec.Body.String(), "data:image/png;base64,aGVsbG8=")
 	require.Contains(t, rec.Body.String(), "\"success\":true")
 }
+
+func newOpenAIImageAPIKeyTestAccount() *Account {
+	return &Account{
+		ID:       55,
+		Name:     "openai-official-image",
+		Platform: PlatformOpenAI,
+		Type:     AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"api_key":  "test-api-key",
+			"base_url": "https://api.openai.com",
+		},
+	}
+}
+
+func openAIImageTestResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Header:     http.Header{"Content-Type": []string{"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}
+
+func TestAccountTestService_OpenAIImageAPIKeyRetriesWithoutResponseFormatWhenRejected(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/accounts/55/test", nil)
+
+	upstream := &httpUpstreamRecorder{responses: []*http.Response{
+		openAIImageTestResponse(http.StatusBadRequest,
+			`{"error":{"message":"Unknown parameter: 'response_format'.","type":"invalid_request_error","param":"response_format","code":"unknown_parameter"}}`),
+		openAIImageTestResponse(http.StatusOK, `{"data":[{"b64_json":"aGVsbG8="}]}`),
+	}}
+	svc := &AccountTestService{httpUpstream: upstream, cfg: &config.Config{}}
+
+	err := svc.testOpenAIImageAPIKey(c, context.Background(), newOpenAIImageAPIKeyTestAccount(), "gpt-image-2", "draw a cat")
+	require.NoError(t, err)
+	require.Len(t, upstream.bodies, 2)
+	require.Contains(t, string(upstream.bodies[0]), `"response_format":"b64_json"`)
+	require.NotContains(t, string(upstream.bodies[1]), "response_format")
+	require.Contains(t, rec.Body.String(), "data:image/png;base64,aGVsbG8=")
+	require.Contains(t, rec.Body.String(), "\"success\":true")
+}
+
+func TestAccountTestService_OpenAIImageAPIKeyDoesNotRetryOnOtherBadRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/accounts/55/test", nil)
+
+	upstream := &httpUpstreamRecorder{resp: openAIImageTestResponse(http.StatusBadRequest,
+		`{"error":{"message":"Invalid size.","type":"invalid_request_error","param":"size","code":"invalid_value"}}`)}
+	svc := &AccountTestService{httpUpstream: upstream, cfg: &config.Config{}}
+
+	err := svc.testOpenAIImageAPIKey(c, context.Background(), newOpenAIImageAPIKeyTestAccount(), "gpt-image-2", "draw a cat")
+	require.Error(t, err)
+	require.Len(t, upstream.bodies, 1)
+	require.Contains(t, rec.Body.String(), "API returned 400")
+}

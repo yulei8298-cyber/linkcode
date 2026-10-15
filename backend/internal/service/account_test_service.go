@@ -3050,37 +3050,26 @@ func (s *AccountTestService) testOpenAIImageAPIKey(c *gin.Context, ctx context.C
 		"n":               1,
 		"response_format": "b64_json",
 	}
-	payloadBytes, _ := json.Marshal(payload)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(payloadBytes))
-	if err != nil {
-		return s.sendErrorAndEnd(c, "Failed to create request")
-	}
-	req = req.WithContext(WithHTTPUpstreamProfile(req.Context(), HTTPUpstreamProfileOpenAI))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+authToken)
-
-	// 账号级请求头覆写：测试请求与真实转发保持一致的最终头
-	account.ApplyHeaderOverrides(req.Header)
-
 	proxyURL := ""
 	if account.ProxyID != nil && account.Proxy != nil {
 		proxyURL = account.Proxy.URL()
 	}
 
-	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+	status, body, err := s.doOpenAIImageTestRequest(ctx, account, apiURL, authToken, proxyURL, payload)
 	if err != nil {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+		return s.sendErrorAndEnd(c, err.Error())
 	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to read response: %s", err.Error()))
+	// 官方 gpt-image 系列不接受 response_format：被明确拒绝时去掉该参数重试一次。
+	if status == http.StatusBadRequest && isRejectedResponseFormatParam(body) {
+		delete(payload, "response_format")
+		status, body, err = s.doOpenAIImageTestRequest(ctx, account, apiURL, authToken, proxyURL, payload)
+		if err != nil {
+			return s.sendErrorAndEnd(c, err.Error())
+		}
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+	if status != http.StatusOK {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", status, string(body)))
 	}
 
 	// Parse {"data": [{"b64_json": "...", "revised_prompt": "..."}]}
