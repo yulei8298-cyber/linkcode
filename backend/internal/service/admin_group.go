@@ -439,6 +439,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if err != nil {
 		return nil, infraerrors.Newf(http.StatusBadRequest, "INVALID_MAX_REASONING_EFFORT", "%v", err)
 	}
+	solContextWindow, err := normalizeSolContextWindow(input.SolContextWindow)
+	if err != nil {
+		return nil, err
+	}
 	maxReasoningEffortOverLimit, err := normalizeMaxReasoningEffortOverLimitForPlatform(platform, input.MaxReasoningEffortOverLimit)
 	if err != nil {
 		return nil, infraerrors.Newf(http.StatusBadRequest, "INVALID_MAX_REASONING_EFFORT_OVER_LIMIT", "%v", err)
@@ -671,6 +675,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		// 固定账号 manifest 配置：账号绑定发生在分组创建之后，创建路径禁止开启，
 		// 成员关系无从校验（前端创建对话框也不展示）。
 		CodexModelsManifestConfig:   normalizeCodexModelsManifestConfig(platform, input.CodexModelsManifestConfig),
+		SolLongContextExempt:        input.SolLongContextExempt,
+		SolContextWindow:            solContextWindow,
 		RPMLimit:                    input.RPMLimit,
 		MaxReasoningEffort:          maxReasoningEffort,
 		MaxReasoningEffortOverLimit: maxReasoningEffortOverLimit,
@@ -1110,6 +1116,16 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.CodexModelsManifestConfig != nil {
 		group.CodexModelsManifestConfig = *input.CodexModelsManifestConfig
+	}
+	if input.SolLongContextExempt != nil {
+		group.SolLongContextExempt = *input.SolLongContextExempt
+	}
+	if input.SolContextWindow != nil {
+		solContextWindow, err := normalizeSolContextWindow(*input.SolContextWindow)
+		if err != nil {
+			return nil, err
+		}
+		group.SolContextWindow = solContextWindow
 	}
 	if input.RPMLimit != nil {
 		group.RPMLimit = *input.RPMLimit

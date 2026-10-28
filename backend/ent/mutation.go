@@ -22190,6 +22190,9 @@ type GroupMutation struct {
 	models_list_config                      *domain.GroupModelsListConfig
 	model_allowlist                         *domain.GroupModelAllowlist
 	codex_models_manifest_config            *domain.GroupCodexModelsManifestConfig
+	sol_long_context_exempt                 *bool
+	sol_context_window                      *int
+	addsol_context_window                   *int
 	rpm_limit                               *int
 	addrpm_limit                            *int
 	max_reasoning_effort                    *string
@@ -25546,6 +25549,98 @@ func (m *GroupMutation) ResetCodexModelsManifestConfig() {
 	m.codex_models_manifest_config = nil
 }
 
+// SetSolLongContextExempt sets the "sol_long_context_exempt" field.
+func (m *GroupMutation) SetSolLongContextExempt(b bool) {
+	m.sol_long_context_exempt = &b
+}
+
+// SolLongContextExempt returns the value of the "sol_long_context_exempt" field in the mutation.
+func (m *GroupMutation) SolLongContextExempt() (r bool, exists bool) {
+	v := m.sol_long_context_exempt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSolLongContextExempt returns the old "sol_long_context_exempt" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldSolLongContextExempt(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSolLongContextExempt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSolLongContextExempt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSolLongContextExempt: %w", err)
+	}
+	return oldValue.SolLongContextExempt, nil
+}
+
+// ResetSolLongContextExempt resets all changes to the "sol_long_context_exempt" field.
+func (m *GroupMutation) ResetSolLongContextExempt() {
+	m.sol_long_context_exempt = nil
+}
+
+// SetSolContextWindow sets the "sol_context_window" field.
+func (m *GroupMutation) SetSolContextWindow(i int) {
+	m.sol_context_window = &i
+	m.addsol_context_window = nil
+}
+
+// SolContextWindow returns the value of the "sol_context_window" field in the mutation.
+func (m *GroupMutation) SolContextWindow() (r int, exists bool) {
+	v := m.sol_context_window
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSolContextWindow returns the old "sol_context_window" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldSolContextWindow(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSolContextWindow is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSolContextWindow requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSolContextWindow: %w", err)
+	}
+	return oldValue.SolContextWindow, nil
+}
+
+// AddSolContextWindow adds i to the "sol_context_window" field.
+func (m *GroupMutation) AddSolContextWindow(i int) {
+	if m.addsol_context_window != nil {
+		*m.addsol_context_window += i
+	} else {
+		m.addsol_context_window = &i
+	}
+}
+
+// AddedSolContextWindow returns the value that was added to the "sol_context_window" field in this mutation.
+func (m *GroupMutation) AddedSolContextWindow() (r int, exists bool) {
+	v := m.addsol_context_window
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSolContextWindow resets all changes to the "sol_context_window" field.
+func (m *GroupMutation) ResetSolContextWindow() {
+	m.sol_context_window = nil
+	m.addsol_context_window = nil
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (m *GroupMutation) SetRpmLimit(i int) {
 	m.rpm_limit = &i
@@ -26231,7 +26326,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 73)
+	fields := make([]string, 0, 75)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -26430,6 +26525,12 @@ func (m *GroupMutation) Fields() []string {
 	if m.codex_models_manifest_config != nil {
 		fields = append(fields, group.FieldCodexModelsManifestConfig)
 	}
+	if m.sol_long_context_exempt != nil {
+		fields = append(fields, group.FieldSolLongContextExempt)
+	}
+	if m.sol_context_window != nil {
+		fields = append(fields, group.FieldSolContextWindow)
+	}
 	if m.rpm_limit != nil {
 		fields = append(fields, group.FieldRpmLimit)
 	}
@@ -26591,6 +26692,10 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.ModelAllowlist()
 	case group.FieldCodexModelsManifestConfig:
 		return m.CodexModelsManifestConfig()
+	case group.FieldSolLongContextExempt:
+		return m.SolLongContextExempt()
+	case group.FieldSolContextWindow:
+		return m.SolContextWindow()
 	case group.FieldRpmLimit:
 		return m.RpmLimit()
 	case group.FieldMaxReasoningEffort:
@@ -26746,6 +26851,10 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldModelAllowlist(ctx)
 	case group.FieldCodexModelsManifestConfig:
 		return m.OldCodexModelsManifestConfig(ctx)
+	case group.FieldSolLongContextExempt:
+		return m.OldSolLongContextExempt(ctx)
+	case group.FieldSolContextWindow:
+		return m.OldSolContextWindow(ctx)
 	case group.FieldRpmLimit:
 		return m.OldRpmLimit(ctx)
 	case group.FieldMaxReasoningEffort:
@@ -27231,6 +27340,20 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCodexModelsManifestConfig(v)
 		return nil
+	case group.FieldSolLongContextExempt:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSolLongContextExempt(v)
+		return nil
+	case group.FieldSolContextWindow:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSolContextWindow(v)
+		return nil
 	case group.FieldRpmLimit:
 		v, ok := value.(int)
 		if !ok {
@@ -27363,6 +27486,9 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addsort_order != nil {
 		fields = append(fields, group.FieldSortOrder)
 	}
+	if m.addsol_context_window != nil {
+		fields = append(fields, group.FieldSolContextWindow)
+	}
 	if m.addrpm_limit != nil {
 		fields = append(fields, group.FieldRpmLimit)
 	}
@@ -27430,6 +27556,8 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedFallbackGroupIDOnInvalidRequest()
 	case group.FieldSortOrder:
 		return m.AddedSortOrder()
+	case group.FieldSolContextWindow:
+		return m.AddedSolContextWindow()
 	case group.FieldRpmLimit:
 		return m.AddedRpmLimit()
 	case group.FieldProfitMinMargin:
@@ -27619,6 +27747,13 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSortOrder(v)
+		return nil
+	case group.FieldSolContextWindow:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSolContextWindow(v)
 		return nil
 	case group.FieldRpmLimit:
 		v, ok := value.(int)
@@ -28006,6 +28141,12 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldCodexModelsManifestConfig:
 		m.ResetCodexModelsManifestConfig()
+		return nil
+	case group.FieldSolLongContextExempt:
+		m.ResetSolLongContextExempt()
+		return nil
+	case group.FieldSolContextWindow:
+		m.ResetSolContextWindow()
 		return nil
 	case group.FieldRpmLimit:
 		m.ResetRpmLimit()

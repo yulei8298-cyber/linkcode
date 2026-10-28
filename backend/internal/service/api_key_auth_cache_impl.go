@@ -16,9 +16,10 @@ import (
 )
 
 // 快照包含分组模型白名单、本地免费分组/对话站授权、定价与 Fast/推理策略、Codex 模型目录配置，
-// 以及官方 v25 新增的分组 image_count_billing 开关。本地与官方都曾把版本号升到 25，
-// 合并后升到 26，确保两种旧形状的 L2 缓存都会重建。快照形状变化时必须继续递增。
-const apiKeyAuthSnapshotVersion = 26
+// 官方 v25 新增的分组 image_count_billing 开关，以及 LinkCode 的 GPT-6.1 Sol 长上下文分组策略。
+// 本地与官方都曾把版本号升到 25，合并后升到 27，确保各种旧形状的 L2 缓存都会重建。
+// 快照形状变化时必须继续递增。
+const apiKeyAuthSnapshotVersion = 27
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -436,6 +437,8 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			ModelsListConfig:                apiKey.Group.ModelsListConfig,
 			ModelAllowlist:                  apiKey.Group.ModelAllowlist,
 			CodexModelsManifestConfig:       apiKey.Group.CodexModelsManifestConfig,
+			SolLongContextExempt:            apiKey.Group.SolLongContextExempt,
+			SolContextWindow:                apiKey.Group.SolContextWindow,
 			RPMLimit:                        apiKey.Group.RPMLimit,
 			MaxReasoningEffort:              apiKey.Group.MaxReasoningEffort,
 			MaxReasoningEffortOverLimit:     apiKey.Group.MaxReasoningEffortOverLimit,
@@ -546,6 +549,8 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			ModelsListConfig:                snapshot.Group.ModelsListConfig,
 			ModelAllowlist:                  snapshot.Group.ModelAllowlist,
 			CodexModelsManifestConfig:       snapshot.Group.CodexModelsManifestConfig,
+			SolLongContextExempt:            snapshot.Group.SolLongContextExempt,
+			SolContextWindow:                snapshot.Group.SolContextWindow,
 			RPMLimit:                        snapshot.Group.RPMLimit,
 			MaxReasoningEffort:              snapshot.Group.MaxReasoningEffort,
 			MaxReasoningEffortOverLimit:     snapshot.Group.MaxReasoningEffortOverLimit,

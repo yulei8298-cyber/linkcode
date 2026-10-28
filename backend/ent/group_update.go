@@ -1204,6 +1204,41 @@ func (_u *GroupUpdate) SetNillableCodexModelsManifestConfig(v *domain.GroupCodex
 	return _u
 }
 
+// SetSolLongContextExempt sets the "sol_long_context_exempt" field.
+func (_u *GroupUpdate) SetSolLongContextExempt(v bool) *GroupUpdate {
+	_u.mutation.SetSolLongContextExempt(v)
+	return _u
+}
+
+// SetNillableSolLongContextExempt sets the "sol_long_context_exempt" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableSolLongContextExempt(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetSolLongContextExempt(*v)
+	}
+	return _u
+}
+
+// SetSolContextWindow sets the "sol_context_window" field.
+func (_u *GroupUpdate) SetSolContextWindow(v int) *GroupUpdate {
+	_u.mutation.ResetSolContextWindow()
+	_u.mutation.SetSolContextWindow(v)
+	return _u
+}
+
+// SetNillableSolContextWindow sets the "sol_context_window" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableSolContextWindow(v *int) *GroupUpdate {
+	if v != nil {
+		_u.SetSolContextWindow(*v)
+	}
+	return _u
+}
+
+// AddSolContextWindow adds value to the "sol_context_window" field.
+func (_u *GroupUpdate) AddSolContextWindow(v int) *GroupUpdate {
+	_u.mutation.AddSolContextWindow(v)
+	return _u
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (_u *GroupUpdate) SetRpmLimit(v int) *GroupUpdate {
 	_u.mutation.ResetRpmLimit()
@@ -2011,6 +2046,15 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.CodexModelsManifestConfig(); ok {
 		_spec.SetField(group.FieldCodexModelsManifestConfig, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.SolLongContextExempt(); ok {
+		_spec.SetField(group.FieldSolLongContextExempt, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SolContextWindow(); ok {
+		_spec.SetField(group.FieldSolContextWindow, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSolContextWindow(); ok {
+		_spec.AddField(group.FieldSolContextWindow, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.RpmLimit(); ok {
 		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
@@ -3528,6 +3572,41 @@ func (_u *GroupUpdateOne) SetNillableCodexModelsManifestConfig(v *domain.GroupCo
 	return _u
 }
 
+// SetSolLongContextExempt sets the "sol_long_context_exempt" field.
+func (_u *GroupUpdateOne) SetSolLongContextExempt(v bool) *GroupUpdateOne {
+	_u.mutation.SetSolLongContextExempt(v)
+	return _u
+}
+
+// SetNillableSolLongContextExempt sets the "sol_long_context_exempt" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableSolLongContextExempt(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetSolLongContextExempt(*v)
+	}
+	return _u
+}
+
+// SetSolContextWindow sets the "sol_context_window" field.
+func (_u *GroupUpdateOne) SetSolContextWindow(v int) *GroupUpdateOne {
+	_u.mutation.ResetSolContextWindow()
+	_u.mutation.SetSolContextWindow(v)
+	return _u
+}
+
+// SetNillableSolContextWindow sets the "sol_context_window" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableSolContextWindow(v *int) *GroupUpdateOne {
+	if v != nil {
+		_u.SetSolContextWindow(*v)
+	}
+	return _u
+}
+
+// AddSolContextWindow adds value to the "sol_context_window" field.
+func (_u *GroupUpdateOne) AddSolContextWindow(v int) *GroupUpdateOne {
+	_u.mutation.AddSolContextWindow(v)
+	return _u
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (_u *GroupUpdateOne) SetRpmLimit(v int) *GroupUpdateOne {
 	_u.mutation.ResetRpmLimit()
@@ -4365,6 +4444,15 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.CodexModelsManifestConfig(); ok {
 		_spec.SetField(group.FieldCodexModelsManifestConfig, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.SolLongContextExempt(); ok {
+		_spec.SetField(group.FieldSolLongContextExempt, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SolContextWindow(); ok {
+		_spec.SetField(group.FieldSolContextWindow, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSolContextWindow(); ok {
+		_spec.AddField(group.FieldSolContextWindow, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.RpmLimit(); ok {
 		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)

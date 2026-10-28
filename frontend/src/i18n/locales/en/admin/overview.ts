@@ -1170,6 +1170,15 @@ export default {
           'Leave empty to use the default $0.01 per call (official pricing: $10 per 1,000 calls); 0 means free. The group rate multiplier is applied on top.',
         finalPricePreview: 'Per-call price after current multiplier: {price}'
       },
+      solLongContext: {
+        title: 'GPT-6.1 Sol long context',
+        exempt: 'Waive the long-context surcharge',
+        exemptHint:
+          'When enabled, GPT-6.1 Sol requests in this group are billed at the standard rate even above 272k context. Off by default, so the surcharge still applies.',
+        contextWindow: 'Codex context window (tokens)',
+        contextWindowHint:
+          'Sol context window sent to Codex clients, e.g. 272000 or 500000. Use 0 to keep the upstream default. Allowed range: {min}–{max}.'
+      },
       peakRate: {
         enable: 'Enable peak rate multiplier',
         peakStart: 'Peak start',

@@ -1167,6 +1167,15 @@ export default {
           '留空使用默认价 $0.01/次（官方定价 $10/1000 次）；填 0 表示免费。实际扣费会叠加分组费率倍数。',
         finalPricePreview: '应用当前倍率后的单次价格：{price}'
       },
+      solLongContext: {
+        title: 'GPT-6.1 Sol 长上下文',
+        exempt: '不收取长上下文附加费',
+        exemptHint:
+          '开启后，本分组的 GPT-6.1 Sol 请求超过 272k 上下文也按标准价计费。默认关闭，照常收取附加费。',
+        contextWindow: 'Codex 上下文窗口（token）',
+        contextWindowHint:
+          '下发给 Codex 客户端的 Sol 上下文窗口，例如 272000 或 500000；填 0 沿用上游默认值。可填范围 {min}–{max}。'
+      },
       peakRate: {
         enable: '启用高峰倍率',
         peakStart: '高峰开始',

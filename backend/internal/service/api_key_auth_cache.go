@@ -120,6 +120,9 @@ type APIKeyAuthGroupSnapshot struct {
 	// CodexModelsManifestConfig 与 ModelAllowlist 一样在认证快照分组里透传，
 	// Codex /models handler 直接读认证分组对象。
 	CodexModelsManifestConfig GroupCodexModelsManifestConfig `json:"codex_models_manifest_config,omitempty"`
+	// GPT-6.1 Sol 长上下文分组策略：计费与 Codex /models 都直接读认证分组对象。
+	SolLongContextExempt bool `json:"sol_long_context_exempt,omitempty"`
+	SolContextWindow     int  `json:"sol_context_window,omitempty"`
 
 	// RPMLimit 分组级每分钟请求数上限（0 = 不限制）；用于 billing_cache_service.checkRPM 级联判断。
 	RPMLimit int `json:"rpm_limit"`

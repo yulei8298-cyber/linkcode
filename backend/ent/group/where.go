@@ -340,6 +340,16 @@ func DefaultMappedModel(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDefaultMappedModel, v))
 }
 
+// SolLongContextExempt applies equality check predicate on the "sol_long_context_exempt" field. It's identical to SolLongContextExemptEQ.
+func SolLongContextExempt(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSolLongContextExempt, v))
+}
+
+// SolContextWindow applies equality check predicate on the "sol_context_window" field. It's identical to SolContextWindowEQ.
+func SolContextWindow(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSolContextWindow, v))
+}
+
 // RpmLimit applies equality check predicate on the "rpm_limit" field. It's identical to RpmLimitEQ.
 func RpmLimit(v int) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRpmLimit, v))
@@ -2503,6 +2513,56 @@ func DefaultMappedModelEqualFold(v string) predicate.Group {
 // DefaultMappedModelContainsFold applies the ContainsFold predicate on the "default_mapped_model" field.
 func DefaultMappedModelContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldDefaultMappedModel, v))
+}
+
+// SolLongContextExemptEQ applies the EQ predicate on the "sol_long_context_exempt" field.
+func SolLongContextExemptEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSolLongContextExempt, v))
+}
+
+// SolLongContextExemptNEQ applies the NEQ predicate on the "sol_long_context_exempt" field.
+func SolLongContextExemptNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldSolLongContextExempt, v))
+}
+
+// SolContextWindowEQ applies the EQ predicate on the "sol_context_window" field.
+func SolContextWindowEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSolContextWindow, v))
+}
+
+// SolContextWindowNEQ applies the NEQ predicate on the "sol_context_window" field.
+func SolContextWindowNEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldSolContextWindow, v))
+}
+
+// SolContextWindowIn applies the In predicate on the "sol_context_window" field.
+func SolContextWindowIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldSolContextWindow, vs...))
+}
+
+// SolContextWindowNotIn applies the NotIn predicate on the "sol_context_window" field.
+func SolContextWindowNotIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldSolContextWindow, vs...))
+}
+
+// SolContextWindowGT applies the GT predicate on the "sol_context_window" field.
+func SolContextWindowGT(v int) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldSolContextWindow, v))
+}
+
+// SolContextWindowGTE applies the GTE predicate on the "sol_context_window" field.
+func SolContextWindowGTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldSolContextWindow, v))
+}
+
+// SolContextWindowLT applies the LT predicate on the "sol_context_window" field.
+func SolContextWindowLT(v int) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldSolContextWindow, v))
+}
+
+// SolContextWindowLTE applies the LTE predicate on the "sol_context_window" field.
+func SolContextWindowLTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldSolContextWindow, v))
 }
 
 // RpmLimitEQ applies the EQ predicate on the "rpm_limit" field.

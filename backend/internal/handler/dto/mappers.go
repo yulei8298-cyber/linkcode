@@ -169,6 +169,8 @@ func GroupFromServiceAdmin(g *service.Group) *AdminGroup {
 		ModelsListConfig:            g.ModelsListConfig,
 		ModelAllowlist:              g.ModelAllowlist,
 		CodexModelsManifestConfig:   g.CodexModelsManifestConfig,
+		SolLongContextExempt:        g.SolLongContextExempt,
+		SolContextWindow:            g.SolContextWindow,
 		SupportedModelScopes:        g.SupportedModelScopes,
 		AccountCount:                g.AccountCount,
 		ActiveAccountCount:          g.ActiveAccountCount,

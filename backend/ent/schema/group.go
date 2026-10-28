@@ -297,6 +297,13 @@ func (Group) Fields() []ent.Field {
 			Default(domain.GroupCodexModelsManifestConfig{}).
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
 			Comment("固定账号获取 Codex Model Manifest 配置；开启后 /models 请求只用选定账号拉取（仅 openai 平台）"),
+		// LinkCode 二开：GPT-6.1 Sol 长上下文按分组配置（仅 openai 平台）。
+		field.Bool("sol_long_context_exempt").
+			Default(false).
+			Comment("开启后该分组的 GPT-6.1 Sol 请求不向用户收取长上下文附加费；默认关闭，照常收取"),
+		field.Int("sol_context_window").
+			Default(0).
+			Comment("下发给 Codex 客户端的 GPT-6.1 Sol 上下文窗口（token）；0 表示沿用上游/官方目录值"),
 
 		// 分组级每分钟请求数上限（0 = 不限制）。设置后优先于用户级兜底生效。
 		field.Int("rpm_limit").

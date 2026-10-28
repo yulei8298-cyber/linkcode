@@ -1657,6 +1657,37 @@
           </div>
         </div>
 
+        <!-- GPT-6.1 Sol 长上下文（仅 openai 平台） -->
+        <div
+          v-if="createForm.platform === 'openai'"
+          class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
+        >
+          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            {{ t("admin.groups.solLongContext.title") }}
+          </h4>
+          <label class="flex items-start gap-2">
+            <input v-model="createForm.sol_long_context_exempt" type="checkbox" class="mt-0.5" />
+            <span><span class="block text-sm text-gray-700 dark:text-gray-300">{{ t("admin.groups.solLongContext.exempt") }}</span><span class="block text-xs text-gray-500">{{ t("admin.groups.solLongContext.exemptHint") }}</span></span>
+          </label>
+          <div class="mt-3">
+            <label class="input-label">{{
+              t("admin.groups.solLongContext.contextWindow")
+            }}</label>
+            <input
+              v-model.number="createForm.sol_context_window"
+              type="number"
+              step="1000"
+              :min="0"
+              :max="SOL_CONTEXT_WINDOW_MAX"
+              placeholder="0"
+              class="input"
+            />
+            <p class="input-hint">
+              {{ t("admin.groups.solLongContext.contextWindowHint", { min: SOL_CONTEXT_WINDOW_MIN, max: SOL_CONTEXT_WINDOW_MAX }) }}
+            </p>
+          </div>
+        </div>
+
 
         <div class="border-t border-gray-200 pt-4 mt-4 dark:border-dark-400">
           <div class="flex items-start justify-between gap-4">
@@ -3484,6 +3515,37 @@
           </div>
         </div>
 
+        <!-- GPT-6.1 Sol 长上下文（仅 openai 平台） -->
+        <div
+          v-if="editForm.platform === 'openai'"
+          class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
+        >
+          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            {{ t("admin.groups.solLongContext.title") }}
+          </h4>
+          <label class="flex items-start gap-2">
+            <input v-model="editForm.sol_long_context_exempt" type="checkbox" class="mt-0.5" />
+            <span><span class="block text-sm text-gray-700 dark:text-gray-300">{{ t("admin.groups.solLongContext.exempt") }}</span><span class="block text-xs text-gray-500">{{ t("admin.groups.solLongContext.exemptHint") }}</span></span>
+          </label>
+          <div class="mt-3">
+            <label class="input-label">{{
+              t("admin.groups.solLongContext.contextWindow")
+            }}</label>
+            <input
+              v-model.number="editForm.sol_context_window"
+              type="number"
+              step="1000"
+              :min="0"
+              :max="SOL_CONTEXT_WINDOW_MAX"
+              placeholder="0"
+              class="input"
+            />
+            <p class="input-hint">
+              {{ t("admin.groups.solLongContext.contextWindowHint", { min: SOL_CONTEXT_WINDOW_MIN, max: SOL_CONTEXT_WINDOW_MAX }) }}
+            </p>
+          </div>
+        </div>
+
         <!-- 固定账号获取 Codex Model Manifest（仅 openai 平台，仅编辑对话框） -->
         <CodexManifestAccountsField
           v-if="editForm.platform === 'openai' && editingGroup"
@@ -4782,6 +4844,11 @@ import {
   type ProfitControlFormState,
 } from "./groupsProfitControl";
 import {
+  normalizeSolContextWindow,
+  SOL_CONTEXT_WINDOW_MAX,
+  SOL_CONTEXT_WINDOW_MIN,
+} from "./groupsSolLongContext";
+import {
   normalizeReasoningEffortForPlatform,
   normalizeReasoningEffortOverLimit,
   reasoningEffortOverLimitDowngrade,
@@ -5411,6 +5478,9 @@ const createForm = reactive({
   video_model_prices: createVideoModelPricesForm(),
   // Codex 网页搜索按次计费（仅 openai 平台使用）；null = 使用默认价 0.01
   web_search_price_per_call: null as number | null,
+  // GPT-6.1 Sol 长上下文分组策略（仅 openai 平台使用）；窗口 0 = 沿用上游默认值
+  sol_long_context_exempt: false,
+  sol_context_window: 0 as number | string,
   search_price_per_1k: null as number | null,
   audio_realtime_price_per_min: null as number | null,
   audio_tts_price_per_million_chars: null as number | null,
@@ -5791,6 +5861,9 @@ const editForm = reactive({
   video_model_prices: createVideoModelPricesForm(),
   // Codex 网页搜索按次计费（仅 openai 平台使用）；null = 使用默认价 0.01
   web_search_price_per_call: null as number | null,
+  // GPT-6.1 Sol 长上下文分组策略（仅 openai 平台使用）；窗口 0 = 沿用上游默认值
+  sol_long_context_exempt: false,
+  sol_context_window: 0 as number | string,
   search_price_per_1k: null as number | null,
   audio_realtime_price_per_min: null as number | null,
   audio_tts_price_per_million_chars: null as number | null,
@@ -6299,6 +6372,8 @@ const closeCreateModal = () => {
   createForm.long_context_pricing_enabled = true;
   createForm.model_pricing = [];
   createForm.web_search_price_per_call = null;
+  createForm.sol_long_context_exempt = false;
+  createForm.sol_context_window = 0;
   createForm.search_price_per_1k = null;
   createForm.audio_realtime_price_per_min = null;
   createForm.audio_tts_price_per_million_chars = null;
@@ -6422,6 +6497,7 @@ const handleCreateGroup = async () => {
     // 构建请求数据，包含模型路由配置
     const requestData = {
       ...createGroupForm,
+      sol_context_window: normalizeSolContextWindow(createForm.sol_context_window),
       daily_free_limit_usd: createForm.is_free
         ? normalizeOptionalLimit(
             createForm.daily_free_limit_usd as number | string | null,
@@ -6607,6 +6683,8 @@ const handleEdit = async (group: AdminGroup) => {
     group.video_model_prices,
   );
   editForm.web_search_price_per_call = group.web_search_price_per_call ?? null;
+  editForm.sol_long_context_exempt = group.sol_long_context_exempt ?? false;
+  editForm.sol_context_window = group.sol_context_window ?? 0;
   editForm.search_price_per_1k = group.search_price_per_1k ?? null;
   editForm.audio_realtime_price_per_min = group.audio_realtime_price_per_min ?? null;
   editForm.audio_tts_price_per_million_chars = group.audio_tts_price_per_million_chars ?? null;
@@ -6720,6 +6798,8 @@ const closeEditModal = () => {
   editForm.long_context_pricing_enabled = true;
   editForm.model_pricing = [];
   editForm.web_search_price_per_call = null;
+  editForm.sol_long_context_exempt = false;
+  editForm.sol_context_window = 0;
   editForm.search_price_per_1k = null;
   editForm.audio_realtime_price_per_min = null;
   editForm.audio_tts_price_per_million_chars = null;
@@ -6774,6 +6854,7 @@ const handleUpdateGroup = async () => {
     // 转换 fallback_group_id: null -> 0 (后端使用 0 表示清除)
     const payload = {
       ...editForm,
+      sol_context_window: normalizeSolContextWindow(editForm.sol_context_window),
       daily_free_limit_usd: editForm.is_free
         ? normalizeOptionalLimit(
             editForm.daily_free_limit_usd as number | string | null,

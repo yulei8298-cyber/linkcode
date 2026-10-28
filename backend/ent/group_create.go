@@ -906,6 +906,34 @@ func (_c *GroupCreate) SetNillableCodexModelsManifestConfig(v *domain.GroupCodex
 	return _c
 }
 
+// SetSolLongContextExempt sets the "sol_long_context_exempt" field.
+func (_c *GroupCreate) SetSolLongContextExempt(v bool) *GroupCreate {
+	_c.mutation.SetSolLongContextExempt(v)
+	return _c
+}
+
+// SetNillableSolLongContextExempt sets the "sol_long_context_exempt" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSolLongContextExempt(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetSolLongContextExempt(*v)
+	}
+	return _c
+}
+
+// SetSolContextWindow sets the "sol_context_window" field.
+func (_c *GroupCreate) SetSolContextWindow(v int) *GroupCreate {
+	_c.mutation.SetSolContextWindow(v)
+	return _c
+}
+
+// SetNillableSolContextWindow sets the "sol_context_window" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSolContextWindow(v *int) *GroupCreate {
+	if v != nil {
+		_c.SetSolContextWindow(*v)
+	}
+	return _c
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (_c *GroupCreate) SetRpmLimit(v int) *GroupCreate {
 	_c.mutation.SetRpmLimit(v)
@@ -1297,6 +1325,14 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultCodexModelsManifestConfig
 		_c.mutation.SetCodexModelsManifestConfig(v)
 	}
+	if _, ok := _c.mutation.SolLongContextExempt(); !ok {
+		v := group.DefaultSolLongContextExempt
+		_c.mutation.SetSolLongContextExempt(v)
+	}
+	if _, ok := _c.mutation.SolContextWindow(); !ok {
+		v := group.DefaultSolContextWindow
+		_c.mutation.SetSolContextWindow(v)
+	}
 	if _, ok := _c.mutation.RpmLimit(); !ok {
 		v := group.DefaultRpmLimit
 		_c.mutation.SetRpmLimit(v)
@@ -1518,6 +1554,12 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.CodexModelsManifestConfig(); !ok {
 		return &ValidationError{Name: "codex_models_manifest_config", err: errors.New(`ent: missing required field "Group.codex_models_manifest_config"`)}
+	}
+	if _, ok := _c.mutation.SolLongContextExempt(); !ok {
+		return &ValidationError{Name: "sol_long_context_exempt", err: errors.New(`ent: missing required field "Group.sol_long_context_exempt"`)}
+	}
+	if _, ok := _c.mutation.SolContextWindow(); !ok {
+		return &ValidationError{Name: "sol_context_window", err: errors.New(`ent: missing required field "Group.sol_context_window"`)}
 	}
 	if _, ok := _c.mutation.RpmLimit(); !ok {
 		return &ValidationError{Name: "rpm_limit", err: errors.New(`ent: missing required field "Group.rpm_limit"`)}
@@ -1840,6 +1882,14 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CodexModelsManifestConfig(); ok {
 		_spec.SetField(group.FieldCodexModelsManifestConfig, field.TypeJSON, value)
 		_node.CodexModelsManifestConfig = value
+	}
+	if value, ok := _c.mutation.SolLongContextExempt(); ok {
+		_spec.SetField(group.FieldSolLongContextExempt, field.TypeBool, value)
+		_node.SolLongContextExempt = value
+	}
+	if value, ok := _c.mutation.SolContextWindow(); ok {
+		_spec.SetField(group.FieldSolContextWindow, field.TypeInt, value)
+		_node.SolContextWindow = value
 	}
 	if value, ok := _c.mutation.RpmLimit(); ok {
 		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
@@ -3072,6 +3122,36 @@ func (u *GroupUpsert) SetCodexModelsManifestConfig(v domain.GroupCodexModelsMani
 // UpdateCodexModelsManifestConfig sets the "codex_models_manifest_config" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateCodexModelsManifestConfig() *GroupUpsert {
 	u.SetExcluded(group.FieldCodexModelsManifestConfig)
+	return u
+}
+
+// SetSolLongContextExempt sets the "sol_long_context_exempt" field.
+func (u *GroupUpsert) SetSolLongContextExempt(v bool) *GroupUpsert {
+	u.Set(group.FieldSolLongContextExempt, v)
+	return u
+}
+
+// UpdateSolLongContextExempt sets the "sol_long_context_exempt" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSolLongContextExempt() *GroupUpsert {
+	u.SetExcluded(group.FieldSolLongContextExempt)
+	return u
+}
+
+// SetSolContextWindow sets the "sol_context_window" field.
+func (u *GroupUpsert) SetSolContextWindow(v int) *GroupUpsert {
+	u.Set(group.FieldSolContextWindow, v)
+	return u
+}
+
+// UpdateSolContextWindow sets the "sol_context_window" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSolContextWindow() *GroupUpsert {
+	u.SetExcluded(group.FieldSolContextWindow)
+	return u
+}
+
+// AddSolContextWindow adds v to the "sol_context_window" field.
+func (u *GroupUpsert) AddSolContextWindow(v int) *GroupUpsert {
+	u.Add(group.FieldSolContextWindow, v)
 	return u
 }
 
@@ -4447,6 +4527,41 @@ func (u *GroupUpsertOne) SetCodexModelsManifestConfig(v domain.GroupCodexModelsM
 func (u *GroupUpsertOne) UpdateCodexModelsManifestConfig() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateCodexModelsManifestConfig()
+	})
+}
+
+// SetSolLongContextExempt sets the "sol_long_context_exempt" field.
+func (u *GroupUpsertOne) SetSolLongContextExempt(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSolLongContextExempt(v)
+	})
+}
+
+// UpdateSolLongContextExempt sets the "sol_long_context_exempt" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSolLongContextExempt() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSolLongContextExempt()
+	})
+}
+
+// SetSolContextWindow sets the "sol_context_window" field.
+func (u *GroupUpsertOne) SetSolContextWindow(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSolContextWindow(v)
+	})
+}
+
+// AddSolContextWindow adds v to the "sol_context_window" field.
+func (u *GroupUpsertOne) AddSolContextWindow(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddSolContextWindow(v)
+	})
+}
+
+// UpdateSolContextWindow sets the "sol_context_window" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSolContextWindow() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSolContextWindow()
 	})
 }
 
@@ -6005,6 +6120,41 @@ func (u *GroupUpsertBulk) SetCodexModelsManifestConfig(v domain.GroupCodexModels
 func (u *GroupUpsertBulk) UpdateCodexModelsManifestConfig() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateCodexModelsManifestConfig()
+	})
+}
+
+// SetSolLongContextExempt sets the "sol_long_context_exempt" field.
+func (u *GroupUpsertBulk) SetSolLongContextExempt(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSolLongContextExempt(v)
+	})
+}
+
+// UpdateSolLongContextExempt sets the "sol_long_context_exempt" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSolLongContextExempt() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSolLongContextExempt()
+	})
+}
+
+// SetSolContextWindow sets the "sol_context_window" field.
+func (u *GroupUpsertBulk) SetSolContextWindow(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSolContextWindow(v)
+	})
+}
+
+// AddSolContextWindow adds v to the "sol_context_window" field.
+func (u *GroupUpsertBulk) AddSolContextWindow(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddSolContextWindow(v)
+	})
+}
+
+// UpdateSolContextWindow sets the "sol_context_window" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSolContextWindow() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSolContextWindow()
 	})
 }
 

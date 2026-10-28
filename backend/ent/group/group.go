@@ -148,6 +148,10 @@ const (
 	FieldModelAllowlist = "model_allowlist"
 	// FieldCodexModelsManifestConfig holds the string denoting the codex_models_manifest_config field in the database.
 	FieldCodexModelsManifestConfig = "codex_models_manifest_config"
+	// FieldSolLongContextExempt holds the string denoting the sol_long_context_exempt field in the database.
+	FieldSolLongContextExempt = "sol_long_context_exempt"
+	// FieldSolContextWindow holds the string denoting the sol_context_window field in the database.
+	FieldSolContextWindow = "sol_context_window"
 	// FieldRpmLimit holds the string denoting the rpm_limit field in the database.
 	FieldRpmLimit = "rpm_limit"
 	// FieldMaxReasoningEffort holds the string denoting the max_reasoning_effort field in the database.
@@ -303,6 +307,8 @@ var Columns = []string{
 	FieldModelsListConfig,
 	FieldModelAllowlist,
 	FieldCodexModelsManifestConfig,
+	FieldSolLongContextExempt,
+	FieldSolContextWindow,
 	FieldRpmLimit,
 	FieldMaxReasoningEffort,
 	FieldMaxReasoningEffortOverLimit,
@@ -449,6 +455,10 @@ var (
 	DefaultModelAllowlist domain.GroupModelAllowlist
 	// DefaultCodexModelsManifestConfig holds the default value on creation for the "codex_models_manifest_config" field.
 	DefaultCodexModelsManifestConfig domain.GroupCodexModelsManifestConfig
+	// DefaultSolLongContextExempt holds the default value on creation for the "sol_long_context_exempt" field.
+	DefaultSolLongContextExempt bool
+	// DefaultSolContextWindow holds the default value on creation for the "sol_context_window" field.
+	DefaultSolContextWindow int
 	// DefaultRpmLimit holds the default value on creation for the "rpm_limit" field.
 	DefaultRpmLimit int
 	// DefaultMaxReasoningEffort holds the default value on creation for the "max_reasoning_effort" field.
@@ -760,6 +770,16 @@ func ByRequirePrivacySet(opts ...sql.OrderTermOption) OrderOption {
 // ByDefaultMappedModel orders the results by the default_mapped_model field.
 func ByDefaultMappedModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDefaultMappedModel, opts...).ToFunc()
+}
+
+// BySolLongContextExempt orders the results by the sol_long_context_exempt field.
+func BySolLongContextExempt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSolLongContextExempt, opts...).ToFunc()
+}
+
+// BySolContextWindow orders the results by the sol_context_window field.
+func BySolContextWindow(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSolContextWindow, opts...).ToFunc()
 }
 
 // ByRpmLimit orders the results by the rpm_limit field.

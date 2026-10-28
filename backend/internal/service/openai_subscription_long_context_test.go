@@ -41,73 +41,81 @@ func TestOpenAISubscriptionLongContextExempt(t *testing.T) {
 }
 
 // 同时覆盖远程目录更新、静态兜底、旧计费入口和分组入口，校验真实扣款与账号成本。
+// LinkCode 二开：向用户收费是否免收 Sol 长上下文附加费只看分组开关（与账号类型无关）；
+// 账号统计成本仍按官方口径，订阅账号的 Sol 请求不计附加费。
 func TestOpenAIGatewayServiceRecordUsage_GPT61SolSubscriptionLongContext(t *testing.T) {
 	for _, catalog := range []bool{false, true} {
 		for _, groupMode := range []string{"无分组", "分组关闭", "分组开启"} {
-			for _, accountEnabled := range []bool{false, true} {
-				for _, accountType := range []string{AccountTypeOAuth, AccountTypeSetupToken, AccountTypeAPIKey} {
-					for _, tier := range []string{"", "priority"} {
-						name := fmt.Sprintf("目录=%t/%s/账号开关=%t/%s/%s", catalog, groupMode, accountEnabled, accountType, tier)
-						t.Run(name, func(t *testing.T) {
-							usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
-							userRepo := &openAIRecordUsageUserRepoStub{}
-							svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, &openAIRecordUsageSubRepoStub{}, nil)
-							if catalog {
-								svc.billingService = NewBillingService(svc.cfg, newStubPricingServiceFromJSON(t, `{
+			for _, solExempt := range []bool{false, true} {
+				if groupMode == "无分组" && solExempt {
+					continue
+				}
+				for _, accountEnabled := range []bool{false, true} {
+					for _, accountType := range []string{AccountTypeOAuth, AccountTypeSetupToken, AccountTypeAPIKey} {
+						for _, tier := range []string{"", "priority"} {
+							name := fmt.Sprintf("目录=%t/%s/分组豁免=%t/账号开关=%t/%s/%s", catalog, groupMode, solExempt, accountEnabled, accountType, tier)
+							t.Run(name, func(t *testing.T) {
+								usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+								userRepo := &openAIRecordUsageUserRepoStub{}
+								svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, &openAIRecordUsageSubRepoStub{}, nil)
+								if catalog {
+									svc.billingService = NewBillingService(svc.cfg, newStubPricingServiceFromJSON(t, `{
 									"gpt-6.1-sol": {"litellm_provider": "openai", "mode": "chat",
 									"input_cost_per_token": 2e-6, "output_cost_per_token": 10e-6,
 									"cache_read_input_token_cost": 0.1e-6, "cache_creation_input_token_cost": 2.5e-6,
 									"input_cost_per_token_above_272k_tokens": 4e-6,
 									"output_cost_per_token_above_272k_tokens": 15e-6}
 								}`))
-							}
-							apiKey := &APIKey{ID: 1}
-							if groupMode != "无分组" {
-								apiKey = openAIRecordUsageAPIKeyWithGroup(svc, 1, groupMode == "分组开启")
-								apiKey.GroupID = i64p(1)
-								apiKey.Group.RateMultiplier = 1.1
-								svc.channelService = newTestChannelServiceForStats(t, &Channel{ID: 1, Status: StatusActive}, 1, PlatformOpenAI)
-							}
-							account := &Account{ID: 3, Platform: PlatformOpenAI, Type: accountType,
-								Extra: map[string]any{openAILongContextBillingEnabledKey: accountEnabled}}
-							err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
-								Result: &OpenAIForwardResult{
-									RequestID: name, Model: "gpt-6.1-sol", ServiceTier: &tier, Duration: time.Second,
-									// 普通输入只有 200k，由缓存使总上下文越过 272k。
-									Usage: OpenAIUsage{InputTokens: 300000, OutputTokens: 2000, CacheReadInputTokens: 80000, CacheCreationInputTokens: 20000},
-								},
-								APIKey: apiKey, User: &User{ID: 2}, Account: account,
-							})
-							require.NoError(t, err)
-							wantLong := accountType == AccountTypeAPIKey && (accountEnabled || groupMode == "分组开启")
-							inputFactor, outputFactor, tierFactor := 1.0, 1.0, 1.0
-							if wantLong {
-								inputFactor, outputFactor = 2, 1.5
-							}
-							if tier == "priority" {
-								tierFactor = 2
-							}
-							log := usageRepo.lastLog
-							require.NotNil(t, log)
-							require.Equal(t, wantLong, log.LongContextBillingApplied)
-							require.InDelta(t, 200000*2e-6*inputFactor*tierFactor, log.InputCost, 1e-12)
-							require.InDelta(t, 80000*0.1e-6*inputFactor*tierFactor, log.CacheReadCost, 1e-12)
-							require.InDelta(t, 20000*2.5e-6*inputFactor*tierFactor, log.CacheCreationCost, 1e-12)
-							require.InDelta(t, 2000*10e-6*outputFactor*tierFactor, log.OutputCost, 1e-12)
-							wantTotal := (0.458*inputFactor + 0.02*outputFactor) * tierFactor
-							require.InDelta(t, wantTotal, log.TotalCost, 1e-12)
-							require.InDelta(t, wantTotal*1.1, log.ActualCost, 1e-12)
-							require.Equal(t, 1, userRepo.deductCalls)
-							require.InDelta(t, wantTotal*1.1, userRepo.lastAmount, 1e-12)
-							if groupMode != "无分组" {
-								wantStats := 0.478 * tierFactor
-								if accountType == AccountTypeAPIKey && accountEnabled {
-									wantStats = (0.458*2 + 0.02*1.5) * tierFactor
 								}
-								require.NotNil(t, log.AccountStatsCost)
-								require.InDelta(t, wantStats, *log.AccountStatsCost, 1e-12)
-							}
-						})
+								apiKey := &APIKey{ID: 1}
+								if groupMode != "无分组" {
+									apiKey = openAIRecordUsageAPIKeyWithGroup(svc, 1, groupMode == "分组开启")
+									apiKey.Group.SolLongContextExempt = solExempt
+									apiKey.GroupID = i64p(1)
+									apiKey.Group.RateMultiplier = 1.1
+									svc.channelService = newTestChannelServiceForStats(t, &Channel{ID: 1, Status: StatusActive}, 1, PlatformOpenAI)
+								}
+								account := &Account{ID: 3, Platform: PlatformOpenAI, Type: accountType,
+									Extra: map[string]any{openAILongContextBillingEnabledKey: accountEnabled}}
+								err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+									Result: &OpenAIForwardResult{
+										RequestID: name, Model: "gpt-6.1-sol", ServiceTier: &tier, Duration: time.Second,
+										// 普通输入只有 200k，由缓存使总上下文越过 272k。
+										Usage: OpenAIUsage{InputTokens: 300000, OutputTokens: 2000, CacheReadInputTokens: 80000, CacheCreationInputTokens: 20000},
+									},
+									APIKey: apiKey, User: &User{ID: 2}, Account: account,
+								})
+								require.NoError(t, err)
+								wantLong := (accountEnabled || groupMode == "分组开启") && !solExempt
+								inputFactor, outputFactor, tierFactor := 1.0, 1.0, 1.0
+								if wantLong {
+									inputFactor, outputFactor = 2, 1.5
+								}
+								if tier == "priority" {
+									tierFactor = 2
+								}
+								log := usageRepo.lastLog
+								require.NotNil(t, log)
+								require.Equal(t, wantLong, log.LongContextBillingApplied)
+								require.InDelta(t, 200000*2e-6*inputFactor*tierFactor, log.InputCost, 1e-12)
+								require.InDelta(t, 80000*0.1e-6*inputFactor*tierFactor, log.CacheReadCost, 1e-12)
+								require.InDelta(t, 20000*2.5e-6*inputFactor*tierFactor, log.CacheCreationCost, 1e-12)
+								require.InDelta(t, 2000*10e-6*outputFactor*tierFactor, log.OutputCost, 1e-12)
+								wantTotal := (0.458*inputFactor + 0.02*outputFactor) * tierFactor
+								require.InDelta(t, wantTotal, log.TotalCost, 1e-12)
+								require.InDelta(t, wantTotal*1.1, log.ActualCost, 1e-12)
+								require.Equal(t, 1, userRepo.deductCalls)
+								require.InDelta(t, wantTotal*1.1, userRepo.lastAmount, 1e-12)
+								if groupMode != "无分组" {
+									wantStats := 0.478 * tierFactor
+									if accountType == AccountTypeAPIKey && accountEnabled {
+										wantStats = (0.458*2 + 0.02*1.5) * tierFactor
+									}
+									require.NotNil(t, log.AccountStatsCost)
+									require.InDelta(t, wantStats, *log.AccountStatsCost, 1e-12)
+								}
+							})
+						}
 					}
 				}
 			}
@@ -140,7 +148,7 @@ func TestOpenAIGatewayServiceRecordUsage_GPT61SolUsesCredentialAndUpstreamModel(
 			err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
 				Result: &OpenAIForwardResult{RequestID: tt.name, Model: tt.model, UpstreamModel: tt.upstream,
 					Usage: OpenAIUsage{InputTokens: 300000, OutputTokens: 2000}, Duration: time.Second},
-				APIKey: openAIRecordUsageAPIKeyWithGroup(svc, 1, true), User: &User{ID: 2},
+				APIKey: solExemptAPIKey(svc), User: &User{ID: 2},
 				Account: &Account{ID: 3, Platform: PlatformOpenAI, Type: AccountTypeOAuth, ParentAccountID: &parentID, QuotaDimension: QuotaDimensionSpark},
 			})
 			require.NoError(t, err)
@@ -179,27 +187,31 @@ func TestCalculateCostUnified_ModelLongContextExemptionPreservesCustomIntervals(
 func TestOpenAIGatewayServiceRecordUsage_GPT61SolLongContextBoundary(t *testing.T) {
 	for _, totalInput := range []int{271999, 272000, 272001} {
 		for _, accountType := range []string{AccountTypeOAuth, AccountTypeAPIKey} {
-			t.Run(fmt.Sprintf("%s/%d", accountType, totalInput), func(t *testing.T) {
-				usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
-				svc := newOpenAIRecordUsageServiceForTest(usageRepo, &openAIRecordUsageUserRepoStub{}, &openAIRecordUsageSubRepoStub{}, nil)
-				err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
-					Result: &OpenAIForwardResult{RequestID: "boundary", Model: "gpt-6.1-sol", Duration: time.Second,
-						Usage: OpenAIUsage{InputTokens: totalInput, OutputTokens: 1000}},
-					APIKey: openAIRecordUsageAPIKeyWithGroup(svc, 1, true), User: &User{ID: 2},
-					Account: &Account{ID: 3, Platform: PlatformOpenAI, Type: accountType,
-						Extra: map[string]any{openAILongContextBillingEnabledKey: true}},
+			for _, solExempt := range []bool{false, true} {
+				t.Run(fmt.Sprintf("%s/%d/分组豁免=%t", accountType, totalInput, solExempt), func(t *testing.T) {
+					usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+					svc := newOpenAIRecordUsageServiceForTest(usageRepo, &openAIRecordUsageUserRepoStub{}, &openAIRecordUsageSubRepoStub{}, nil)
+					apiKey := openAIRecordUsageAPIKeyWithGroup(svc, 1, true)
+					apiKey.Group.SolLongContextExempt = solExempt
+					err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+						Result: &OpenAIForwardResult{RequestID: "boundary", Model: "gpt-6.1-sol", Duration: time.Second,
+							Usage: OpenAIUsage{InputTokens: totalInput, OutputTokens: 1000}},
+						APIKey: apiKey, User: &User{ID: 2},
+						Account: &Account{ID: 3, Platform: PlatformOpenAI, Type: accountType,
+							Extra: map[string]any{openAILongContextBillingEnabledKey: true}},
+					})
+					require.NoError(t, err)
+					wantLong := !solExempt && totalInput > 272000
+					wantInput, wantOutput := float64(totalInput)*2e-6, 0.01
+					if wantLong {
+						wantInput *= 2
+						wantOutput *= 1.5
+					}
+					require.Equal(t, wantLong, usageRepo.lastLog.LongContextBillingApplied)
+					require.InDelta(t, wantInput, usageRepo.lastLog.InputCost, 1e-12)
+					require.InDelta(t, wantOutput, usageRepo.lastLog.OutputCost, 1e-12)
 				})
-				require.NoError(t, err)
-				wantLong := accountType == AccountTypeAPIKey && totalInput > 272000
-				wantInput, wantOutput := float64(totalInput)*2e-6, 0.01
-				if wantLong {
-					wantInput *= 2
-					wantOutput *= 1.5
-				}
-				require.Equal(t, wantLong, usageRepo.lastLog.LongContextBillingApplied)
-				require.InDelta(t, wantInput, usageRepo.lastLog.InputCost, 1e-12)
-				require.InDelta(t, wantOutput, usageRepo.lastLog.OutputCost, 1e-12)
-			})
+			}
 		}
 	}
 }
@@ -208,7 +220,7 @@ func TestOpenAIGatewayServiceRecordUsage_GPT61SolExemptionSurvivesRepricing(t *t
 	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
 	userRepo := &openAIRecordUsageUserRepoStub{}
 	svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, &openAIRecordUsageSubRepoStub{}, nil)
-	apiKey := openAIRecordUsageAPIKeyWithGroup(svc, 1, true)
+	apiKey := solExemptAPIKey(svc)
 	apiKey.GroupID = i64p(1)
 	apiKey.Group.Platform = PlatformOpenAI
 	apiKey.Group.RateMultiplier = 1.1
@@ -235,4 +247,11 @@ func TestOpenAIGatewayServiceRecordUsage_GPT61SolExemptionSurvivesRepricing(t *t
 	require.False(t, usageRepo.lastLog.LongContextBillingApplied)
 	require.NotNil(t, usageRepo.lastLog.AccountStatsCost)
 	require.InDelta(t, standardCost*2, *usageRepo.lastLog.AccountStatsCost, 1e-12)
+}
+
+// solExemptAPIKey 返回开启了 Sol 长上下文分组豁免的 API Key（分组长上下文阶梯价开启）。
+func solExemptAPIKey(svc *OpenAIGatewayService) *APIKey {
+	apiKey := openAIRecordUsageAPIKeyWithGroup(svc, 1, true)
+	apiKey.Group.SolLongContextExempt = true
+	return apiKey
 }

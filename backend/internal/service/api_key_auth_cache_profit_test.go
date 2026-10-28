@@ -55,7 +55,7 @@ func TestAPIKeyAuthSnapshotProfitControlRoundtrip(t *testing.T) {
 	snapshot := svc.snapshotFromAPIKey(context.Background(), apiKey)
 	require.NotNil(t, snapshot)
 	require.Equal(t, apiKeyAuthSnapshotVersion, snapshot.Version)
-	require.Equal(t, 25, snapshot.Version, "v25 在 v24（模型白名单、本地授权、定价策略）基础上携带用户级套餐并发")
+	require.Equal(t, 27, snapshot.Version, "v27：合并官方 v25 的 image_count_billing，并携带用户级套餐并发与 Sol 长上下文分组策略")
 
 	// 模拟 L2 缓存的完整 JSON 往返（与 apiKeyCache.SetAuthCache/GetAuthCache 同构）。
 	payload, err := json.Marshal(&APIKeyAuthCacheEntry{Snapshot: snapshot})

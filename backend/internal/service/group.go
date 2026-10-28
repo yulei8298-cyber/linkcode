@@ -124,6 +124,10 @@ type Group struct {
 	// CodexModelsManifestConfig 开启后，普通模型列表与 Codex manifest 优先使用
 	// 固定账号列表拉取并合并，不经过调度器（仅 openai 平台）。
 	CodexModelsManifestConfig GroupCodexModelsManifestConfig
+	// SolLongContextExempt 开启后该分组的 GPT-6.1 Sol 请求不向用户收取长上下文附加费（LinkCode 二开）。
+	SolLongContextExempt bool
+	// SolContextWindow 下发给 Codex 客户端的 Sol 上下文窗口；0 表示沿用上游/官方目录值。
+	SolContextWindow int
 
 	// RPMLimit 分组级每分钟请求数上限（0 = 不限制）。
 	// 一旦设置即接管该分组用户的限流（覆盖用户级 rpm_limit），可被 user-group rpm_override 进一步覆盖。

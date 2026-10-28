@@ -159,6 +159,10 @@ func (s *OpenAIGatewayService) BuildGroupConfiguredCodexModelsManifest(
 	if err != nil {
 		return nil, false, fmt.Errorf("build group configured Codex models: %w", err)
 	}
+	body, _, err = applyGroupSolContextWindow(body, group)
+	if err != nil {
+		return nil, false, fmt.Errorf("apply group Sol context window: %w", err)
+	}
 	manifest := &OpenAIModelsResponse{
 		Body: body,
 		ETag: codexModelsManifestBodyETag(body),
@@ -216,7 +220,11 @@ func (s *OpenAIGatewayService) MergeGroupConfiguredCodexModels(
 		return fmt.Errorf("filter retired Codex models: %w", err)
 	}
 	body = filtered
-	if changed || retired {
+	body, solWindowChanged, err := applyGroupSolContextWindow(body, group)
+	if err != nil {
+		return fmt.Errorf("apply group Sol context window: %w", err)
+	}
+	if changed || retired || solWindowChanged {
 		manifest.Body = body
 		manifest.ETag = codexModelsManifestBodyETag(body)
 	}
