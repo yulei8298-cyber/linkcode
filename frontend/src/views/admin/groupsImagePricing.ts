@@ -9,6 +9,12 @@ export const imagePricingPlatforms = new Set([
 export const supportsImagePricingPlatform = (platform: string): boolean =>
   imagePricingPlatforms.has(platform);
 
+// 与后端 DefaultAllowImageGenerationForPlatform 一致：这些平台新建分组默认允许生图。
+const imageGenerationDefaultPlatforms = new Set(["antigravity", "gemini", "grok"]);
+
+export const defaultAllowImageGenerationForPlatform = (platform: string): boolean =>
+  imageGenerationDefaultPlatforms.has(platform);
+
 // 视频平台的分组价是按秒的分组覆盖价（留空使用模型定价），与 Grok 共用同一组字段。
 export const supportsVideoPricingPlatform = (platform: string): boolean =>
   platform === "grok" || platform === "video";

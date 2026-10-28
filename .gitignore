@@ -135,6 +135,7 @@ vite.config.js
 docs/*
 !docs/同步开源版本0.1.178并兼容二开记录.md
 !docs/同步开源版本0.1.179并兼容二开记录.md
+!docs/admin-api-keys.md
 !docs/PAYMENT.md
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md

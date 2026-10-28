@@ -15,10 +15,10 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-// v24 includes model allowlist plus local free/chat-station authorization, pricing and Fast/reasoning
-// policy fields, plus the Codex model manifest configuration. Bump this whenever
-// snapshot shape changes so stale L2 entries are rebuilt.
-const apiKeyAuthSnapshotVersion = 25
+// 快照包含分组模型白名单、本地免费分组/对话站授权、定价与 Fast/推理策略、Codex 模型目录配置，
+// 以及官方 v25 新增的分组 image_count_billing 开关。本地与官方都曾把版本号升到 25，
+// 合并后升到 26，确保两种旧形状的 L2 缓存都会重建。快照形状变化时必须继续递增。
+const apiKeyAuthSnapshotVersion = 26
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -401,6 +401,7 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			IPBlacklist:                     apiKey.Group.IPBlacklist,
 			AllowImageGeneration:            apiKey.Group.AllowImageGeneration,
 			AllowBatchImageGeneration:       apiKey.Group.AllowBatchImageGeneration,
+			ImageCountBilling:               apiKey.Group.ImageCountBilling,
 			ImageRateIndependent:            apiKey.Group.ImageRateIndependent,
 			ImageRateMultiplier:             apiKey.Group.ImageRateMultiplier,
 			ImagePrice1K:                    apiKey.Group.ImagePrice1K,
@@ -510,6 +511,7 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			IPBlacklist:                     snapshot.Group.IPBlacklist,
 			AllowImageGeneration:            snapshot.Group.AllowImageGeneration,
 			AllowBatchImageGeneration:       snapshot.Group.AllowBatchImageGeneration,
+			ImageCountBilling:               snapshot.Group.ImageCountBilling,
 			ImageRateIndependent:            snapshot.Group.ImageRateIndependent,
 			ImageRateMultiplier:             snapshot.Group.ImageRateMultiplier,
 			ImagePrice1K:                    snapshot.Group.ImagePrice1K,

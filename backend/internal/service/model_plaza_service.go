@@ -43,6 +43,7 @@ type PlazaGroup struct {
 	ID                 int64
 	Name               string
 	Description        string
+	I18n               GroupI18n
 	Platform           string
 	SubscriptionType   string
 	RateMultiplier     float64
@@ -128,6 +129,7 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 			ID:                        g.ID,
 			Name:                      g.Name,
 			Description:               g.Description,
+			I18n:                      g.I18n,
 			Platform:                  g.Platform,
 			SubscriptionType:          g.SubscriptionType,
 			RateMultiplier:            g.RateMultiplier,
@@ -299,6 +301,11 @@ func (s *ModelPlazaService) fillDisplayPricing(ctx context.Context, m *PlazaMode
 	channelPricing := m.Pricing
 	if groupPricing := matchGroupModelPricing(g, m.Name); groupPricing != nil {
 		m.Pricing = groupPricing
+		// 分组模型级固定价就是实收价，不能再被分组图片兜底档位覆盖。
+		// 否则模型广场会显示 image_price_1k/2k/4k，而实际按 model_pricing 扣费。
+		if groupPricing.BillingMode == BillingModeImage || groupPricing.BillingMode == BillingModePerRequest {
+			return
+		}
 	}
 	if m.Platform == PlatformVideo {
 		// 视频模型按秒 / 按次计价，不展示 token 阶梯。

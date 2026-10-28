@@ -140,6 +140,8 @@ type chatStationAPIKeyRepository interface {
 
 // APIKeyRateLimitData holds rate limit usage and window state for an API key.
 type APIKeyRateLimitData struct {
+	// QuotaUsed 是总额度已用量（quota_used）。
+	QuotaUsed     float64
 	Usage5h       float64
 	Usage1d       float64
 	Usage7d       float64
@@ -671,11 +673,7 @@ func paginateAPIKeys(keys []APIKey, params pagination.PaginationParams) []APIKey
 		return []APIKey{}
 	}
 	limit := params.Limit()
-	page := params.Page
-	if page < 1 {
-		page = 1
-	}
-	offset := (page - 1) * limit
+	offset := params.Offset()
 	if offset >= len(keys) {
 		return []APIKey{}
 	}
