@@ -1404,6 +1404,49 @@ func TestClassifyOpsClientBusinessLimitedMarkerExcludesCustomPolicyDenialFromSLA
 	require.Equal(t, "client_request", errorSource)
 }
 
+func TestClassifyOpsLocalUpgradeRequiredExcludedFromSLA(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	errType := normalizeOpsErrorType("invalid_request_error", "")
+	phase, isBusinessLimited, errorOwner, errorSource := classifyOpsErrorLog(c, errType, "WebSocket upgrade required (Upgrade: websocket)", "", http.StatusUpgradeRequired)
+
+	require.Equal(t, "invalid_request_error", errType)
+	require.True(t, isBusinessLimited, "本地 426 是客户端协议问题，应排除出 SLA")
+	// 阶段与归属保持自然分类，不能被误标成 auth。
+	require.Equal(t, "request", phase)
+	require.Equal(t, "client", errorOwner)
+	require.Equal(t, "client_request", errorSource)
+}
+
+func TestClassifyOpsUpstreamUpgradeRequiredStillCountsForSLA(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Set(service.OpsUpstreamStatusCodeKey, http.StatusUpgradeRequired)
+
+	errType := normalizeOpsErrorType("upstream_error", "")
+	_, isBusinessLimited, errorOwner, _ := classifyOpsErrorLog(c, errType, "Upstream request failed", "", http.StatusUpgradeRequired)
+
+	require.False(t, isBusinessLimited, "上游自己返回的 426 是供应商侧问题，仍应计入 SLA")
+	require.Equal(t, "provider", errorOwner)
+}
+
+func TestClassifyOpsModelNotFoundStillExcludedFromSLA(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalModelConfiguration)
+
+	errType := normalizeOpsErrorType("model_not_found", "")
+	phase, isBusinessLimited, errorOwner, _ := classifyOpsErrorLog(c, errType, `Model "gpt-6-luna" is not supported by any configured account in this group`, "", http.StatusNotFound)
+
+	require.True(t, isBusinessLimited)
+	require.Equal(t, "routing", phase)
+	require.Equal(t, "platform", errorOwner)
+}
+
 func TestClassifyOpsOtherErrorsStillCountForSLA(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

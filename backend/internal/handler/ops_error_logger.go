@@ -2261,11 +2261,16 @@ func classifyOpsIsBusinessLimited(errType, phase, code string, status int, messa
 		// SLA/错误率排除“用户级业务限制”
 		return true
 	}
+	// 426 是网关对客户端协议的要求（如对 /responses 发起非 WebSocket 的 GET），属于客户端
+	// 使用方式问题而非服务可用性故障。本函数只在没有上游错误上下文时调用，
+	// 因此上游自身返回的 426 不会被排除，仍计入 SLA。
+	if status == http.StatusUpgradeRequired {
+		return true
+	}
 	// Avoid treating upstream rate limits as business-limited.
 	if errType == "rate_limit_error" && strings.Contains(strings.ToLower(message), "upstream") {
 		return false
 	}
-	_ = status
 	return false
 }
 
