@@ -557,6 +557,12 @@ export default {
         claudeCodeVersionAutoSyncHint: '每小时从官方发布渠道获取最新版本的 Claude Code 客户端版本号，无需为了跟版本而升级本服务。关闭后停止获取新版本，已同步的版本仍可使用；上方手填版本始终优先。',
         claudeCodeVersionSyncedValue: '当前同步到：{version}',
         codexHardeningTitle: 'Codex 设置',
+        requestTimezoneEnabled: '请求时区绑定',
+        requestTimezoneEnabledDesc: '开启后可选手动账号时区或按请求出口 IP 自动识别，替换已有环境上下文、网页搜索时区及受支持的时区请求头。保留日期和普通对话；关闭后不改写。此功能不保证改善模型表现。',
+        requestTimezoneMode: '时区来源',
+        requestTimezoneManual: '手动：使用账号配置',
+        requestTimezoneAuto: '自动：跟随出口 IP',
+        requestTimezoneModeDesc: '手动模式默认 Asia/Singapore；自动模式经请求出口识别 IP 时区，切换代理后重新识别，失败时保留原文。保留日期和普通对话，不保证改善模型表现。',
         codexTicketEnabled: '292 打票',
         codexTicketEnabledDesc:
           '关闭后不打票、不注入 x-codex-turn-state，按原链路转发。开启后后台打票，并在业务请求中覆盖该头。',

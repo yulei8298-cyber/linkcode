@@ -9,6 +9,7 @@ import (
 )
 
 type bulkOpenAISettings struct {
+	requestTimezone         bool
 	longContextBilling      bool
 	endpointCapabilities    bool
 	responsesMode           bool
@@ -17,7 +18,7 @@ type bulkOpenAISettings struct {
 }
 
 func (s bulkOpenAISettings) any() bool {
-	return s.longContextBilling || s.endpointCapabilities || s.responsesMode
+	return s.requestTimezone || s.longContextBilling || s.endpointCapabilities || s.responsesMode
 }
 
 func normalizeBulkOpenAISettings(input *BulkUpdateAccountsInput) (bulkOpenAISettings, error) {
@@ -26,6 +27,12 @@ func normalizeBulkOpenAISettings(input *BulkUpdateAccountsInput) (bulkOpenAISett
 		return settings, nil
 	}
 
+	if _, exists := input.Extra[openAIRequestTimezoneExtraKey]; exists {
+		settings.requestTimezone = true
+		if err := ValidateOpenAIRequestTimezoneExtra(PlatformOpenAI, input.Extra); err != nil {
+			return settings, err
+		}
+	}
 	if _, exists := input.Extra[openAILongContextBillingEnabledKey]; exists {
 		settings.longContextBilling = true
 		if err := ValidateOpenAILongContextBillingExtra(PlatformOpenAI, input.Extra); err != nil {
@@ -163,6 +170,11 @@ func validateBulkOpenAISettingsTargets(
 			return 0, invalidBulkOpenAITarget(accountID, "account does not exist")
 		}
 
+		if settings.requestTimezone {
+			if err := ValidateOpenAIRequestTimezoneExtra(account.Platform, input.Extra); err != nil {
+				return 0, err
+			}
+		}
 		if settings.longContextBilling {
 			if account.Platform != PlatformOpenAI || !supportsOpenAILongContextBilling(account.Type) {
 				return 0, invalidBulkOpenAITarget(accountID, "long-context billing requires an OpenAI OAuth, setup-token, or API-key account")

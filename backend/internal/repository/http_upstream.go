@@ -211,6 +211,11 @@ func (s *httpUpstreamService) Do(req *http.Request, proxyURL string, accountID i
 		profile = service.HTTPUpstreamProfileFromContext(req.Context())
 	}
 
+	// 请求时区在传输层选定实际出口代理之后绑定，确保与真实出口 IP 一致。
+	req, bindErr := service.BindOpenAIRequestTimezone(req, proxyURL)
+	if bindErr != nil {
+		return nil, bindErr
+	}
 	// 获取或创建对应的客户端，并标记请求占用
 	entry, err := s.acquireClientWithProfile(proxyURL, accountID, accountConcurrency, profile)
 	if err != nil {
@@ -273,6 +278,11 @@ func (s *httpUpstreamService) DoWithTLS(req *http.Request, proxyURL string, acco
 		return nil, err
 	}
 
+	// 请求时区在传输层选定实际出口代理之后绑定，确保与真实出口 IP 一致。
+	req, bindErr := service.BindOpenAIRequestTimezone(req, proxyURL)
+	if bindErr != nil {
+		return nil, bindErr
+	}
 	entry, err := s.acquireClientWithTLS(proxyURL, accountID, accountConcurrency, profile, upstreamProfile)
 	if err != nil {
 		slog.Debug("tls_fingerprint_acquire_client_failed", "account_id", accountID, "error", err)
