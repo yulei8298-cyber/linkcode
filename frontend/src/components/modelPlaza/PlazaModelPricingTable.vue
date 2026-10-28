@@ -112,7 +112,13 @@
           </td>
 
           <!-- token 计费:输入 / 输出 / 缓存(写/读),有阶梯时每档一行;档位标签只放输入列,其余列按行对齐 -->
-          <template v-if="billingMode(m) === BILLING_MODE_TOKEN">
+          <!-- 视频模型：按秒 / 按条 / token 规则，实付区整体合并 -->
+          <template v-if="m.video_pricing">
+            <td colspan="3" class="pz-cell px-3 py-2.5 align-middle">
+              <PlazaVideoPricing :spec="m.video_pricing" :rate="videoRate()" />
+            </td>
+          </template>
+          <template v-else-if="billingMode(m) === BILLING_MODE_TOKEN">
             <td class="pz-cell px-3 py-2.5 align-middle font-mono font-semibold text-gray-900 dark:text-gray-50">
               <template v-if="tokenIntervals(m).length">
                 <div
@@ -309,6 +315,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatScaled, resolveIntervalPrices } from '@/utils/pricing'
+import PlazaVideoPricing from './PlazaVideoPricing.vue'
 import { currencyForModel, isDomesticModel } from '@/utils/modelPlazaPricing'
 import { platformAccentColor, platformBadgeLightClass, platformLabel } from '@/utils/platformColors'
 import {
@@ -433,6 +440,11 @@ function paidPerMillion(value: number | null | undefined, m: PlazaModel, period:
   if (value == null) return '-'
   const rate = period ? periodRate(period) : effectiveRate.value
   return formatScaled(value * rate, PER_MILLION, MIN_DECIMALS, currencyForModel(m))
+}
+
+/** 视频模型的实付倍率：视频独立倍率开启时取其值，否则取分组 / 用户专属倍率。 */
+function videoRate(): number {
+  return props.videoRateIndependent === true ? Math.max(0, props.videoRateMultiplier ?? 1) : effectiveRate.value
 }
 
 /** 图片和视频分别使用对应的独立倍率开关。 */

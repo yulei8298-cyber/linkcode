@@ -659,6 +659,11 @@ type UsageLog struct {
 	ImageSizeBreakdown map[string]int `json:"image_size_breakdown"`
 	MediaType          *string        `json:"media_type"`
 
+	// 视频生成字段（Grok 视频与视频平台任务）：条数、计费分辨率与计费时长（秒）
+	VideoCount           int     `json:"video_count"`
+	VideoResolution      *string `json:"video_resolution,omitempty"`
+	VideoDurationSeconds *int    `json:"video_duration_seconds,omitempty"`
+
 	// User-Agent
 	UserAgent *string `json:"user_agent"`
 	// IPAddress is visible to the owner of the usage record.

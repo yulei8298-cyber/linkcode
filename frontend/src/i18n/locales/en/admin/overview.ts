@@ -1126,6 +1126,8 @@ export default {
           'Configure Grok video generation prices in USD per second of output video. Leave empty to use the default per-second rates (grok-imagine-video: $0.05/s 480p, $0.07/s 720p; video-1.5: $0.08/s 480p, $0.14/s 720p, $0.25/s 1080p).',
         modelOverridesTitle: 'Per-model video price overrides',
         modelOverridesDescription: 'Each populated cell overrides the flat resolution price for that model family. Preview and legacy aliases for video-1.5 use the same family; empty cells fall back to the flat resolution price.',
+        videoPlatformDescription:
+          'Group override for video platform: per-second price (USD/s). When set it overrides the model pricing of every video model in this group; leave empty to use each model\'s per-second / per-video / token rule from Model Pricing. 4K never uses group prices.',
         independentMultiplier: 'Use independent video multiplier',
         videoMultiplier: 'Video multiplier',
         modeHint:

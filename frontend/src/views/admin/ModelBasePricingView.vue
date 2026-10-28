@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import { adminAPI } from '@/api/admin'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+import VideoPricingEditor from '@/components/admin/VideoPricingEditor.vue'
+import type { AdminModelPrice, VideoPricingSpec } from '@/api/admin/modelBasePricing'
 import { extractApiErrorMessage } from '@/utils/apiError'
 
 const model = ref('')
@@ -13,6 +15,9 @@ const error = ref('')
 const edited = ref(false)
 const values = ref<Record<string, string | number>>({})
 const loadedModel = ref('')
+// 视频模型的计费规则（按秒 / 按次 / token）；null 表示沿用内置参考价。
+const videoSpec = ref<VideoPricingSpec | null>(null)
+const videoDefault = ref<VideoPricingSpec | null>(null)
 const canSave = computed(() => !loading.value && !saving.value && loadedModel.value !== '' && loadedModel.value === model.value.trim())
 const fields = [
   ['input_price', '输入 token'], ['output_price', '输出 token'],
@@ -31,6 +36,8 @@ async function load() {
     const result = await adminAPI.modelBasePricing.getModelBasePricing(requestedModel)
     loadedModel.value = requestedModel
     edited.value = result.edited
+    videoSpec.value = result.override?.video ?? null
+    videoDefault.value = result.video_default ?? null
     const catalog = result.catalog as Record<string, number> | null
     const override = result.override as Record<string, number | null> | undefined
     values.value = Object.fromEntries(fields.map(([key]) => {
@@ -55,9 +62,11 @@ async function save() {
   try {
     const entries = Object.entries(values.value).filter(([, value]) => String(value).trim() !== '')
     if (entries.some(([, value]) => !Number.isFinite(Number(value)) || Number(value) < 0)) throw new Error('价格必须为大于或等于 0 的数字')
-    const price = Object.fromEntries(entries.map(([key, value]) => [key, Number(value) / (key === 'per_image_price' ? 1 : 1_000_000)]))
-    await adminAPI.modelBasePricing.updateModelBasePricing(loadedModel.value, entries.length ? price : null)
-    edited.value = entries.length > 0; message.value = '已保存，模型广场会立即使用新的基准价。'
+    const price: Record<string, unknown> = Object.fromEntries(entries.map(([key, value]) => [key, Number(value) / (key === 'per_image_price' ? 1 : 1_000_000)]))
+    if (videoSpec.value) price.video = videoSpec.value
+    const hasPrice = Object.keys(price).length > 0
+    await adminAPI.modelBasePricing.updateModelBasePricing(loadedModel.value, hasPrice ? (price as AdminModelPrice) : null)
+    edited.value = hasPrice; message.value = '已保存，模型广场会立即使用新的基准价。'
   } catch (err: unknown) { error.value = extractApiErrorMessage(err) }
   finally { saving.value = false }
 }
@@ -85,7 +94,7 @@ async function restore() {
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-dark-500 dark:bg-dark-800">
         <label class="text-sm font-medium text-gray-700 dark:text-gray-200">模型名称</label>
         <div class="mt-2 flex flex-col gap-3 sm:flex-row">
-          <input v-model="model" :disabled="saving || loading" class="input flex-1" placeholder="例如 gpt-5.5、claude-sonnet-4-6" @keyup.enter="load" />
+          <input v-model="model" :disabled="saving || loading" class="input flex-1" placeholder="例如 gpt-5.5、claude-sonnet-4-6、wan3.0-video" @keyup.enter="load" />
           <button class="btn btn-primary sm:min-w-28" :disabled="saving || loading || !hasModel" @click="load"><Icon name="search" size="sm" class="mr-2" />{{ loading ? '读取中…' : '读取价格' }}</button>
         </div>
       </div>
@@ -98,6 +107,7 @@ async function restore() {
         <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label v-for="[key, label] in fields" :key="key" class="text-sm text-gray-600 dark:text-gray-300">{{ label }}<input v-model="values[key]" type="number" min="0" step="any" class="input mt-1" placeholder="继承官方" /></label>
         </div>
+        <VideoPricingEditor v-model="videoSpec" :default-spec="videoDefault" class="mt-5" />
         <div class="mt-5 flex flex-wrap items-center gap-3"><button class="btn btn-primary" :disabled="!canSave" @click="save">保存基准价</button><button class="btn btn-secondary" :disabled="!canSave || !edited" @click="restore">恢复官方目录</button></div>
       </div>
       <p v-if="message" role="status" class="text-sm text-emerald-600">{{ message }}</p>

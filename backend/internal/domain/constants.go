@@ -37,7 +37,10 @@ const (
 	PlatformCommandCode = "command_code"
 	// PlatformCline 是 Cline API（多模型聚合，OpenAI 兼容 Chat Completions；按量积分计费，
 	// 另有 ClinePass 订阅）。
-	PlatformCline     = "cline"
+	PlatformCline = "cline"
+	// PlatformVideo 是视频生成平台：账号按 credentials["video_protocol"] 区分上游协议
+	// （Seedance / 可灵 / 海螺 / 万相 / Veo 等），只承接视频任务端点。
+	PlatformVideo     = "video"
 	PlatformComposite = "composite"
 )
 

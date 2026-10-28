@@ -190,7 +190,12 @@ export default {
         codexCliWs: 'Codex CLI (WebSocket)',
         grokCli: 'Grok CLI',
         systemOne: 'System One',
+        videoApi: 'Video API',
         opencode: 'OpenCode',
+      },
+      video: {
+        description: 'Video groups generate videos through a unified async task API: create a task, poll its status, then download the result. The new-api style /v1/video/generations is also supported.',
+        note: 'Billed by actual duration or per video; failed and cancelled tasks are free. For vendor SDKs set the SDK Base URL to "gateway URL/video/<protocol>" (for example /video/kling or /video/dashscope).'
       },
       typesafe: {
         description: 'Call Jev through the native TypeSafe System One endpoint.',
@@ -465,6 +470,11 @@ export default {
     exportFailed: 'Failed to export usage data',
     exportExcelSuccess: 'Usage data exported successfully (Excel format)',
     exportExcelFailed: 'Failed to export usage data',
+    videoCountValue: '{n} video(s)',
+    videoSecondsValue: '{n}s',
+    videoSpec: 'Video',
+    videoTokens: 'Output tokens',
+    videoTotalPrice: 'Video cost',
     imageUnit: ' images',
     userAgent: 'User-Agent',
     ipGeo: {
@@ -689,6 +699,20 @@ export default {
     loadFailed: 'Failed to load model plaza',
     noSearchResult: 'No matching models',
     anonymousHint: 'Sign in to see your exclusive groups and personal rates',
+    video: {
+      perSecond: 'Per second',
+      perVideo: 'Per video',
+      token: 'Per token',
+      perSecondUnit: '/s',
+      perVideoUnit: '/video',
+      withAudio: 'with audio',
+      tokenUnit: '/1M tokens',
+      anyResolution: 'Any resolution',
+      anyDuration: 'Any duration',
+      seconds: '{n}s',
+      durationRange: '{min}–{max}s',
+      rateNote: 'Includes ×{rate} rate',
+    },
     cards: {
       description: 'Every group, every model, clear pricing.',
       currencyUnit: 'USD / million tokens',

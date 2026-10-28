@@ -278,6 +278,13 @@
           }
         ]
       }
+    },
+    {
+      "id": "video",
+      "display_name": "Video",
+      "gateway": "openai",
+      "cn_provider": false,
+      "video_only": true
     }
   ],
   "composite_precedence": [
@@ -293,6 +300,135 @@
     "opencode_go",
     "typesafe",
     "command_code",
-    "cline"
+    "cline",
+    "video"
+  ],
+  "video_protocols": [
+    {
+      "protocol": "ark",
+      "display_name": "Seedance / 豆包（火山方舟）",
+      "vendor": "seedance",
+      "default_base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "native_prefix": "/video/ark",
+      "example_models": [
+        "doubao-seedance-2-0-260128",
+        "doubao-seedance-2-0-fast-260128",
+        "doubao-seedance-1-5-pro-251215"
+      ]
+    },
+    {
+      "protocol": "kling",
+      "display_name": "可灵 Kling",
+      "vendor": "kling",
+      "default_base_url": "https://api-beijing.klingai.com",
+      "supports_secret_key": true,
+      "native_prefix": "/video/kling",
+      "example_models": [
+        "kling-v3",
+        "kling-v2-5-turbo",
+        "kling-v2-1-master"
+      ]
+    },
+    {
+      "protocol": "minimax",
+      "display_name": "海螺 Hailuo（MiniMax）",
+      "vendor": "hailuo",
+      "default_base_url": "https://api.minimaxi.com",
+      "native_prefix": "/video/minimax",
+      "example_models": [
+        "MiniMax-Hailuo-2.3",
+        "MiniMax-Hailuo-2.3-Fast",
+        "MiniMax-Hailuo-02"
+      ]
+    },
+    {
+      "protocol": "dashscope",
+      "display_name": "通义万相 Wan（阿里云百炼）",
+      "vendor": "wan",
+      "default_base_url": "https://dashscope.aliyuncs.com",
+      "native_prefix": "/video/dashscope",
+      "example_models": [
+        "wan3.0-video",
+        "wan3.0-video-prime",
+        "wan2.7-video",
+        "wan2.5-t2v-preview"
+      ]
+    },
+    {
+      "protocol": "vidu",
+      "display_name": "Vidu（生数科技）",
+      "vendor": "vidu",
+      "default_base_url": "https://api.vidu.cn",
+      "native_prefix": "/video/vidu",
+      "example_models": [
+        "viduq2-pro",
+        "viduq2-turbo",
+        "viduq1"
+      ]
+    },
+    {
+      "protocol": "veo",
+      "display_name": "Google Veo（Gemini API）",
+      "vendor": "veo",
+      "default_base_url": "https://generativelanguage.googleapis.com",
+      "native_prefix": "/video/veo",
+      "example_models": [
+        "veo-3.1-generate-preview",
+        "veo-3.1-fast-generate-preview",
+        "veo-3.1-lite-generate-preview"
+      ]
+    },
+    {
+      "protocol": "runway",
+      "display_name": "Runway",
+      "vendor": "runway",
+      "default_base_url": "https://api.dev.runwayml.com",
+      "native_prefix": "/video/runway",
+      "example_models": [
+        "gen4.5",
+        "gen4_turbo",
+        "veo3.1"
+      ]
+    },
+    {
+      "protocol": "luma",
+      "display_name": "Luma Dream Machine",
+      "vendor": "luma",
+      "default_base_url": "https://api.lumalabs.ai",
+      "native_prefix": "/video/luma",
+      "example_models": [
+        "ray-2",
+        "ray-flash-2"
+      ]
+    },
+    {
+      "protocol": "pixverse",
+      "display_name": "PixVerse",
+      "vendor": "pixverse",
+      "default_base_url": "https://app-api.pixverse.ai",
+      "native_prefix": "/video/pixverse",
+      "example_models": [
+        "v5.5",
+        "v5"
+      ]
+    },
+    {
+      "protocol": "openai_videos",
+      "display_name": "OpenAI 兼容 /v1/videos",
+      "vendor": "openai",
+      "default_base_url": "https://api.openai.com/v1",
+      "native_prefix": "/video/openai",
+      "example_models": [
+        "sora-2",
+        "sora-2-pro"
+      ]
+    },
+    {
+      "protocol": "newapi",
+      "display_name": "new-api 兼容 /v1/video/generations",
+      "vendor": "newapi",
+      "default_base_url": "https://api.example.com",
+      "native_prefix": "/video/newapi"
+    }
   ]
 }

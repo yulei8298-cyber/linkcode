@@ -72,6 +72,8 @@ type modelPlazaModel struct {
 	LongContextBasis string `json:"long_context_basis,omitempty"`
 	// TimePricing 分时倍率时段，落在时段内的请求整单乘倍率；无分时省略。
 	TimePricing *modelPlazaTimePricing `json:"time_pricing,omitempty"`
+	// VideoPricing 视频模型的计费规则（按秒 / 按次 / token，未乘倍率）；非视频模型省略。
+	VideoPricing *service.VideoPricingSpec `json:"video_pricing,omitempty"`
 }
 
 // modelPlazaGroup 广场分组条目（白名单字段）。
@@ -217,6 +219,7 @@ func toModelPlazaGroupDTO(g *service.PlazaGroup, userRates map[int64]float64) mo
 			OfficialPricing:  toModelPlazaOfficialPricing(m.OfficialPricing),
 			LongContextBasis: string(m.LongContextBasis),
 			TimePricing:      toModelPlazaTimePricing(m.TimePricing),
+			VideoPricing:     m.VideoPricing,
 		})
 	}
 	dto := modelPlazaGroup{

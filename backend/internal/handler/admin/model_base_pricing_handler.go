@@ -14,7 +14,12 @@ func (h *ChannelHandler) GetModelBasePricing(c *gin.Context) {
 		return
 	}
 	price, edited, catalog := h.pricingService.GetAdminModelPrice(model)
-	response.Success(c, gin.H{"model": model, "override": price, "edited": edited, "catalog": catalog})
+	payload := gin.H{"model": model, "override": price, "edited": edited, "catalog": catalog}
+	// 视频模型额外返回内置默认规则，表单据此预填按秒 / 按次价格。
+	if spec, ok := service.LookupDefaultVideoPricingSpec(model); ok {
+		payload["video_default"] = spec
+	}
+	response.Success(c, payload)
 }
 
 func (h *ChannelHandler) UpdateModelBasePricing(c *gin.Context) {

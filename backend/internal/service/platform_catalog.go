@@ -4,6 +4,8 @@ import (
 	"sort"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/service/video"
+	"github.com/Wei-Shaw/sub2api/internal/service/video/registry"
 )
 
 // PlatformCatalog 是前端使用的平台清单：domain 平台清单加上多协议供应商的
@@ -15,6 +17,8 @@ type PlatformCatalog struct {
 	Platforms []PlatformCatalogEntry `json:"platforms"`
 	// CompositePrecedence 是组合分组逐平台回退的顺序（先命中者生效）。
 	CompositePrecedence []string `json:"composite_precedence"`
+	// VideoProtocols 是视频平台账号可选的上游协议（展示名、默认基址、原生透传前缀）。
+	VideoProtocols []video.Info `json:"video_protocols"`
 }
 
 // PlatformCatalogEntry 描述一个具体平台；MultiProtocol 仅多协议 API Key 供应商有值。
@@ -47,6 +51,7 @@ func BuildPlatformCatalog() PlatformCatalog {
 	catalog := PlatformCatalog{
 		Platforms:           make([]PlatformCatalogEntry, 0, len(specs)),
 		CompositePrecedence: domain.CompositePrecedencePlatformIDs(),
+		VideoProtocols:      registry.Infos(),
 	}
 	for _, spec := range specs {
 		catalog.Platforms = append(catalog.Platforms, PlatformCatalogEntry{

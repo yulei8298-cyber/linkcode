@@ -31,6 +31,9 @@ type PlatformSpec struct {
 	CNProvider bool `json:"cn_provider"`
 	// LiteLLMProvider 是定价目录中的 provider 名；空表示不支持从定价目录同步模型。
 	LiteLLMProvider string `json:"litellm_provider,omitempty"`
+	// VideoOnly 表示平台只承接视频生成端点：复用 OpenAI 网关的调度、并发与用量计费，
+	// 文本 / 图片 / 语音等端点在路由层拒绝。
+	VideoOnly bool `json:"video_only,omitempty"`
 }
 
 // platformList 的顺序即平台的展示顺序。
@@ -48,6 +51,7 @@ var platformList = []PlatformSpec{
 	{ID: PlatformTypeSafe, DisplayName: "TypeSafe / Jev", Gateway: PlatformGatewayAnthropic, LiteLLMProvider: "typesafe"},
 	{ID: PlatformCommandCode, DisplayName: "Command Code", Gateway: PlatformGatewayOpenAI},
 	{ID: PlatformCline, DisplayName: "Cline", Gateway: PlatformGatewayOpenAI},
+	{ID: PlatformVideo, DisplayName: "Video", Gateway: PlatformGatewayOpenAI, VideoOnly: true},
 }
 
 var platformIndex = func() map[string]int {
@@ -128,6 +132,12 @@ func CompositePrecedencePlatformIDs() []string {
 func UsesOpenAIGateway(id string) bool {
 	spec, ok := LookupPlatform(id)
 	return ok && spec.Gateway == PlatformGatewayOpenAI
+}
+
+// IsVideoPlatform 报告平台是否只承接视频生成端点。
+func IsVideoPlatform(id string) bool {
+	spec, ok := LookupPlatform(id)
+	return ok && spec.VideoOnly
 }
 
 // IsCNProviderPlatform 报告平台是否为国产单一厂商。

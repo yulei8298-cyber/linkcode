@@ -382,7 +382,10 @@ func shouldBypassEmbeddedFrontend(path string) bool {
 		strings.HasPrefix(trimmed, "/v3/contents/generations/tasks/") ||
 		strings.HasPrefix(trimmed, "/images/") ||
 		trimmed == "/videos" ||
-		strings.HasPrefix(trimmed, "/videos/")
+		strings.HasPrefix(trimmed, "/videos/") ||
+		// 视频平台：厂商原生协议透传与签名成品下载链接
+		strings.HasPrefix(trimmed, "/video/") ||
+		strings.HasPrefix(trimmed, "/video-files/")
 }
 
 func serveIndexHTML(c *gin.Context, fsys fs.FS) {

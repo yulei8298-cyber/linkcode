@@ -28,6 +28,14 @@
 
       <!-- API Key fields (only for apikey type) -->
       <div v-if="account.type === 'apikey'" class="space-y-4">
+        <VideoAccountFields
+          v-if="account.platform === 'video'"
+          v-model:protocol="editVideoProtocol"
+          v-model:secret-key="editVideoSecretKey"
+          v-model:base-url="editBaseUrl"
+          :has-secret-key="Boolean(account.credentials_status?.has_secret_key)"
+          @apply-models="applyEditVideoExampleModels"
+        />
         <div v-if="!isCNApiKeyAccount || editApiProtocol !== 'adaptive'">
           <label class="input-label">{{ t('admin.accounts.baseUrl') }}</label>
           <input
@@ -3186,6 +3194,8 @@ import ModelWhitelistSelector from '@/components/account/ModelWhitelistSelector.
 import QuotaLimitCard from '@/components/account/QuotaLimitCard.vue'
 import GrokBaseUrlPresets from '@/components/account/GrokBaseUrlPresets.vue'
 import CnBaseUrlPresets from '@/components/account/CnBaseUrlPresets.vue'
+import VideoAccountFields from '@/components/account/VideoAccountFields.vue'
+import { getVideoProtocol } from '@/constants/videoBrands'
 import OpenCodeGoProtocolRulesEditor from '@/components/account/OpenCodeGoProtocolRulesEditor.vue'
 import HeaderOverrideEditor from '@/components/account/HeaderOverrideEditor.vue'
 import OllamaCloudUsageSettings from '@/components/account/OllamaCloudUsageSettings.vue'
@@ -3414,6 +3424,9 @@ interface TempUnschedRuleForm {
 // State
 const submitting = ref(false)
 const editBaseUrl = ref('https://api.anthropic.com')
+// 视频平台：上游协议与可灵官方 SecretKey（留空表示保持原值）。
+const editVideoProtocol = ref('ark')
+const editVideoSecretKey = ref('')
 const editApiKey = ref('')
 
 // ── 国产供应商（Kimi / Zhipu / DeepSeek）account_mode / api_protocol 编辑 ──
@@ -3591,6 +3604,11 @@ const modelMappings = ref<ModelMapping[]>([])
 const openAICompactModelMappings = ref<ModelMapping[]>([])
 const modelRestrictionMode = ref<'whitelist' | 'mapping'>('whitelist')
 const allowedModels = ref<string[]>([])
+
+function applyEditVideoExampleModels(models: string[]) {
+  modelRestrictionMode.value = 'whitelist'
+  allowedModels.value = models
+}
 const DEFAULT_POOL_MODE_RETRY_COUNT = 3
 const MAX_POOL_MODE_RETRY_COUNT = 10
 const DEFAULT_POOL_MODE_RETRY_STATUS_CODES = [401, 403, 429]
@@ -4070,6 +4088,7 @@ const defaultBaseUrl = computed(() => {
   if (props.account?.platform === 'gemini') return 'https://generativelanguage.googleapis.com'
   if (props.account?.platform === 'grok') return 'https://api.x.ai/v1'
   if (props.account?.platform === 'typesafe') return 'https://api.typesafe.ai'
+  if (props.account?.platform === 'video') return getVideoProtocol(editVideoProtocol.value)?.default_base_url ?? ''
   // CN 供应商：按当前模式/协议回落到官方预设（清空输入框提交时使用），
   // 不能落到 anthropic 默认值（会被当 CC base 拼出错误端点）。
   if (props.account && isMultiProtocolApiKeyPlatform(props.account.platform)) {
@@ -4511,6 +4530,10 @@ const syncFormFromAccount = (newAccount: Account | null) => {
           cloneOpenCodeGoProtocolRules(defaultProviderProtocolRules(newAccount.platform, currentOpenCodeOrCNMode()))
       }
     }
+    if (newAccount.platform === 'video') {
+      editVideoProtocol.value = typeof credentials.video_protocol === 'string' ? credentials.video_protocol : 'ark'
+      editVideoSecretKey.value = ''
+    }
     const platformDefaultUrl =
       newAccount.platform === 'openai'
         ? 'https://api.openai.com'
@@ -4520,6 +4543,8 @@ const syncFormFromAccount = (newAccount: Account | null) => {
             ? 'https://api.x.ai/v1'
             : newAccount.platform === 'typesafe'
               ? 'https://api.typesafe.ai'
+            : newAccount.platform === 'video'
+              ? getVideoProtocol(editVideoProtocol.value)?.default_base_url ?? ''
             : isMultiProtocolApiKeyPlatform(newAccount.platform)
               ? defaultCNBaseUrl(newAccount.platform, currentOpenCodeOrCNMode(), editApiProtocol.value)
               : 'https://api.anthropic.com'
@@ -5250,6 +5275,12 @@ const handleSubmit = async () => {
       const newCredentials: Record<string, unknown> = {
         ...currentCredentials,
         base_url: newBaseUrl
+      }
+      if (props.account.platform === 'video') {
+        newCredentials.video_protocol = editVideoProtocol.value
+        if (editVideoSecretKey.value.trim()) {
+          newCredentials.secret_key = editVideoSecretKey.value.trim()
+        }
       }
 
       // 国产供应商：模式与协议写入凭据（决定额度/余额探测与转发端点/格式）。

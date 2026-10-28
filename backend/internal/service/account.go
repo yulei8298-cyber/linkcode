@@ -19,6 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/typesafe"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
+	"github.com/Wei-Shaw/sub2api/internal/service/video"
 )
 
 type Account struct {
@@ -1776,12 +1777,9 @@ func (a *Account) SupportsOpenAIEndpointCapability(capability OpenAIEndpointCapa
 	if a == nil {
 		return false
 	}
-	if capability == OpenAIEndpointCapabilitySeedance {
-		configured, _ := a.openAIEndpointCapabilitySet()
-		return configured[string(OpenAIEndpointCapabilitySeedance)] &&
-			a.Platform == PlatformOpenAI &&
-			a.Type == AccountTypeAPIKey &&
-			strings.TrimSpace(a.GetCredential("base_url")) != ""
+	if a.Platform == PlatformVideo {
+		// 视频账号只承接视频任务：统一入口不限协议，原生透传要求同协议。
+		return capability == "" || capability == VideoProtocolCapability(a.GetCredential(video.CredentialKeyProtocol))
 	}
 	if capability == "" {
 		return true

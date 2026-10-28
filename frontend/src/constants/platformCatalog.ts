@@ -44,13 +44,27 @@ export interface PlatformSpec {
   gateway: PlatformGateway
   cn_provider: boolean
   litellm_provider?: string
+  /** 只承接视频生成端点的平台（视频平台）。 */
+  video_only?: boolean
   multi_protocol?: ProviderProfileInfo
+}
+
+/** 视频平台账号可选的上游协议（后端 video.Info）。 */
+export interface VideoProtocolInfo {
+  protocol: string
+  display_name: string
+  vendor: string
+  default_base_url: string
+  supports_secret_key?: boolean
+  native_prefix: string
+  example_models?: string[]
 }
 
 export interface PlatformCatalog {
   platforms: PlatformSpec[]
   /** 组合分组逐平台回退的顺序（先命中者生效）。 */
   composite_precedence: string[]
+  video_protocols?: VideoProtocolInfo[]
 }
 
 export const BUILTIN_PLATFORM_CATALOG: PlatformCatalog = builtinCatalog as PlatformCatalog

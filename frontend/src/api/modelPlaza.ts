@@ -4,6 +4,7 @@
  * 带 token 请求时后端会额外返回专属分组与用户专属倍率。
  */
 
+import type { VideoPricingSpec } from '@/api/admin/modelBasePricing'
 import { apiClient } from './client'
 import type { UserPricingInterval, UserSupportedModelPricing } from './channels'
 
@@ -53,6 +54,8 @@ export interface PlazaModel {
   long_context_basis?: PlazaLongContextBasis
   /** 仅配置了分时倍率的模型返回。 */
   time_pricing?: PlazaTimePricing
+  /** 视频模型的计费规则（按秒 / 按条 / token，未乘倍率）。 */
+  video_pricing?: VideoPricingSpec
 }
 
 export interface ModelPlazaGroup {

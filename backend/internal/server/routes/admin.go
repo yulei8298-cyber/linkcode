@@ -136,6 +136,7 @@ func RegisterAdminRoutes(
 
 		// 操作审计日志
 		registerAuditLogRoutes(admin, h, stepUpAuth)
+		registerVideoTaskRoutes(admin, h)
 	}
 }
 
@@ -162,6 +163,16 @@ func registerAuditLogRoutes(admin *gin.RouterGroup, h *handler.Handlers, _ middl
 		auditLogs.GET("/:id", h.Admin.AuditLog.Get)
 		// 清空需现场 TOTP 校验（在 handler 内强制），不复用 step-up sudo 窗口
 		auditLogs.POST("/clear", h.Admin.AuditLog.Clear)
+	}
+}
+
+// registerVideoTaskRoutes 注册视频任务管理接口（查看、刷新、重试结算）。
+func registerVideoTaskRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	videoTasks := admin.Group("/video-tasks")
+	{
+		videoTasks.GET("", h.Admin.VideoTask.List)
+		videoTasks.POST("/:task_id/refresh", h.Admin.VideoTask.Refresh)
+		videoTasks.POST("/:task_id/retry-billing", h.Admin.VideoTask.RetryBilling)
 	}
 }
 

@@ -6,6 +6,9 @@ const (
 	VideoBillingResolution480P  = "480p"
 	VideoBillingResolution720P  = "720p"
 	VideoBillingResolution1080P = "1080p"
+	// VideoBillingResolution4K 只用于视频平台模型的计费规则（VideoPricingSpec）；
+	// Grok 不提供 4k，LookupVideoBillingResolution 仍把它视为未知档位。
+	VideoBillingResolution4K = "4k"
 )
 
 // xAI 视频生成按秒计费，duration 请求参数允许 1-15 秒；未指定时上游默认生成 8 秒。

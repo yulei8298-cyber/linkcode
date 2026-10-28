@@ -1047,6 +1047,18 @@ var upstreamBillingProbeOfficialAPIDomains = []string{
 	"typesafe.ai",
 	"commandcode.ai",
 	"cline.bot",
+	// 视频平台各协议的官方地址（第三方中转仍会探测）。
+	"volces.com",
+	"bytepluses.com",
+	"klingai.com",
+	"minimaxi.com",
+	"minimax.io",
+	"aliyuncs.com",
+	"vidu.cn",
+	"vidu.com",
+	"runwayml.com",
+	"lumalabs.ai",
+	"pixverse.ai",
 }
 
 func upstreamBillingProbeTargetIsOfficialAPI(baseURL string) bool {

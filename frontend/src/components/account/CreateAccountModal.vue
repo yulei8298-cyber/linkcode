@@ -264,6 +264,24 @@
             {{ spec.display_name }}
           </button>
         </div>
+
+        <!-- 视频平台：Seedance / 可灵 / 海螺 / 万相 / Veo 等，按上游协议区分 -->
+        <div class="mt-2 flex flex-wrap rounded-lg bg-gray-100 p-1 dark:bg-dark-700" data-testid="platform-row-video">
+          <button
+            type="button"
+            data-testid="platform-button-video"
+            @click="selectVideoPlatform()"
+            :class="[
+              'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-all',
+              form.platform === 'video'
+                ? 'bg-white text-fuchsia-600 shadow-sm dark:bg-dark-600 dark:text-fuchsia-300'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            ]"
+          >
+            <PlatformIcon platform="video" size="sm" />
+            {{ t('admin.video.platformButton') }}
+          </button>
+        </div>
       </div>
 
       <!-- Account Type Selection (Anthropic) -->
@@ -1423,6 +1441,13 @@
 
       <!-- API Key input (only for apikey type, excluding Antigravity which has its own fields) -->
       <div v-if="form.type === 'apikey' && form.platform !== 'antigravity'" class="space-y-4">
+        <VideoAccountFields
+          v-if="form.platform === 'video'"
+          v-model:protocol="videoProtocol"
+          v-model:secret-key="videoSecretKey"
+          v-model:base-url="apiKeyBaseUrl"
+          @apply-models="applyVideoExampleModels"
+        />
         <div v-if="!isMultiProtocolPlatform || apiProtocol !== 'adaptive'">
           <label class="input-label">{{ t('admin.accounts.baseUrl') }}</label>
           <input
@@ -4008,6 +4033,8 @@ import QuotaLimitCard from '@/components/account/QuotaLimitCard.vue'
 import Toggle from '@/components/common/Toggle.vue'
 import GrokBaseUrlPresets from '@/components/account/GrokBaseUrlPresets.vue'
 import CnBaseUrlPresets from '@/components/account/CnBaseUrlPresets.vue'
+import VideoAccountFields from '@/components/account/VideoAccountFields.vue'
+import { getVideoProtocol } from '@/constants/videoBrands'
 import OpenCodeGoProtocolRulesEditor from '@/components/account/OpenCodeGoProtocolRulesEditor.vue'
 import HeaderOverrideEditor from '@/components/account/HeaderOverrideEditor.vue'
 import { allSelectedGroupsEnableLongContextPricing } from '@/components/account/longContextBilling'
@@ -4125,6 +4152,8 @@ const apiKeyBaseUrlPlaceholder = computed(() => {
       return 'https://api.x.ai/v1'
     case 'typesafe':
       return 'https://api.typesafe.ai'
+    case 'video':
+      return videoDefaultBaseUrl() || 'https://api.example.com'
     default:
       return 'https://api.anthropic.com'
   }
@@ -4149,6 +4178,8 @@ const apiKeyValuePlaceholder = computed(() => {
       return 'sk-...'
     case 'typesafe':
       return 'ts-...'
+    case 'video':
+      return t('admin.video.apiKeyPlaceholder')
     default:
       return isMultiProtocolPlatform.value ? 'sk-...' : 'sk-ant-...'
   }
@@ -4235,6 +4266,10 @@ const accountCategory = ref<'oauth-based' | 'apikey' | 'bedrock' | 'service_acco
 const addMethod = ref<AddMethod>('oauth') // For oauth-based: 'oauth' or 'setup-token'
 const apiKeyBaseUrl = ref('https://api.anthropic.com')
 const apiKeyValue = ref('')
+// 视频平台：上游协议与可灵官方 SecretKey（第三方中转只需 Key）。
+const videoProtocol = ref('ark')
+const videoSecretKey = ref('')
+const videoDefaultBaseUrl = () => getVideoProtocol(videoProtocol.value)?.default_base_url ?? ''
 const upstreamBillingAutoProbeEnabled = ref(true)
 
 // ── 国产供应商（Kimi / Zhipu / DeepSeek）账号类型、API 协议与端点 ──
@@ -4361,6 +4396,16 @@ function selectOpenCodeGoPlatform() {
   apiKeyBaseUrl.value = defaultCNBaseUrl('opencode_go', openCodeAccountMode.value, 'adaptive')
   resetAdaptiveBaseUrls('opencode_go', openCodeAccountMode.value)
   openCodeGoProtocolRules.value = cloneOpenCodeGoProtocolRules(defaultOpenCodeProtocolRules(openCodeAccountMode.value))
+}
+function selectVideoPlatform() {
+  form.platform = 'video'
+  form.type = 'apikey'
+  accountCategory.value = 'apikey'
+  apiKeyBaseUrl.value = videoDefaultBaseUrl()
+}
+function applyVideoExampleModels(models: string[]) {
+  modelRestrictionMode.value = 'whitelist'
+  allowedModels.value = models
 }
 function selectTypeSafePlatform() {
   form.platform = 'typesafe'
@@ -4960,6 +5005,8 @@ watch(
               ? 'https://api.x.ai/v1'
               : newPlatform === 'typesafe'
                 ? 'https://api.typesafe.ai'
+              : newPlatform === 'video'
+                ? videoDefaultBaseUrl()
               : 'https://api.anthropic.com'
     }
     // Clear model-related settings
@@ -5437,6 +5484,8 @@ const resetForm = () => {
   adaptiveBaseUrls.value = { chat_completions: '', anthropic: '', responses: '' }
   apiKeyBaseUrl.value = 'https://api.anthropic.com'
   apiKeyValue.value = ''
+  videoProtocol.value = 'ark'
+  videoSecretKey.value = ''
   upstreamRequestIdHeader.value = ''
   upstreamBillingAutoProbeEnabled.value = true
   editQuotaLimit.value = null
@@ -5898,6 +5947,8 @@ const handleSubmit = async () => {
           ? 'https://api.x.ai/v1'
           : form.platform === 'typesafe'
             ? 'https://api.typesafe.ai'
+          : form.platform === 'video'
+            ? videoDefaultBaseUrl()
           : 'https://api.anthropic.com'
 
   // Build credentials with optional model mapping
@@ -5907,6 +5958,12 @@ const handleSubmit = async () => {
   }
   if (form.platform === 'gemini') {
     credentials.tier_id = geminiTierAIStudio.value
+  }
+  if (form.platform === 'video') {
+    credentials.video_protocol = videoProtocol.value
+    if (videoSecretKey.value.trim()) {
+      credentials.secret_key = videoSecretKey.value.trim()
+    }
   }
 
   // 国产供应商：账号模式 + 协议 + 对应端点写入凭据；后端按 account_mode 路由

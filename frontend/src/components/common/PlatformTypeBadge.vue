@@ -3,7 +3,9 @@
     <!-- Row 1: Platform + Type -->
     <div class="inline-flex items-center overflow-hidden rounded-md">
       <span :class="['inline-flex items-center gap-1 px-2 py-1', platformClass]">
-        <PlatformIcon :platform="platform" size="xs" />
+        <!-- 视频账号展示上游厂商标志，便于在同一平台下区分可灵 / 海螺 / 万相等 -->
+        <BrandIcon v-if="videoVendor?.icon" :brand="videoVendor.icon" size="xs" data-testid="video-vendor-icon" />
+        <PlatformIcon v-else :platform="platform" size="xs" />
         <span>{{ platformLabel }}</span>
       </span>
       <span :class="['inline-flex items-center gap-1 px-1.5 py-1', typeClass]">
@@ -73,6 +75,8 @@ import { normalizePlanType, openAIPlanTypeLabel } from '@/utils/planType'
 import GrokFreeIcon from './GrokFreeIcon.vue'
 import PlatformIcon from './PlatformIcon.vue'
 import Icon from '@/components/icons/Icon.vue'
+import BrandIcon from '@/components/icons/brands/BrandIcon.vue'
+import { videoVendorStyle } from '@/constants/videoBrands'
 
 const { t } = useI18n()
 
@@ -83,11 +87,15 @@ interface Props {
   planType?: string
   privacyMode?: string
   subscriptionExpiresAt?: string
+  /** 视频平台账号的上游协议（credentials.video_protocol），决定展示的厂商品牌。 */
+  videoProtocol?: string
 }
 
 const props = defineProps<Props>()
 
-const platformLabel = computed(() => sharedPlatformLabel(props.platform))
+const videoVendor = computed(() => (props.platform === 'video' ? videoVendorStyle(props.videoProtocol) : null))
+
+const platformLabel = computed(() => videoVendor.value?.label ?? sharedPlatformLabel(props.platform))
 
 const normalizedAuthMode = computed(() =>
   (props.authMode || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
@@ -176,6 +184,9 @@ const planIconName = computed<'bolt' | null>(() => {
 })
 
 const platformClass = computed(() => {
+  if (videoVendor.value) {
+    return videoVendor.value.badge
+  }
   if (props.platform === 'anthropic') {
     return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
   }
@@ -204,6 +215,9 @@ const platformClass = computed(() => {
 })
 
 const typeClass = computed(() => {
+  if (props.platform === 'video') {
+    return 'bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-900/20 dark:text-fuchsia-300'
+  }
   if (props.platform === 'anthropic') {
     return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
   }

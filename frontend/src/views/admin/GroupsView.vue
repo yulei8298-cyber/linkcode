@@ -1172,7 +1172,7 @@
           </p>
         </div>
 
-        <!-- 视频生成计费配置（仅 Grok 平台） -->
+        <!-- 视频生成计费配置（Grok 与视频平台） -->
         <div
           v-if="supportsVideoPricingPlatform(createForm.platform)"
           class="border-t pt-4"
@@ -1183,7 +1183,7 @@
             {{ t(videoPricingI18nKey("title")) }}
           </label>
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            {{ t(videoPricingI18nKey("description")) }}
+            {{ t(videoPricingI18nKey(createForm.platform === "video" ? "videoPlatformDescription" : "description")) }}
           </p>
           <div class="mb-4">
             <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -1247,6 +1247,7 @@
             </div>
           </div>
           <div
+            v-if="createForm.platform === 'grok'"
             class="mt-4 border-t border-dashed border-gray-200 pt-4 dark:border-dark-700"
             data-testid="create-grok-video-model-prices"
           >
@@ -2988,7 +2989,7 @@
           </p>
         </div>
 
-        <!-- 视频生成计费配置（仅 Grok 平台） -->
+        <!-- 视频生成计费配置（Grok 与视频平台） -->
         <div
           v-if="supportsVideoPricingPlatform(editForm.platform)"
           class="border-t pt-4"
@@ -2999,7 +3000,7 @@
             {{ t(videoPricingI18nKey("title")) }}
           </label>
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            {{ t(videoPricingI18nKey("description")) }}
+            {{ t(videoPricingI18nKey(editForm.platform === "video" ? "videoPlatformDescription" : "description")) }}
           </p>
           <div class="mb-4">
             <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -3063,6 +3064,7 @@
             </div>
           </div>
           <div
+            v-if="editForm.platform === 'grok'"
             class="mt-4 border-t border-dashed border-gray-200 pt-4 dark:border-dark-700"
             data-testid="edit-grok-video-model-prices"
           >

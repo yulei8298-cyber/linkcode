@@ -5,8 +5,8 @@ package service
 var SensitiveCredentialKeys = []string{
 	// OAuth
 	"access_token", "refresh_token", "id_token", "agent_private_key",
-	// API Key 类
-	"api_key", "session_key", "cookie",
+	// API Key 类（secret_key 为可灵官方 AccessKey/SecretKey 中的 SecretKey）
+	"api_key", "secret_key", "session_key", "cookie",
 	// Grok Web SSO / password (must never persist or echo after Build OAuth)
 	"password", "sso_token", "sso", "sso-rw", "clearTextPassword",
 	// 云服务凭据

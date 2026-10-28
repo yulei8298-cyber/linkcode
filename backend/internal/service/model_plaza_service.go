@@ -30,6 +30,8 @@ type PlazaModel struct {
 	LongContextBasis ContextPricingBasis
 	// TimePricing 计费会生效的分时倍率时段；无分时为 nil。
 	TimePricing *TimePricingSchedule
+	// VideoPricing 视频模型的展示计费规则（分组按秒覆盖价优先，其次模型定价）。
+	VideoPricing *VideoPricingSpec
 }
 
 // PlazaGroup 模型广场中以分组为顶层的条目。
@@ -294,8 +296,14 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 // token 模型取计费阶梯表（单价与档位均由真实计费函数得出），
 // 图片/按次模型（或阶梯表不可用时）沿用渠道定价与分组图片档位价。
 func (s *ModelPlazaService) fillDisplayPricing(ctx context.Context, m *PlazaModel, g *Group) {
+	channelPricing := m.Pricing
 	if groupPricing := matchGroupModelPricing(g, m.Name); groupPricing != nil {
 		m.Pricing = groupPricing
+	}
+	if m.Platform == PlatformVideo {
+		// 视频模型按秒 / 按次计价，不展示 token 阶梯。
+		m.VideoPricing = s.plazaVideoPricing(m.Name, g, channelPricing)
+		return
 	}
 	if s.billingService != nil && s.resolver != nil {
 		sched, err := s.billingService.ResolveContextPricingSchedule(ctx, s.resolver, ContextPricingScheduleInput{

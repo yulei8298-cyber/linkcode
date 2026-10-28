@@ -20,6 +20,8 @@ type AdminModelPrice struct {
 	ImageInput   *float64 `json:"image_input_price,omitempty"`
 	ImageOutput  *float64 `json:"image_output_price,omitempty"`
 	PerImage     *float64 `json:"per_image_price,omitempty"`
+	// Video 是视频模型的计费规则（按秒 / 按次 / 按 token），覆盖内置默认价。
+	Video *VideoPricingSpec `json:"video,omitempty"`
 }
 
 func (p AdminModelPrice) validate() error {
@@ -31,6 +33,12 @@ func (p AdminModelPrice) validate() error {
 				return fmt.Errorf("prices must be finite and non-negative")
 			}
 		}
+	}
+	if p.Video != nil {
+		if err := p.Video.Validate(); err != nil {
+			return err
+		}
+		count++
 	}
 	if count == 0 {
 		return fmt.Errorf("enter at least one price")
@@ -180,4 +188,21 @@ func (s *PricingService) GetAdminModelPrice(model string) (AdminModelPrice, bool
 		base = &copy
 	}
 	return p, edited, base
+}
+
+// GetVideoPricingSpec 返回模型的视频计费规则：管理员覆盖优先，其次内置默认价。
+// source 为 "admin" 或 "default"。
+func (s *PricingService) GetVideoPricingSpec(model string) (spec VideoPricingSpec, source string, ok bool) {
+	if s != nil {
+		s.mu.RLock()
+		p, edited := s.adminPriceLocked(model)
+		s.mu.RUnlock()
+		if edited && p.Video != nil {
+			return *p.Video, "admin", true
+		}
+	}
+	if spec, ok := LookupDefaultVideoPricingSpec(model); ok {
+		return spec, "default", true
+	}
+	return VideoPricingSpec{}, "", false
 }

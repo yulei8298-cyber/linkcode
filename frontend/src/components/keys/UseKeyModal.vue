@@ -368,6 +368,8 @@ const defaultClientTab = computed(() => {
       return 'claude'
     case 'typesafe':
       return 'systemone'
+    case 'video':
+      return 'video'
     default:
       return 'claude'
   }
@@ -502,6 +504,10 @@ const clientTabs = computed((): TabConfig[] => {
       return [
         { id: 'systemone', label: t('keys.useKeyModal.cliTabs.systemOne'), icon: TerminalIcon }
       ]
+    case 'video':
+      return [
+        { id: 'video', label: t('keys.useKeyModal.cliTabs.videoApi'), icon: TerminalIcon }
+      ]
     case 'deepseek':
     case 'minimax':
     case 'composite':
@@ -588,6 +594,8 @@ const platformDescription = computed(() => {
         : t('keys.useKeyModal.composite.description')
     case 'typesafe':
       return t('keys.useKeyModal.typesafe.description')
+    case 'video':
+      return t('keys.useKeyModal.video.description')
     default:
       return t('keys.useKeyModal.description')
   }
@@ -647,6 +655,8 @@ const platformNote = computed(() => {
         : t('keys.useKeyModal.note')
     case 'typesafe':
       return t('keys.useKeyModal.typesafe.note')
+    case 'video':
+      return t('keys.useKeyModal.video.note')
     default:
       return t('keys.useKeyModal.note')
   }
@@ -775,6 +785,8 @@ const currentFiles = computed((): FileConfig[] => {
   switch (props.platform) {
     case 'typesafe':
       return [generateSystemOneCurl(baseRoot, apiKey)]
+    case 'video':
+      return generateVideoCurl(baseRoot, apiKey)
     case 'openai':
       if (activeClientTab.value === 'claude') {
         // Anthropic clients append /v1/messages themselves.
@@ -867,6 +879,38 @@ Invoke-RestMethod -Method Post -Uri "${endpoint}" -Headers $headers -ContentType
   -H "Content-Type: application/json" \\
   --data '${payload}'`
   }
+}
+
+// 视频平台：统一任务接口三步（创建 → 查询 → 下载），厂商原生 SDK 另见管理员提供的透传地址。
+function generateVideoCurl(baseUrl: string, apiKey: string): FileConfig[] {
+  const payload = '{"model":"wan3.0-video","prompt":"海浪轻拍沙滩，日落","seconds":5,"resolution":"720p","aspect_ratio":"16:9"}'
+  if (activeTab.value === 'powershell') {
+    return [{
+      path: 'PowerShell',
+      content: `$headers = @{ Authorization = "Bearer ${apiKey}" }
+$task = Invoke-RestMethod -Method Post -Uri "${baseUrl}/v1/videos" -Headers $headers -ContentType "application/json" -Body '${payload}'
+# 轮询直到 status 为 completed / failed
+Invoke-RestMethod -Uri "${baseUrl}/v1/videos/$($task.id)" -Headers $headers
+# 完成后下载成品
+Invoke-WebRequest -Uri "${baseUrl}/v1/videos/$($task.id)/content" -Headers $headers -OutFile video.mp4`
+    }]
+  }
+  const cont = activeTab.value === 'cmd' ? '^' : '\\'
+  const body = activeTab.value === 'cmd' ? `"${payload.replace(/"/g, '\\"')}"` : `'${payload}'`
+  return [{
+    path: activeTab.value === 'cmd' ? 'Command Prompt' : 'Terminal',
+    content: `# 1. 创建任务（返回 id，形如 vt_xxx）
+curl -X POST "${baseUrl}/v1/videos" ${cont}
+  -H "Authorization: Bearer ${apiKey}" ${cont}
+  -H "Content-Type: application/json" ${cont}
+  --data ${body}
+
+# 2. 查询任务（status: queued / in_progress / completed / failed）
+curl "${baseUrl}/v1/videos/<task_id>" -H "Authorization: Bearer ${apiKey}"
+
+# 3. 下载成品（completed 后；查询结果里的 url 也可直接在浏览器播放）
+curl -L "${baseUrl}/v1/videos/<task_id>/content" -H "Authorization: Bearer ${apiKey}" -o video.mp4`
+  }]
 }
 
 function generateAnthropicFiles(baseUrl: string, apiKey: string): FileConfig[] {
@@ -1335,6 +1379,7 @@ function generateRoutedCodexFiles(
     typesafe: 'TypeSafe / Jev',
     command_code: 'Command Code',
     cline: 'Cline',
+    video: 'Video',
     composite: 'Composite'
   }
   const label = labels[platform]

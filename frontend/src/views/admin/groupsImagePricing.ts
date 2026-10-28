@@ -9,8 +9,9 @@ export const imagePricingPlatforms = new Set([
 export const supportsImagePricingPlatform = (platform: string): boolean =>
   imagePricingPlatforms.has(platform);
 
+// 视频平台的分组价是按秒的分组覆盖价（留空使用模型定价），与 Grok 共用同一组字段。
 export const supportsVideoPricingPlatform = (platform: string): boolean =>
-  platform === "grok";
+  platform === "grok" || platform === "video";
 
 export const imagePricingI18nKey = (_platform: string, key: string): string =>
   `admin.groups.imagePricing.${key}`;

@@ -31,6 +31,28 @@ export function isImageUsage(row: Pick<ImageBillingRow, 'image_count' | 'billing
   return (row?.image_count ?? 0) > 0 && row?.billing_mode !== BILLING_MODE_TOKEN && row?.billing_mode !== BILLING_MODE_VIDEO
 }
 
+interface VideoBillingRow {
+  billing_mode?: string | null
+  video_count?: number
+}
+
+/** 视频生成用量：显式 video 计费模式，或带视频条数的非 token 记录。 */
+export function isVideoUsage(row: VideoBillingRow | null | undefined): boolean {
+  if (!row) return false
+  return row.billing_mode === BILLING_MODE_VIDEO || ((row.video_count ?? 0) > 0 && row.billing_mode !== BILLING_MODE_TOKEN)
+}
+
+/** 视频用量摘要，例如「1 条 · 720p · 5 秒」；缺失字段省略。 */
+export function formatVideoUsage(
+  row: { video_count?: number; video_resolution?: string | null; video_duration_seconds?: number | null },
+  t: (key: string, values?: Record<string, unknown>) => string
+): string {
+  const parts = [t('usage.videoCountValue', { n: Math.max(row.video_count ?? 0, 1) })]
+  if (row.video_resolution) parts.push(row.video_resolution)
+  if (row.video_duration_seconds) parts.push(t('usage.videoSecondsValue', { n: row.video_duration_seconds }))
+  return parts.join(' · ')
+}
+
 export function getDisplayBillingMode(row: Pick<ImageBillingRow, 'billing_mode' | 'image_count'> | null | undefined): string | null | undefined {
   // Explicit video/token modes always win over image_count heuristics.
   if (row?.billing_mode === BILLING_MODE_VIDEO || row?.billing_mode === BILLING_MODE_TOKEN) {

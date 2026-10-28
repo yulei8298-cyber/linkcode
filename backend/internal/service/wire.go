@@ -107,6 +107,20 @@ func ProvideBatchImageCleanupService(repo BatchImageRepository, accountRepo Acco
 	return svc
 }
 
+// ProvideVideoGatewayService 创建视频网关服务并启动后台轮询与补结算。
+func ProvideVideoGatewayService(
+	gateway *OpenAIGatewayService,
+	repo VideoTaskRepository,
+	accountRepo AccountRepository,
+	apiKeyService *APIKeyService,
+	subscriptions *SubscriptionService,
+	cfg *config.Config,
+) *VideoGatewayService {
+	svc := NewVideoGatewayService(gateway, repo, accountRepo, apiKeyService, subscriptions, cfg)
+	svc.Start()
+	return svc
+}
+
 // ProvideOpenAIOAuthService creates OpenAIOAuthService with privacy/account enrichment support.
 func ProvideOpenAIOAuthService(
 	proxyRepo ProxyRepository,
@@ -915,6 +929,7 @@ var ProviderSet = wire.NewSet(
 	NewBatchImageDownloadService,
 	ProvideBatchImageCleanupService,
 	ProvideBatchImageWorkerRuntime,
+	ProvideVideoGatewayService,
 	wire.Bind(new(AccountRuntimeBlocker), new(*OpenAIGatewayService)),
 	NewOAuthService,
 	ProvideClaudeResetCreditService,

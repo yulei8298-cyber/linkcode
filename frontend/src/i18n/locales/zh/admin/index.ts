@@ -9,6 +9,7 @@ import promptAudit from './promptAudit'
 import plugins from './plugins'
 import intelCheck from './intelCheck'
 import packages from './packages'
+import video from './video'
 
 export default {
   ...overview,
@@ -22,4 +23,5 @@ export default {
   ...plugins,
   ...intelCheck,
   ...packages,
+  ...video,
 }

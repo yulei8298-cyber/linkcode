@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -629,4 +630,20 @@ func TestGetModelDefaultPricing_OmitsUnsupportedCache1hPrice(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 	require.True(t, body.Data.Found)
 	require.Nil(t, body.Data.CacheWrite1hPrice)
+}
+
+func TestCreateChannelRequest_AcceptsVideoBillingMode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	bind := func(body string) error {
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		c.Request = httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
+		c.Request.Header.Set("Content-Type", "application/json")
+		var req createChannelRequest
+		return c.ShouldBindJSON(&req)
+	}
+	require.NoError(t, bind(`{"name":"视频","model_pricing":[{"platform":"video","models":["kling-v3"],"billing_mode":"video",
+		"intervals":[{"tier_label":"720p","per_request_price":0.32}]}]}`))
+
+	pricing := pricingRequestToService([]channelModelPricingRequest{{Platform: "video", Models: []string{"kling-v3"}, BillingMode: "video"}}, true)
+	require.Equal(t, service.BillingModeVideo, pricing[0].BillingMode)
 }

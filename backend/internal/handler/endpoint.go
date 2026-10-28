@@ -30,8 +30,13 @@ const (
 	EndpointVideosEdits          = "/v1/videos/edits"
 	EndpointVideosExtensions     = "/v1/videos/extensions"
 	EndpointVideos               = "/v1/videos"
-	EndpointSeedanceTasks        = "/api/v3/contents/generations/tasks"
-	EndpointGeminiModels         = "/v1beta/models"
+	// EndpointSeedanceTasks 是火山方舟原生任务路径（Seedance）。
+	EndpointSeedanceTasks = "/api/v3/contents/generations/tasks"
+	// EndpointVideoGenerations 是 new-api 风格的统一视频任务路径。
+	EndpointVideoGenerations = "/v1/video/generations"
+	// EndpointVideoNativePrefix 是视频厂商原生协议透传前缀（/video/{protocol}/...）。
+	EndpointVideoNativePrefix = "/video/"
+	EndpointGeminiModels      = "/v1beta/models"
 )
 
 const EndpointAntigravityGenerateContent = "/v1internal:streamGenerateContent"
@@ -83,8 +88,16 @@ const (
 func NormalizeInboundEndpoint(path string) string {
 	path = strings.TrimSpace(path)
 	switch {
+	case strings.HasPrefix(path, EndpointVideoNativePrefix):
+		// 原生透传按协议归档：/video/kling/v1/videos/text2video → /video/kling
+		if protocol, _, _ := strings.Cut(strings.TrimPrefix(path, EndpointVideoNativePrefix), "/"); protocol != "" {
+			return EndpointVideoNativePrefix + protocol
+		}
+		return path
 	case strings.Contains(path, "/contents/generations/tasks"):
 		return EndpointSeedanceTasks
+	case strings.Contains(path, "/video/generations"):
+		return EndpointVideoGenerations
 	case strings.Contains(path, EndpointResponsesInputTokens) || isResponsesInputTokensAliasPath(path):
 		return EndpointResponsesInputTokens
 	case strings.Contains(path, EndpointEmbeddings) || strings.Contains(path, "/embeddings"):

@@ -692,6 +692,19 @@ func TestEmbeddedFrontendBypassesBareVideoAPIRoutes(t *testing.T) {
 	}
 }
 
+func TestEmbeddedFrontendBypassesVideoPlatformRoutes(t *testing.T) {
+	for _, path := range []string{
+		"/video/kling/v1/videos/text2video",
+		"/video/ark/api/v3/contents/generations/tasks",
+		"/video/dashscope/api/v1/tasks/t1",
+		"/video-files/vt_abc",
+	} {
+		require.True(t, shouldBypassEmbeddedFrontend(path), "path=%s", path)
+	}
+	// 管理端「视频任务」页面仍由前端渲染。
+	require.False(t, shouldBypassEmbeddedFrontend("/admin/video-tasks"))
+}
+
 func TestEmbeddedFrontendBypassesBareAPIAliases(t *testing.T) {
 	for _, path := range []string{
 		"/chat/completions",

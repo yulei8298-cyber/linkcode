@@ -55,6 +55,10 @@ const messages: Record<string, string> = {
   'usage.userBilled': 'User billed',
   'usage.accountBilled': 'Account billed',
   'usage.imageUnit': ' images',
+  'usage.videoSpec': 'Video',
+  'usage.videoTokens': 'Output tokens',
+  'usage.videoTotalPrice': 'Video cost',
+  'admin.usage.billingModeVideo': 'Video',
   'usage.imageCount': 'Image count',
   'usage.imageBillingSize': 'Billing size',
   'usage.imageInputSize': 'Input size',
@@ -710,6 +714,37 @@ describe('admin UsageTable tooltip', () => {
     expect(text).toContain('Per-image price')
     expect(text).toContain('not recorded')
     expect(text).not.toContain('(2K)')
+  })
+})
+
+describe('admin UsageTable video rows', () => {
+  it('shows video count, resolution and duration instead of tokens', async () => {
+    const wrapper = mount(UsageTable, {
+      props: {
+        data: [{
+          ...baseImageRow,
+          request_id: 'video-task:vt_1',
+          image_count: 0,
+          billing_mode: 'video',
+          video_count: 1,
+          video_resolution: '1080p',
+          video_duration_seconds: 20,
+          output_tokens: 0,
+          total_cost: 3.4,
+        }],
+        loading: false,
+        columns: [],
+      },
+      global: { stubs: { DataTable: DataTableStub, EmptyState: true, Icon: true, Teleport: true } },
+    })
+    const cell = wrapper.find('[data-testid="usage-video-cell"]')
+    expect(cell.exists()).toBe(true)
+    expect(cell.text()).toContain('1080p')
+    expect(cell.text()).toContain('usage.videoSecondsValue')
+    await wrapper.find('.group.relative').trigger('mouseenter')
+    await nextTick()
+    expect(wrapper.text()).toContain('Video cost')
+    expect(wrapper.text()).not.toContain('Image count')
   })
 })
 

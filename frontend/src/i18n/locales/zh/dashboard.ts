@@ -191,7 +191,12 @@ export default {
         codexCliWs: 'Codex CLI (WebSocket)',
         grokCli: 'Grok CLI',
         systemOne: 'System One',
+        videoApi: '视频接口',
         opencode: 'OpenCode'
+      },
+      video: {
+        description: '视频分组通过统一的异步任务接口生成视频：创建任务后轮询状态，完成后下载成品。也兼容 new-api 风格的 /v1/video/generations。',
+        note: '视频按实际时长或条数计费，失败与取消不扣费；使用厂商原生 SDK 时，把 SDK 的 Base URL 设为「网关地址/video/协议名」（如 /video/kling、/video/dashscope）。'
       },
       typesafe: {
         description: '通过 TypeSafe 原生 System One 端点调用 Jev。',
@@ -470,6 +475,11 @@ export default {
     exportFailed: '使用数据导出失败',
     exportExcelSuccess: '使用数据导出成功（Excel格式）',
     exportExcelFailed: '使用数据导出失败',
+    videoCountValue: '{n} 条',
+    videoSecondsValue: '{n} 秒',
+    videoSpec: '视频规格',
+    videoTokens: '输出 token',
+    videoTotalPrice: '视频费用',
     imageUnit: '张',
     userAgent: 'User-Agent',
     ipGeo: {
@@ -694,6 +704,20 @@ export default {
     loadFailed: '加载模型广场失败',
     noSearchResult: '没有匹配的模型',
     anonymousHint: '登录后可查看你的专属分组与专属倍率',
+    video: {
+      perSecond: '按秒计费',
+      perVideo: '按条计费',
+      token: '按 token 计费',
+      perSecondUnit: '/秒',
+      perVideoUnit: '/条',
+      withAudio: '带音频',
+      tokenUnit: '/百万 token',
+      anyResolution: '任意分辨率',
+      anyDuration: '任意时长',
+      seconds: '{n} 秒',
+      durationRange: '时长 {min}–{max} 秒',
+      rateNote: '已按倍率 ×{rate} 换算',
+    },
     cards: {
       description: '每个分组，每个模型，价格一目了然。',
       currencyUnit: 'USD / 百万 tokens',
