@@ -370,15 +370,14 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 		}
 		SetOpsUpstreamModel(c, actualModel)
 		upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
+		upstreamCtx = attachOpenAIUpstreamTrace(upstreamCtx, c, account)
 		upstreamReq, buildErr := s.buildUpstreamRequestOpenAIPassthrough(upstreamCtx, c, account, body, token)
 		releaseUpstreamCtx()
 		if buildErr != nil {
 			return nil, buildErr
 		}
 
-		upstreamStart := time.Now()
-		resp, err = s.doOpenAIUpstream(upstreamReq, proxyURL, account)
-		SetOpsLatencyMs(c, OpsUpstreamLatencyMsKey, time.Since(upstreamStart).Milliseconds())
+		resp, err = s.doOpenAIUpstreamTimed(c, upstreamReq, proxyURL, account)
 		if err != nil {
 			// Transport-level failure (proxy/DNS/TCP/TLS — no HTTP response). Convert to
 			// a failover so the handler switches to a healthy account.

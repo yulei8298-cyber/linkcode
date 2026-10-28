@@ -406,6 +406,8 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 	setOpenAIClientTransportHTTP(c)
 
 	requestStart := time.Now()
+	// 分阶段耗时：仅在所选账号开启 openai_stage_timing_log 时才会输出日志。
+	timing := service.NewOpenAIStageTiming(c)
 
 	// Get apiKey and user from context (set by ApiKeyAuth middleware)
 	apiKey, ok := middleware2.GetAPIKeyFromContext(c)
@@ -448,6 +450,10 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		return
 	}
 
+	// 读体耗时含客户端上传时间，大请求体（base64 图片等）时这一段占比会很高。
+	timing.RecordSince(service.StageBodyRead, requestStart)
+	timing.Set(service.StageBodyBytes, int64(len(body)))
+	prepareStart := time.Now()
 	setOpsRequestContext(c, "", false)
 	sessionHashBody := body
 	body, ok = h.normalizeOpenAIResponsesCompactRequest(c, reqLog, body)
@@ -607,6 +613,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 
 	service.SetOpsLatencyMs(c, service.OpsAuthLatencyMsKey, time.Since(requestStart).Milliseconds())
 	routingStart := time.Now()
+	timing.RecordSince(service.StagePrepare, prepareStart)
 
 	userReleaseFunc, acquired := h.acquireResponsesUserSlot(c, subject.UserID, subject.Concurrency, reqStream, &streamStarted, reqLog)
 	if !acquired {
@@ -616,6 +623,8 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 	if userReleaseFunc != nil {
 		defer userReleaseFunc()
 	}
+	timing.RecordSince(service.StageUserSlot, routingStart)
+	billingStart := time.Now()
 
 	// 2. Re-check billing eligibility after wait
 	if err := h.billingCacheService.CheckBillingEligibility(c.Request.Context(), apiKey.User, apiKey, apiKey.Group, subscription, service.QuotaPlatform(c.Request.Context(), apiKey)); err != nil {
@@ -640,6 +649,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		return
 	}
 	defer inflightRelease()
+	timing.RecordSince(service.StageBilling, billingStart)
 
 	// Generate session hash (header first; fallback to prompt_cache_key)
 	sessionHash := h.gatewayService.GenerateSessionHash(c, sessionHashBody)
@@ -685,6 +695,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		}
 		// Select account supporting the requested model
 		reqLog.Debug("openai.account_selecting", zap.Int("excluded_account_count", len(failedAccountIDs)))
+		selectStart := time.Now()
 		selection, scheduleDecision, err := h.gatewayService.SelectAccountWithSchedulerForCapability(
 			c.Request.Context(),
 			apiKey.GroupID,
@@ -749,6 +760,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			zap.Int64("latency_ms", scheduleDecision.LatencyMs),
 			zap.Float64("load_skew", scheduleDecision.LoadSkew),
 		)
+		timing.RecordSince(service.StageSelectAccount, selectStart)
 		account := selection.Account
 		if previousResponseID != "" && requestPlatform == service.PlatformOpenAI && !account.IsOpenAIApiKey() {
 			// The public Responses HTTP API supports previous_response_id on API-key
@@ -777,7 +789,9 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		reqLog.Debug("openai.account_selected", zap.Int64("account_id", account.ID), zap.String("account_name", account.Name))
 		setOpsSelectedAccount(c, account.ID, account.Platform)
 
+		slotStart := time.Now()
 		accountReleaseFunc, slotResult := h.acquireResponsesAccountSlot(c, apiKey.GroupID, sessionHash, selection, reqStream, &streamStarted, reqLog)
+		timing.RecordSince(service.StageAccountSlot, slotStart)
 		if slotResult == openAISlotAcquireProfitVetoed {
 			// 利润终检否决：排除该账号重新选号，全池耗尽由下一轮选号报错；
 			// 否决次数达上限则直接终止，避免排队抢槽后才终检的延迟放大。
@@ -793,7 +807,9 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 
 		// Forward request
 		service.SetOpsLatencyMs(c, service.OpsRoutingLatencyMsKey, time.Since(routingStart).Milliseconds())
+		timing.RecordSince(service.StagePreForward, requestStart)
 		forwardStart := time.Now()
+		timing.BeginForward(forwardStart)
 		// 用扣除非语义心跳字节的口径快照：心跳注释不构成语义响应，
 		// 不能因心跳字节变化而放弃 failover 换号（#3887）。
 		writerSizeBeforeForward := service.OpenAICompactKeepaliveAdjustedWrittenSize(c)
@@ -815,6 +831,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		}
 		h.recordCyberPolicyIfMarked(c, apiKey, account, subscription, reqModel, err != nil, cyberBlockBodyHTTP, clientRequestedUsageFields(c, channelMapping, reqModel, ""), service.HashUsageRequestPayload(body), extractCyberPolicyInputEvidence(service.ContentModerationProtocolOpenAIResponses, body))
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
+		timing.Set(service.StageForward, forwardDurationMs)
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)
 		responseLatencyMs := forwardDurationMs
 		if upstreamLatencyMs > 0 && forwardDurationMs > upstreamLatencyMs {
@@ -824,6 +841,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		if err == nil && result != nil && result.FirstTokenMs != nil {
 			service.SetOpsLatencyMs(c, service.OpsTimeToFirstTokenMsKey, int64(*result.FirstTokenMs))
 		}
+		logOpenAIStageTiming(reqLog, timing, account, switchCount, result, err)
 		// #5148 对齐：错误返回携带的部分 result（流中断前上游已计量的 usage）照常
 		// 入账；failover 错误恒定 result=nil，不会重复计费。
 		submitResponsesUsage := func(res *service.OpenAIForwardResult) {
