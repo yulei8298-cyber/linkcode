@@ -9,12 +9,13 @@ import (
 // ChannelMonitor 全局常量。
 // 这些是 MVP 阶段的硬编码值，按需可以提到 config 中。
 const (
-	// monitorRequestTimeout 单次模型请求总超时（含 Body 读取）。
-	monitorRequestTimeout = 45 * time.Second
+	// monitorRequestTimeout 单次模型请求总超时（含 Body 读取）。探测耗时达到该值即超时，记为 error（红色）。
+	monitorRequestTimeout = 50 * time.Second
 	// monitorPingTimeout HEAD 请求 endpoint origin 的超时。
 	monitorPingTimeout = 8 * time.Second
-	// monitorDegradedThreshold 主请求成功但耗时超过该阈值视为 degraded。
-	monitorDegradedThreshold = 6 * time.Second
+	// monitorDegradedThreshold 主请求成功但耗时达到或超过该阈值视为 degraded（黄色）。
+	// 低于该阈值为 operational（绿色）；红色另由 monitorRequestTimeout 超时或非 2xx、答案错误触发。
+	monitorDegradedThreshold = 10 * time.Second
 	// monitorHistoryRetentionDays 明细历史保留天数。
 	// 60s 默认间隔 * 30 天 ≈ 43200 行/monitor/model，一般部署总量 <= 2M 行，
 	// PG 无压力；所以直接保留完整明细一个月，可用率查询可以全走原始行不依赖聚合。
@@ -144,7 +145,9 @@ const (
 	// monitorTLSHandshakeTimeout HTTP transport TLS 握手超时。
 	monitorTLSHandshakeTimeout = 10 * time.Second
 	// monitorResponseHeaderTimeout HTTP transport 等待响应头超时。
-	monitorResponseHeaderTimeout = 30 * time.Second
+	// 探测为非流式，响应头基本在答案生成完才返回，因此它与 monitorRequestTimeout 一起决定「变红」的秒数；
+	// 保持两者相等，避免响应头超时比总超时更早把慢响应判为红色。
+	monitorResponseHeaderTimeout = 50 * time.Second
 	// monitorPingDiscardMaxBytes ping 时丢弃响应体的最大字节数。
 	monitorPingDiscardMaxBytes = 1024
 
