@@ -562,7 +562,7 @@ export default {
         requestTimezoneMode: '时区来源',
         requestTimezoneManual: '手动：使用账号配置',
         requestTimezoneAuto: '自动：跟随出口 IP',
-        requestTimezoneModeDesc: '手动模式默认 Asia/Singapore；自动模式经请求出口识别 IP 时区，切换代理后重新识别，失败时保留原文。保留日期和普通对话，不保证改善模型表现。',
+        requestTimezoneModeDesc: '手动模式默认 America/Los_Angeles；自动模式经请求出口识别 IP 时区，切换代理后重新识别，失败时保留原文。保留日期和普通对话，不保证改善模型表现。',
         codexTicketEnabled: '292 打票',
         codexTicketEnabledDesc:
           '关闭后不打票、不注入 x-codex-turn-state，按原链路转发。开启后后台打票，并在业务请求中覆盖该头。',

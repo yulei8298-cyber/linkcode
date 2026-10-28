@@ -628,7 +628,7 @@ export default {
       // OpenAI specific hints
       openai: {
         requestTimezone: 'Request timezone',
-        requestTimezoneDesc: 'Applies only when the request timezone source in system settings is Manual: account setting. Defaults to Asia/Singapore.',
+        requestTimezoneDesc: 'Applies only when the request timezone source in system settings is Manual: account setting. Defaults to America/Los_Angeles.',
         requestTimezoneLoadFailed: 'Could not load timezones. Please retry later.',
         baseUrlHint: 'Leave default for official OpenAI API',
         apiKeyHint: 'Your OpenAI API Key',

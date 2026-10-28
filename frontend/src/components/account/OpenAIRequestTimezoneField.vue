@@ -23,7 +23,7 @@ import Select from '@/components/common/Select.vue'
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{ (event: 'update:modelValue', value: string): void }>()
 const { t } = useI18n()
-const options = ref([{ value: 'Asia/Singapore', label: 'Asia/Singapore' }])
+const options = ref([{ value: 'America/Los_Angeles', label: 'America/Los_Angeles' }])
 const loading = ref(false)
 const loadFailed = ref(false)
 const loaded = ref(false)
@@ -33,7 +33,7 @@ const selectTimezone = (value: string | number | boolean | null) => {
 }
 
 watch(() => props.modelValue, value => {
-  if (loaded.value && !options.value.some(option => option.value === value)) emit('update:modelValue', 'Asia/Singapore')
+  if (loaded.value && !options.value.some(option => option.value === value)) emit('update:modelValue', 'America/Los_Angeles')
 })
 
 onMounted(async () => {

@@ -569,7 +569,7 @@ export default {
         requestTimezoneMode: "Timezone source",
         requestTimezoneManual: "Manual: account setting",
         requestTimezoneAuto: "Automatic: egress IP",
-        requestTimezoneModeDesc: "Manual mode defaults to Asia/Singapore. Automatic mode detects the timezone through the request egress and resolves again after proxy changes; failed detection preserves the original request. Dates and ordinary text stay unchanged. This does not guarantee improved model quality.",
+        requestTimezoneModeDesc: "Manual mode defaults to America/Los_Angeles. Automatic mode detects the timezone through the request egress and resolves again after proxy changes; failed detection preserves the original request. Dates and ordinary text stay unchanged. This does not guarantee improved model quality.",
         codexTicketEnabled: "292 ticket harvest",
         codexTicketEnabledDesc:
           "When off, the gateway neither harvests nor injects x-codex-turn-state and forwards traffic as usual. When on, it harvests tickets in the background and overwrites that header on production requests.",

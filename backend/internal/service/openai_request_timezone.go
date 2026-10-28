@@ -12,7 +12,7 @@ import (
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
-const DefaultOpenAIRequestTimezone = "Asia/Singapore"
+const DefaultOpenAIRequestTimezone = "America/Los_Angeles"
 const openAIRequestTimezoneExtraKey = "openai_request_timezone"
 
 //go:embed openai_request_timezones.txt

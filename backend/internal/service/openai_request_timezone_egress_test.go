@@ -65,7 +65,7 @@ func TestRequestTimezoneEgressModesAndSwitch(t *testing.T) {
 		want          string
 		calls         int
 	}{
-		{"disabled", false, true, "Asia/Shanghai", 0}, {"manual", true, false, "Asia/Singapore", 0}, {"automatic", true, true, "Asia/Tokyo", 1},
+		{"disabled", false, true, "Asia/Shanghai", 0}, {"manual", true, false, "America/Los_Angeles", 0}, {"automatic", true, true, "Asia/Tokyo", 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			probe := &egressTimezoneProber{probe: func(context.Context, string) (*ProxyExitInfo, int64, error) {
