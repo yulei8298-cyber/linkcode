@@ -187,6 +187,19 @@ func (s *PackageService) AdminVoid(ctx context.Context, packageID int64) (*UserP
 	return pkg, nil
 }
 
+// AdminExtend 管理员免费延长一张套餐（用户有特殊情况时使用），只顺延到期时间，额度不变。
+func (s *PackageService) AdminExtend(ctx context.Context, packageID int64, days int) (*UserPackage, error) {
+	if days < 1 || days > MaxPackageExtendDays {
+		return nil, ErrPackageExtendInvalid
+	}
+	pkg, err := s.repo.ExtendPackage(ctx, packageID, days, s.now())
+	if err != nil {
+		return nil, err
+	}
+	s.InvalidateGroupState(pkg.UserID, pkg.GroupID)
+	return pkg, nil
+}
+
 // FulfillOrder 支付成功后发货：按订单幂等地创建一张套餐，额度与名称取当前配置快照。
 func (s *PackageService) FulfillOrder(ctx context.Context, in PackageFulfillInput) (*UserPackage, error) {
 	plan, err := s.repo.GetPlan(ctx, in.PlanID)

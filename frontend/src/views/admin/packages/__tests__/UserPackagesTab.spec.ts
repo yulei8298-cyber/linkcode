@@ -6,14 +6,15 @@ vi.mock('vue-i18n', async () => {
   return { ...actual, useI18n: () => ({ t: (key: string, params?: Record<string, unknown>) => (params ? `${key}:${JSON.stringify(params)}` : key) }) }
 })
 
-const { listUserPackages, getUserPackageStats, unfreezeUserPackage, voidUserPackage } = vi.hoisted(() => ({
+const { listUserPackages, getUserPackageStats, unfreezeUserPackage, voidUserPackage, extendUserPackage } = vi.hoisted(() => ({
   listUserPackages: vi.fn(),
   getUserPackageStats: vi.fn(),
   unfreezeUserPackage: vi.fn(),
   voidUserPackage: vi.fn(),
+  extendUserPackage: vi.fn(),
 }))
 vi.mock('@/api/admin/packages', () => ({
-  default: { listUserPackages, getUserPackageStats, unfreezeUserPackage, voidUserPackage },
+  default: { listUserPackages, getUserPackageStats, unfreezeUserPackage, voidUserPackage, extendUserPackage },
 }))
 vi.mock('@/api/admin', () => ({
   adminAPI: { groups: { getAll: vi.fn().mockResolvedValue([{ id: 2, name: 'GPT-Pro', subscription_type: 'standard', is_free: false }]) } },
@@ -35,7 +36,7 @@ const stats = {
   live_quota_usd: 300, live_used_usd: 120, recent_sold: 6, recent_revenue: 18, window_days: 30,
 }
 
-const stubs = { ConfirmDialog: true, Pagination: true }
+const stubs = { ConfirmDialog: true, Pagination: true, PackageExtendDialog: true }
 
 async function mountTab() {
   const wrapper = mount(UserPackagesTab, { global: { stubs } })
@@ -50,6 +51,7 @@ describe('管理端用户套餐总览', () => {
     getUserPackageStats.mockResolvedValue(stats)
     unfreezeUserPackage.mockResolvedValue({})
     voidUserPackage.mockResolvedValue({})
+    extendUserPackage.mockResolvedValue({})
   })
 
   it('打开即加载列表与汇总，不需要先指定用户', async () => {
@@ -106,5 +108,44 @@ describe('管理端用户套餐总览', () => {
     expect(unfreezeUserPackage).toHaveBeenCalledWith(8)
     expect(listUserPackages).toHaveBeenCalledTimes(1)
     expect(getUserPackageStats).toHaveBeenCalledTimes(1)
+  })
+
+  it('延长按钮只出现在使用中和冻结中的套餐', async () => {
+    listUserPackages.mockResolvedValue({
+      items: [item(), item({ id: 8, status: 'frozen' }), item({ id: 9, status: 'expired' }), item({ id: 10, status: 'exhausted' }), item({ id: 11, status: 'voided' })],
+      total: 5, page: 1, page_size: 20, pages: 1,
+    })
+    const wrapper = await mountTab()
+    const rows = wrapper.findAll('[data-test="package-row"]')
+    expect(rows.map((r) => r.find('[data-test="extend"]').exists())).toEqual([true, true, false, false, false])
+  })
+
+  it('点延长打开弹窗，确认后调用接口、关闭弹窗并刷新', async () => {
+    const wrapper = await mountTab()
+    const dialog = wrapper.findComponent({ name: 'PackageExtendDialog' })
+    expect(dialog.props('item')).toBeNull()
+
+    await wrapper.findAll('[data-test="package-row"]')[1].get('[data-test="extend"]').trigger('click')
+    expect(dialog.props('item')).toMatchObject({ id: 8 })
+
+    listUserPackages.mockClear()
+    getUserPackageStats.mockClear()
+    dialog.vm.$emit('confirm', dialog.props('item'), 5)
+    await flushPromises()
+    expect(extendUserPackage).toHaveBeenCalledWith(8, 5)
+    expect(dialog.props('item')).toBeNull()
+    expect(listUserPackages).toHaveBeenCalledTimes(1)
+    expect(getUserPackageStats).toHaveBeenCalledTimes(1)
+  })
+
+  it('延长失败时保留弹窗，方便改天数重试', async () => {
+    extendUserPackage.mockRejectedValue(new Error('PACKAGE_NOT_EXTENDABLE'))
+    const wrapper = await mountTab()
+    await wrapper.findAll('[data-test="package-row"]')[0].get('[data-test="extend"]').trigger('click')
+    const dialog = wrapper.findComponent({ name: 'PackageExtendDialog' })
+    dialog.vm.$emit('confirm', dialog.props('item'), 3)
+    await flushPromises()
+    expect(extendUserPackage).toHaveBeenCalledWith(7, 3)
+    expect(dialog.props('item')).toMatchObject({ id: 7 })
   })
 })

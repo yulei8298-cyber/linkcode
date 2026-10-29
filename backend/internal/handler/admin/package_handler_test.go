@@ -86,6 +86,46 @@ func TestAdminPackageHandler_Stats(t *testing.T) {
 	require.EqualValues(t, service.AdminPackageSalesWindowDays, data["window_days"])
 }
 
+type extendRepoStub struct {
+	service.PackageRepository
+	id   int64
+	days int
+}
+
+func (s *extendRepoStub) ExtendPackage(_ context.Context, id int64, days int, _ time.Time) (*service.UserPackage, error) {
+	s.id, s.days = id, days
+	if id == 404 {
+		return nil, service.ErrPackageNotExtendable
+	}
+	return &service.UserPackage{ID: id, UserID: 9, GroupID: 2, Status: service.PackageStatusActive}, nil
+}
+
+func TestAdminPackageHandler_Extend(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &extendRepoStub{}
+	h := NewPackageHandler(service.NewPackageService(repo, adminPackageSettingStub{}, nil, nil))
+	r := gin.New()
+	r.POST("/user-packages/:id/extend", h.ExtendUserPackage)
+
+	w, body := serveJSON(r, http.MethodPost, "/user-packages/3/extend", `{"days":7}`)
+	require.Equal(t, http.StatusOK, w.Code)
+	require.Equal(t, int64(3), repo.id)
+	require.Equal(t, 7, repo.days)
+	require.EqualValues(t, 3, body["data"].(map[string]any)["id"])
+
+	for _, payload := range []string{`{}`, `{"days":0}`, `{"days":366}`, `{"days":"7"}`, `not json`} {
+		repo.days = 0
+		w, _ = serveJSON(r, http.MethodPost, "/user-packages/3/extend", payload)
+		require.Equal(t, http.StatusBadRequest, w.Code, payload)
+		require.Zero(t, repo.days, "非法天数不应落库：%s", payload)
+	}
+
+	w, _ = serveJSON(r, http.MethodPost, "/user-packages/abc/extend", `{"days":7}`)
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	w, _ = serveJSON(r, http.MethodPost, "/user-packages/404/extend", `{"days":7}`)
+	require.Equal(t, http.StatusBadRequest, w.Code, "已结束的套餐返回 400")
+}
+
 type enterpriseSettingStub struct {
 	service.SettingRepository
 	saved string

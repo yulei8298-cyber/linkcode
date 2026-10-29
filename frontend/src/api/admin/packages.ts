@@ -198,6 +198,12 @@ export async function voidUserPackage(id: number): Promise<UserPackage> {
   return data
 }
 
+/** 免费延长使用中或冻结中的套餐：到期时间顺延 days 天（1–365），额度不变。 */
+export async function extendUserPackage(id: number, days: number): Promise<UserPackage> {
+  const { data } = await apiClient.post<UserPackage>(`/admin/packages/user-packages/${id}/extend`, { days })
+  return data
+}
+
 export const packagesAdminAPI = {
   listPlans,
   savePlan,
@@ -216,6 +222,7 @@ export const packagesAdminAPI = {
   setUserEnterprise,
   unfreezeUserPackage,
   voidUserPackage,
+  extendUserPackage,
 }
 
 export default packagesAdminAPI

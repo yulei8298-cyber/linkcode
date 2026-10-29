@@ -37,6 +37,8 @@ const (
 	DefaultPackageMaxFreezeDayWeek  = 7
 	DefaultPackageMaxFreezeDayMonth = 15
 	MaxPackageMaxFreezeDay          = 60
+	// 管理员单次延长套餐的天数上限。
+	MaxPackageExtendDays = 365
 )
 
 // PackageValidityDays 按周期返回有效天数。
@@ -67,6 +69,8 @@ var (
 	ErrPackageFreezeCapUsed   = infraerrors.BadRequest("PACKAGE_FREEZE_CAP_REACHED", "这张套餐的冻结额度已用完")
 	ErrPackageNotFreezable    = infraerrors.BadRequest("PACKAGE_NOT_FREEZABLE", "只有使用中的套餐可以冻结")
 	ErrPackageNotFrozen       = infraerrors.BadRequest("PACKAGE_NOT_FROZEN", "套餐未处于冻结状态")
+	ErrPackageNotExtendable   = infraerrors.BadRequest("PACKAGE_NOT_EXTENDABLE", "只有使用中或冻结中的套餐可以延长")
+	ErrPackageExtendInvalid   = infraerrors.BadRequest("PACKAGE_EXTEND_DAYS_INVALID", "延长天数需为 1–365 的整数")
 	ErrPackageNoticeOutdated  = infraerrors.BadRequest("PACKAGE_NOTICE_OUTDATED", "购买须知已更新，请重新阅读并同意")
 	ErrPackageHolidayInvalid  = infraerrors.BadRequest("PACKAGE_HOLIDAY_INVALID", "名称或日期范围不合法（单次最多 60 天）")
 	ErrPackageHolidayNotFound = infraerrors.NotFound("PACKAGE_HOLIDAY_NOT_FOUND", "没有找到这段手动添加的日期")
@@ -117,6 +121,18 @@ func (p *UserPackage) RemainingUSD() float64 {
 		return 0
 	}
 	return p.QuotaUSD - p.UsedUSD
+}
+
+// Extendable 能否由管理员延长：冻结中，或使用中且未到期、未用完。
+// 已到期但还没被定时任务标记的 active 套餐视为已结束。
+func (p *UserPackage) Extendable(now time.Time) bool {
+	if p == nil {
+		return false
+	}
+	if p.Status == PackageStatusFrozen {
+		return true
+	}
+	return p.Status == PackageStatusActive && p.ExpiresAt.After(now) && p.UsedUSD < p.QuotaUSD
 }
 
 // FrozenSecondsAt 截至 now 的累计冻结秒数（含进行中的一段）。
@@ -200,6 +216,8 @@ type PackageRepository interface {
 	ListFrozenIDs(ctx context.Context) ([]int64, error)
 	ExpirePackages(ctx context.Context, now time.Time) ([]UserPackage, error)
 	VoidPackage(ctx context.Context, packageID int64) (*UserPackage, error)
+	// ExtendPackage 在行锁下把使用中或冻结中的套餐到期时间顺延 days 天，额度不变。
+	ExtendPackage(ctx context.Context, packageID int64, days int, now time.Time) (*UserPackage, error)
 	RestorePackageStatus(ctx context.Context, packageID int64, status string) (*UserPackage, error)
 
 	// 可冻结日期

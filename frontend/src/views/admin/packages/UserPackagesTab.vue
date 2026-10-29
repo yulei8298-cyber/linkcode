@@ -62,6 +62,7 @@
               <td class="whitespace-nowrap px-4 py-2.5">{{ formatDateTimeToMinute(p.created_at) }}</td>
               <td class="px-4 py-2.5">
                 <div class="flex gap-2 whitespace-nowrap">
+                  <button v-if="p.status === 'active' || p.status === 'frozen'" type="button" class="btn btn-primary btn-sm" data-test="extend" :disabled="busy" @click="pendingExtend = p">{{ t('admin.packages.userPackages.extend.action') }}</button>
                   <button v-if="p.status === 'frozen'" type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="unfreeze(p)">{{ t('admin.packages.userPackages.unfreeze') }}</button>
                   <button v-if="p.status === 'active' || p.status === 'frozen'" type="button" class="btn btn-danger btn-sm" :disabled="busy" @click="pendingVoid = p">{{ t('admin.packages.userPackages.void') }}</button>
                 </div>
@@ -82,6 +83,8 @@
       @confirm="confirmVoid"
       @cancel="pendingVoid = null"
     />
+
+    <PackageExtendDialog :item="pendingExtend" :busy="busy" @close="pendingExtend = null" @confirm="confirmExtend" />
   </section>
 </template>
 
@@ -98,6 +101,7 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 import { formatDateTimeToMinute } from '@/utils/format'
 import { formatCNY, formatUSD, PACKAGE_STATUS_BADGE, usedPercent } from '@/components/package/packageUtils'
 import UserPackageStats from './UserPackageStats.vue'
+import PackageExtendDialog from './PackageExtendDialog.vue'
 
 const STATUSES = ['active', 'frozen', 'exhausted', 'expired', 'voided'] as const
 const COLUMNS = ['user', 'plan', 'group', 'usage', 'paid', 'status', 'expires', 'frozen', 'bought', 'actions'] as const
@@ -114,6 +118,7 @@ const groups = ref<AdminGroup[]>([])
 const loading = ref(false)
 const busy = ref(false)
 const pendingVoid = ref<AdminUserPackage | null>(null)
+const pendingExtend = ref<AdminUserPackage | null>(null)
 let keywordTimer: ReturnType<typeof setTimeout> | undefined
 let loadSeq = 0
 
@@ -181,17 +186,21 @@ function onPageSize(size: number) {
   void loadList()
 }
 
-async function act(action: () => Promise<unknown>) {
+/** 执行一次操作并刷新；成功返回 true，失败已提示错误。 */
+async function act(action: () => Promise<unknown>, successMsg = t('admin.packages.userPackages.done')): Promise<boolean> {
   busy.value = true
+  let ok = false
   try {
     await action()
-    appStore.showSuccess(t('admin.packages.userPackages.done'))
+    appStore.showSuccess(successMsg)
+    ok = true
   } catch (err: unknown) {
     appStore.showError(extractApiErrorMessage(err, t('common.error')))
   } finally {
     busy.value = false
   }
   await refresh()
+  return ok
 }
 
 const unfreeze = (p: AdminUserPackage) => act(() => packagesAdminAPI.unfreezeUserPackage(p.id))
@@ -200,6 +209,12 @@ function confirmVoid() {
   const p = pendingVoid.value
   pendingVoid.value = null
   if (p) void act(() => packagesAdminAPI.voidUserPackage(p.id))
+}
+
+// 失败时保留弹窗，方便改天数后重试。
+async function confirmExtend(p: AdminUserPackage, days: number) {
+  const done = t('admin.packages.userPackages.extend.done', { name: p.name, n: days })
+  if (await act(() => packagesAdminAPI.extendUserPackage(p.id, days), done)) pendingExtend.value = null
 }
 
 onMounted(async () => {

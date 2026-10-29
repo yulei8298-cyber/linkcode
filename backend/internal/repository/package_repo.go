@@ -220,6 +220,28 @@ func (r *packageRepository) VoidPackage(ctx context.Context, packageID int64) (*
 	return userPackageToService(row), nil
 }
 
+// ExtendPackage 管理员延长套餐：可延长条件见 UserPackage.Extendable，到期时间顺延 days 天。
+// 冻结中的套餐到期时间本就暂停，顺延后解冻时再叠加冻结时长，两者互不影响。
+func (r *packageRepository) ExtendPackage(ctx context.Context, packageID int64, days int, now time.Time) (*service.UserPackage, error) {
+	var out *service.UserPackage
+	err := r.withTx(ctx, func(txCtx context.Context, tx *dbent.Client) error {
+		row, err := tx.UserPackage.Query().Where(userpackage.IDEQ(packageID)).ForUpdate().Only(txCtx)
+		if err != nil {
+			return translatePersistenceError(err, service.ErrPackageNotFound, nil)
+		}
+		if !userPackageToService(row).Extendable(now) {
+			return service.ErrPackageNotExtendable
+		}
+		updated, err := row.Update().SetExpiresAt(row.ExpiresAt.AddDate(0, 0, days)).Save(txCtx)
+		if err != nil {
+			return err
+		}
+		out = userPackageToService(updated)
+		return nil
+	})
+	return out, err
+}
+
 // RestorePackageStatus 把已作废的套餐恢复为作废前的状态（仅用于退款回滚）。
 func (r *packageRepository) RestorePackageStatus(ctx context.Context, packageID int64, status string) (*service.UserPackage, error) {
 	n, err := clientFromContext(ctx, r.client).UserPackage.Update().

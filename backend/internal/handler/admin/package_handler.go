@@ -239,6 +239,30 @@ func (h *PackageHandler) VoidUserPackage(c *gin.Context) {
 	response.Success(c, pkg)
 }
 
+type packageExtendRequest struct {
+	Days int `json:"days" binding:"required"`
+}
+
+// ExtendUserPackage POST /api/v1/admin/packages/user-packages/:id/extend
+// 免费延长使用中或冻结中的套餐，只顺延到期时间，额度不变。
+func (h *PackageHandler) ExtendUserPackage(c *gin.Context) {
+	id, ok := packagePathID(c)
+	if !ok {
+		return
+	}
+	var req packageExtendRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorFrom(c, service.ErrPackageExtendInvalid)
+		return
+	}
+	pkg, err := h.packageService.AdminExtend(c.Request.Context(), id, req.Days)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, pkg)
+}
+
 func packagePathID(c *gin.Context) (int64, bool) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
