@@ -37,6 +37,10 @@ type PackageService struct {
 
 	stateCache *ristretto.Cache
 	stateGroup singleflight.Group
+	// stateEpoch 每次失效加一，回源写缓存前比对，丢弃失效前已读库的结果。用全局计数而非
+	// 按键计数，避免键集合无限增长；代价只是失效瞬间其他键的并发回源少缓存一次。
+	stateMu    sync.RWMutex
+	stateEpoch uint64
 
 	// 企业尊享配置与用户身份缓存，首次使用时创建。
 	enterpriseCache     *gocache.Cache
@@ -128,13 +132,12 @@ func (s *PackageService) ResolveGroupState(ctx context.Context, userID, groupID 
 		}
 	}
 	value, err, _ := s.stateGroup.Do(key, func() (any, error) {
+		epoch := s.currentStateEpoch()
 		st, err := s.repo.GetGroupState(ctx, userID, groupID, s.now())
 		if err != nil {
 			return nil, err
 		}
-		if s.stateCache != nil {
-			_ = s.stateCache.SetWithTTL(key, *st, 1, packageStateCacheTTL)
-		}
+		s.cacheGroupState(key, *st, epoch)
 		return *st, nil
 	})
 	if err != nil {
@@ -144,12 +147,48 @@ func (s *PackageService) ResolveGroupState(ctx context.Context, userID, groupID 
 	return &st, nil
 }
 
-// InvalidateGroupState 失效某用户在某分组的套餐概况缓存。
-func (s *PackageService) InvalidateGroupState(userID, groupID int64) {
-	if s == nil || s.stateCache == nil {
+func (s *PackageService) currentStateEpoch() uint64 {
+	s.stateMu.RLock()
+	defer s.stateMu.RUnlock()
+	return s.stateEpoch
+}
+
+// cacheGroupState 仅当回源期间没有发生失效时写缓存。比对与写入在读锁内完成，
+// 失效方递增代际须拿写锁，因此写入要么排在失效的 Wait 之前被删掉，要么被拒绝。
+func (s *PackageService) cacheGroupState(key string, st PackageGroupState, epoch uint64) {
+	if s.stateCache == nil {
 		return
 	}
-	s.stateCache.Del(packageStateCacheKey(userID, groupID))
+	s.stateMu.RLock()
+	defer s.stateMu.RUnlock()
+	if s.stateEpoch == epoch {
+		_ = s.stateCache.SetWithTTL(key, st, 1, packageStateCacheTTL)
+	}
+}
+
+// InvalidateGroupState 失效某用户在某分组的套餐概况缓存。须在状态变更落库之后调用。
+//
+// 三处时序各自处理：
+//   - 进行中的回源可能在变更前读库、在失效后写缓存：递增代际让它的写入被拒绝；
+//   - 失效后到达的请求不能复用进行中的旧回源：Forget 让它们重新回源；
+//   - ristretto 首次写入是异步缓冲的，Del 之前排队的旧写入会在之后才落地：先 Wait
+//     冲刷缓冲区，再由 Del 同步删除。
+//
+// 失效是低频操作，读路径不加锁等待。
+func (s *PackageService) InvalidateGroupState(userID, groupID int64) {
+	if s == nil {
+		return
+	}
+	key := packageStateCacheKey(userID, groupID)
+	s.stateGroup.Forget(key)
+	if s.stateCache == nil {
+		return
+	}
+	s.stateMu.Lock()
+	s.stateEpoch++
+	s.stateMu.Unlock()
+	s.stateCache.Wait()
+	s.stateCache.Del(key)
 }
 
 func packageStateCacheKey(userID, groupID int64) string {

@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -24,6 +25,8 @@ type packageRepoFake struct {
 		caps       PackageFreezeCaps
 	}
 	state *PackageGroupState
+	// afterGetState 在 GetGroupState 读完状态、返回之前调用，用于模拟回源期间的并发变更。
+	afterGetState func()
 
 	userPackages map[int64]*UserPackage
 	createCalls  int
@@ -92,6 +95,9 @@ func (f *packageRepoFake) ListFrozenIDs(_ context.Context) ([]int64, error) {
 
 func (f *packageRepoFake) GetGroupState(_ context.Context, _, _ int64, _ time.Time) (*PackageGroupState, error) {
 	cp := *f.state
+	if hook := f.afterGetState; hook != nil {
+		hook()
+	}
 	return &cp, nil
 }
 
@@ -337,6 +343,103 @@ func TestPackageResolveGroupState_CachesAndInvalidates(t *testing.T) {
 	st, _ = svc.ResolveGroupState(ctx, 1, 7)
 	require.Equal(t, 0, st.Usable)
 	require.Equal(t, 1, st.Frozen)
+}
+
+// 首次写入仍在 ristretto 缓冲区里时立即失效，之后的读取不能再命中缓冲区落地的旧状态。
+func TestPackageResolveGroupState_InvalidateBeatsBufferedSet(t *testing.T) {
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+	ctx := context.Background()
+
+	for userID := int64(1); userID <= 300; userID++ {
+		repo.state = &PackageGroupState{Usable: 1}
+		st, err := svc.ResolveGroupState(ctx, userID, 7)
+		require.NoError(t, err)
+		require.Equal(t, 1, st.Usable)
+
+		repo.state = &PackageGroupState{Frozen: 1}
+		svc.InvalidateGroupState(userID, 7)
+		for i := 0; i < 200; i++ {
+			st, err = svc.ResolveGroupState(ctx, userID, 7)
+			require.NoError(t, err)
+			require.Equal(t, 0, st.Usable, "用户 %d 第 %d 次读取命中了失效前的旧状态", userID, i)
+			require.Equal(t, 1, st.Frozen)
+		}
+	}
+}
+
+// 回源已读到旧状态时发生失效，回源结果仍返回给发起方，但不能写进缓存。
+func TestPackageResolveGroupState_InvalidateDuringLoadDropsStaleResult(t *testing.T) {
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+	ctx := context.Background()
+
+	repo.state = &PackageGroupState{Usable: 1}
+	repo.afterGetState = func() {
+		repo.afterGetState = nil
+		repo.state = &PackageGroupState{Frozen: 1}
+		svc.InvalidateGroupState(1, 7)
+	}
+	st, err := svc.ResolveGroupState(ctx, 1, 7)
+	require.NoError(t, err)
+	require.Equal(t, 1, st.Usable, "失效前发起的回源返回它读到的结果")
+
+	svc.stateCache.Wait()
+	st, err = svc.ResolveGroupState(ctx, 1, 7)
+	require.NoError(t, err)
+	require.Equal(t, 0, st.Usable, "失效前读库的回源结果不能写进缓存")
+	require.Equal(t, 1, st.Frozen)
+}
+
+// 失效后到达的读取不能复用失效前发起、尚未结束的回源。
+func TestPackageResolveGroupState_InvalidateDetachesInflightLoad(t *testing.T) {
+	repo := newPackageRepoFake()
+	svc := newPackageServiceForTest(repo, time.Now())
+	ctx := context.Background()
+
+	loaded := make(chan struct{})
+	release := make(chan struct{})
+	var releaseOnce sync.Once
+	unblock := func() { releaseOnce.Do(func() { close(release) }) }
+	defer unblock()
+
+	repo.state = &PackageGroupState{Usable: 1}
+	repo.afterGetState = func() {
+		repo.afterGetState = nil
+		close(loaded)
+		<-release
+	}
+	stale := make(chan *PackageGroupState, 1)
+	go func() {
+		st, _ := svc.ResolveGroupState(ctx, 1, 7)
+		stale <- st
+	}()
+	<-loaded
+
+	repo.state = &PackageGroupState{Frozen: 1}
+	svc.InvalidateGroupState(1, 7)
+	fresh := make(chan *PackageGroupState, 1)
+	go func() {
+		st, _ := svc.ResolveGroupState(ctx, 1, 7)
+		fresh <- st
+	}()
+	select {
+	case st := <-fresh:
+		require.NotNil(t, st)
+		require.Equal(t, 1, st.Frozen, "失效后的读取应重新回源拿到新状态")
+	case <-time.After(2 * time.Second):
+		t.Fatal("失效后的读取仍在等待失效前发起的回源")
+	}
+
+	unblock()
+	st := <-stale
+	require.NotNil(t, st)
+	require.Equal(t, 1, st.Usable)
+
+	svc.stateCache.Wait()
+	st, err := svc.ResolveGroupState(ctx, 1, 7)
+	require.NoError(t, err)
+	require.Equal(t, 1, st.Frozen, "旧回源结束后缓存仍是新状态")
 }
 
 // ---------- 节假日同步 ----------
