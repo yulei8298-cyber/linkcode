@@ -1,8 +1,8 @@
 import type { GroupPlatform } from '@/types'
 
-export type KeyGroupProvider = 'anthropic' | 'openai' | 'domestic' | 'other'
+export type KeyGroupProvider = 'anthropic' | 'openai' | 'domestic' | 'video' | 'other'
 
-export const KEY_GROUP_PROVIDERS = ['anthropic', 'openai', 'domestic', 'other'] as const
+export const KEY_GROUP_PROVIDERS = ['anthropic', 'openai', 'domestic', 'video', 'other'] as const
 
 // Classify by the configured upstream platform, never by a group's display name.
 const PROVIDER_BY_PLATFORM: Record<GroupPlatform, KeyGroupProvider> = {
@@ -20,7 +20,7 @@ const PROVIDER_BY_PLATFORM: Record<GroupPlatform, KeyGroupProvider> = {
   typesafe: 'other',
   command_code: 'other',
   cline: 'other',
-  video: 'other'
+  video: 'video'
 }
 
 export function getKeyGroupProvider(platform: GroupPlatform): KeyGroupProvider {
@@ -32,5 +32,6 @@ export const KEY_GROUP_PROVIDER_ICONS: Record<KeyGroupProvider, GroupPlatform[]>
   anthropic: ['anthropic'],
   openai: ['openai'],
   domestic: ['deepseek', 'kimi'],
+  video: ['video'],
   other: ['gemini', 'grok']
 }

@@ -128,12 +128,14 @@ export default {
       anthropic: 'Anthropic',
       openai: 'OpenAI',
       domestic: 'Chinese AI',
+      video: 'Video',
       other: 'Other'
     },
     providerHints: {
       anthropic: 'Choose an available Anthropic / Claude group',
       openai: 'Choose an available OpenAI / GPT group',
       domestic: 'Includes DeepSeek, Kimi, Zhipu GLM and MiniMax',
+      video: 'Video generation groups such as Seedance, Kling and Wan',
       other: 'Includes Gemini, Grok, Antigravity, OpenCode and mixed groups'
     },
     selectGroup: 'Select a group',
