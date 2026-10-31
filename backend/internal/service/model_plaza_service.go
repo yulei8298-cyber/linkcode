@@ -475,6 +475,14 @@ func domesticOfficialPricingCNY(modelName string) *PlazaOfficialPricing {
 	name := strings.ToLower(strings.TrimSpace(modelName))
 	var input, output, cacheRead float64 // 元/token
 	switch {
+	// 带日期后缀的快照与 v4.1-flash 按上游价目单独定价，须排在同前缀的通用规则之前；
+	// v4.1-flash 的高峰价由前端按渠道分时倍率在此基础价上换算。
+	case strings.HasPrefix(name, "deepseek-v4-pro-0813"):
+		input, output, cacheRead = 9e-6, 27e-6, 0.3e-6
+	case strings.HasPrefix(name, "deepseek-v4-flash-0731"):
+		input, output, cacheRead = 3e-6, 9e-6, 0.1e-6
+	case strings.HasPrefix(name, "deepseek-v4.1-flash"):
+		input, output, cacheRead = 1e-6, 4e-6, 0.02e-6
 	case strings.HasPrefix(name, "deepseek-v4-pro"):
 		input, output, cacheRead = 4.5e-6, 13.5e-6, 0.15e-6
 	case strings.HasPrefix(name, "deepseek-v4-flash"):
