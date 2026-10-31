@@ -81,3 +81,32 @@ func TestJudgeIntelCheckLogic_文本标识符不被当作Markdown或单位(t *te
 		})
 	}
 }
+
+func TestJudgeIntelCheckLogic_条件讨论不改变本题结论(t *testing.T) {
+	for _, mode := range []string{IntelCheckMatchNumeric, IntelCheckMatchExact} {
+		for _, expected := range []string{"17", "25"} {
+			t.Run(mode+"/期望"+expected, func(t *testing.T) {
+				question := &IntelCheckQuestion{Kind: IntelCheckKindLogic, ExpectedAnswer: expected, MatchMode: mode}
+				reply := "本题最终答案：17。\n\n注：如果换一个条件，最终答案：25。"
+				outcome := judgeIntelCheckLogic(question, reply)
+				wantMatch := expected == "17"
+				wantStatus := IntelCheckStatusFail
+				if wantMatch {
+					wantStatus = IntelCheckStatusPass
+				}
+				require.Equal(t, "17", outcome.ExtractedAnswer)
+				require.Equal(t, wantStatus, outcome.Status)
+				require.Equal(t, wantMatch, outcome.JudgeDetail["matched"])
+				require.Equal(t, "17", outcome.JudgeDetail["extracted_answer"])
+			})
+		}
+	}
+}
+
+func TestJudgeIntelCheckLogic_第232轮数值判定(t *testing.T) {
+	question := &IntelCheckQuestion{Kind: IntelCheckKindLogic, ExpectedAnswer: "21", MatchMode: IntelCheckMatchNumeric}
+	outcome := judgeIntelCheckLogic(question, intelCheckRound232Conclusion)
+	require.Equal(t, IntelCheckStatusPass, outcome.Status)
+	require.Equal(t, "21", outcome.ExtractedAnswer)
+	require.Equal(t, true, outcome.JudgeDetail["matched"])
+}
